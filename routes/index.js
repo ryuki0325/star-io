@@ -6,6 +6,12 @@ const crypto = require("crypto");
 const router = express.Router();
 const smm = require("../lib/smmClient");
 
+// 👑 おすすめサービスIDを.envから読み込み
+const recommendedServices = (process.env.RECOMMENDED_SERVICES || "")
+  .split(",")
+  .map(id => parseInt(id, 10))
+  .filter(id => !isNaN(id))
+
 // 優先アプリ
 const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch"];
 
@@ -334,19 +340,23 @@ router.get("/order", async (req, res) => {
     if (!grouped[app]) grouped[app] = {};
     if (!grouped[app][type]) grouped[app][type] = [];
 
-    // ✅ 基本レートを保持 & 倍率を適用
-  // 1ドルあたりの円換算レート（envから取得、デフォルト150円）
-     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+// 1ドルあたりの円換算レート（envから取得、デフォルト150円）
+const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
 
-   // APIのレート（ドル建て）をまず円換算
-      s.baseRate = parseFloat(s.rate) * JPY_RATE;
+// APIのレート（ドル建て）を円換算
+s.baseRate = parseFloat(s.rate) * JPY_RATE;
 
 // 段階的な倍率を適用
-      s.rate = applyPriceMultiplier(s.baseRate);
+s.rate = applyPriceMultiplier(s.baseRate);
 
-    grouped[app][type].push(s);
-  });
+// 👑おすすめ判定（.env で指定したサービスIDなら名前の前に追加）
+if (recommendedServices.includes(Number(s.service))) {
+  s.name = "👑おすすめ " + s.name;
+}
 
+// ✅ 最後にまとめて追加
+grouped[app][type].push(s);
+    
   // --- アプリ順序を決定 ---
   const appOrder = Object.keys(grouped).sort((a, b) => {
     const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
