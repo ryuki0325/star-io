@@ -516,6 +516,12 @@ router.post("/order", async (req, res) => {
   const { serviceId, link, quantity } = req.body;
   const db = req.app.locals.db;
 
+  // ✅ 数量を整数化（必須！）
+  const qty = parseInt(quantity, 10) || 0;
+  if (qty <= 0) {
+    return res.send("数量が不正です");
+  }
+
   // ✅ 利益倍率ロジック
   function applyPriceMultiplier(price) {
     const low  = parseFloat(process.env.MULTIPLIER_LOW  || "2.0");
@@ -547,7 +553,7 @@ router.post("/order", async (req, res) => {
     const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
 
     // ✅ 最終金額 (円)
-    const amount = (unitRate / 1000) * Number(quantity);
+    const amount = (unitRate / 1000) * qty;
 
     // ✅ 残高確認
     const balanceResult = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
@@ -568,12 +574,12 @@ router.post("/order", async (req, res) => {
 
     try {
       // ✅ SMMFlare APIに注文送信
-      const orderRes = await smm.createOrder(serviceId, link, quantity);
+      const orderRes = await smm.createOrder(serviceId, link, qty);
 
-      // ✅ 注文をDB保存
+      // ✅ 注文をDB保存（quantity は整数！）
       await db.query(
         "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
-        [req.session.userId, serviceId, svc.name, link, quantity, amount]
+        [req.session.userId, serviceId, svc.name, link, qty, amount]
       );
 
       // ✅ コミット
@@ -583,7 +589,7 @@ router.post("/order", async (req, res) => {
         title: "注文完了",
         orderId: orderRes.order,     // APIから返ってきた注文ID
         serviceName: svc.name,
-        quantity,
+        quantity: qty,
         amount: amount.toFixed(2),   // 表示は小数2桁
         balance: (balance - amount).toFixed(2) // 更新後残高
       });
