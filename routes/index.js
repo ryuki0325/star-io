@@ -516,7 +516,7 @@ router.post("/order", async (req, res) => {
   const { serviceId, link, quantity } = req.body;
   const db = req.app.locals.db;
 
-  // ✅ 数量を整数化（必須！）
+  // ✅ 数量を整数化
   const qty = parseInt(quantity, 10) || 0;
   if (qty <= 0) {
     return res.send("数量が不正です");
@@ -556,20 +556,25 @@ router.post("/order", async (req, res) => {
     let amount = (unitRate / 1000) * qty;
     amount = Math.round(amount * 100) / 100;  // 小数第3位で四捨五入
 
-   // ✅ 残高確認
-const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
-const balance = result.rows[0]?.balance || 0;
+    // ✅ 残高を取得
+    const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
+    const balance = result.rows[0]?.balance || 0;
 
-if (balance < amount) {
-  return res.render("order", {   // ← order_form ではなく order.ejs に合わせる
-    title: "新規注文",
-    user: req.session.user,
-    error: "残高が不足しています。チャージしてください。",
-    serviceId,
-    link,
-    quantity
-  });
-}
+    // ✅ 残高不足チェック
+    if (balance < amount) {
+      return res.render("order", {
+        title: "新規注文",
+        user: req.session.user,
+        error: "残高が不足しています。チャージしてください。",
+        serviceId,
+        link,
+        quantity,
+        balance,         // ← 追加
+        grouped: {},     // 必要ならここで渡す
+        appOrder: [],    // 必要ならここで渡す
+        selectedApp: ""  // 必要ならここで渡す
+      });
+    }
 
     // ✅ トランザクション開始
     await db.query("BEGIN");
@@ -584,7 +589,7 @@ if (balance < amount) {
       // ✅ SMMFlare APIに注文送信
       const orderRes = await smm.createOrder(serviceId, link, qty);
 
-      // ✅ 注文をDB保存（quantity は整数！）
+      // ✅ 注文をDB保存
       await db.query(
         "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
         [req.session.userId, serviceId, svc.name, link, qty, amount]
@@ -595,11 +600,11 @@ if (balance < amount) {
 
       res.render("order_success", {
         title: "注文完了",
-        orderId: orderRes.order,     // APIから返ってきた注文ID
+        orderId: orderRes.order,     
         serviceName: svc.name,
         quantity: qty,
-        amount: amount.toFixed(2),   // 表示は小数2桁
-        balance: (balance - amount).toFixed(2) // 更新後残高
+        amount: amount.toFixed(2),
+        balance: (balance - amount).toFixed(2)
       });
 
     } catch (apiErr) {
