@@ -2,8 +2,8 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Render が環境変数を用意してくれる
-  ssl: { rejectUnauthorized: false }
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Render の Postgres 用
 });
 
 module.exports = {
