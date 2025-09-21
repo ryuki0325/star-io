@@ -1,0 +1,67 @@
+<% title = 'ホーム' %>
+
+<div class="container-fluid py-4 text-light">
+  <h2 class="mb-4">🚀 ようこそ <span class="text-info"><%= user?.email || "ゲスト" %></span> さん</h2>
+
+  <!-- 🔹 残高・注文数・ランク -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="card bg-dark border-info shadow-sm h-100">
+        <div class="card-body text-center">
+          <h5 class="text-secondary">💰 残高</h5>
+          <p class="fs-4 fw-bold text-info"><%= Number(user?.balance || 0).toFixed(2) %> 円</p>
+          <a href="/funds" class="btn btn-outline-info btn-sm">チャージ</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-dark border-info shadow-sm h-100">
+        <div class="card-body text-center">
+          <h5 class="text-secondary">🧾 注文履歴</h5>
+          <p class="fs-4 fw-bold text-info"><%= orders?.length || 0 %> 件</p>
+          <a href="/orders" class="btn btn-outline-info btn-sm">履歴を見る</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-dark border-info shadow-sm h-100">
+        <div class="card-body text-center">
+          <h5 class="text-secondary">👑 ユーザーランク</h5>
+          <p class="fs-4 fw-bold text-info">Starter</p>
+          <small class="text-muted">※将来的にランクシステム追加可</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 アプリショートカット -->
+  <h4 class="mb-3">アプリを選んで新規注文 ✨</h4>
+  <div class="row g-3">
+    <% const apps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"]; %>
+    <% apps.forEach(app => { %>
+      <div class="col-md-3 col-sm-6">
+        <a href="/order?app=<%= app %>" class="btn btn-outline-info w-100 py-3 fw-bold shadow-sm">
+          <%= emojiMap[app] || "🧩" %> <%= app %>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<style>
+  .card {
+    border-width: 2px !important;
+    border-radius: 12px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 20px rgba(13,202,240,.4);
+  }
+  .btn {
+    border-width: 2px !important;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+</style>

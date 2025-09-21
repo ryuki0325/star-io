@@ -1,0 +1,26 @@
+<% title = 'クーポン管理' %>
+<div class="container py-4 text-light">
+  <h2>🎁 クーポン管理</h2>
+
+  <form method="POST" class="mb-4">
+    <input type="text" name="code" placeholder="コード" required>
+    <input type="number" name="discount_value" placeholder="金額" required>
+    <input type="date" name="valid_until" required>
+    <input type="number" name="max_uses" placeholder="最大使用回数" value="1">
+    <button type="submit" class="btn btn-success">発行</button>
+  </form>
+
+  <table class="table table-dark table-striped">
+    <thead><tr><th>コード</th><th>金額</th><th>有効期限</th><th>使用数</th></tr></thead>
+    <tbody>
+      <% coupons.forEach(c => { %>
+        <tr>
+          <td><%= c.code %></td>
+          <td><%= c.discount_value %>円</td>
+          <td><%= c.valid_until %></td>
+          <td><%= c.used_count %>/<%= c.max_uses %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,40 @@
+<% title = '購入履歴' %>
+<div class="container py-4 text-light">
+  <h2>📜 ユーザー <%= userId %> の購入履歴</h2>
+
+  <% if (!orders || orders.length === 0) { %>
+    <p class="text-center text-muted">購入履歴はありません。</p>
+  <% } else { %>
+    <div class="d-flex flex-column gap-3">
+      <% orders.forEach(order => { %>
+        <div class="order-card border border-info rounded p-3 shadow-sm">
+          <div class="d-flex justify-content-between">
+            <span class="badge bg-info text-dark">ID: <%= order.id %></span>
+            <span class="badge bg-secondary">
+              📅 <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}) %>
+            </span>
+          </div>
+          <h6 class="mt-2 text-white"><%= order.service_name %></h6>
+          <p class="mb-1">🔗 <a href="<%= order.link %>" target="_blank" class="text-info">リンク</a></p>
+          <p class="mb-1">📦 数量: <%= order.quantity %></p>
+          <p class="mb-1">💰 金額: <span class="text-success"><%= Number(order.price_jpy).toFixed(2) %> 円</span></p>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div class="mt-3">
+    <a href="/staff/users" class="btn btn-outline-light">← ユーザー一覧へ戻る</a>
+  </div>
+</div>
+
+<style>
+  .order-card {
+    background: #111;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .order-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(13,202,240,0.6);
+  }
+</style>

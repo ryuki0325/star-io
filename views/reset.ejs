@@ -1,0 +1,17 @@
+<% title = '新しいパスワード設定' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">🔐 新しいパスワード設定</h2>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <form action="/reset/<%= token %>" method="POST" class="bg-dark p-4 rounded border border-info">
+    <div class="mb-3">
+      <label for="password" class="form-label">新しいパスワード</label>
+      <input type="password" id="password" name="password" class="form-control bg-dark text-light border-info" required>
+    </div>
+    <button type="submit" class="btn btn-success w-100">パスワードを変更</button>
+  </form>
+</div>

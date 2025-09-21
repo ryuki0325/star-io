@@ -1,0 +1,83 @@
+<% title = '💰残高チャージ' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">💰 残高チャージ</h2>
+
+  <!-- エラーがあれば表示 -->
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <!-- 残高表示 -->
+  <div class="card bg-dark border-info p-3 mb-4 text-white">
+    <p class="mb-0">現在の残高</p>
+    <h4 class="fw-bold text-info mb-0"><%= Number(balance).toFixed(0) %> 円</h4>
+  </div>
+
+  <!-- Stripe チャージフォーム -->
+  <form id="chargeForm">
+    <div class="mb-3">
+      <label for="chargeAmount" class="form-label fw-bold">チャージ金額（1000円以上）</label>
+      <input type="number" id="chargeAmount" name="amount"
+             class="form-control bg-dark text-light border-info"
+             min="1000" step="100" required>
+    </div>
+
+    <!-- ワンクリック選択 -->
+    <div class="mb-3">
+      <label class="form-label fw-bold">クイック選択</label>
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-info quick-btn" data-value="1000">1000円</button>
+        <button type="button" class="btn btn-outline-info quick-btn" data-value="2000">2000円</button>
+        <button type="button" class="btn btn-outline-info quick-btn" data-value="5000">5000円</button>
+        <button type="button" class="btn btn-outline-info quick-btn" data-value="10000">10000円</button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-info w-100 fw-bold">Stripeでチャージする</button>
+  </form>
+</div>
+
+<!-- Stripe.js 読み込み -->
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  const stripe = Stripe("<%= process.env.STRIPE_PUBLISHABLE_KEY %>");
+
+  // クイック選択
+  document.querySelectorAll(".quick-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.getElementById("chargeAmount").value = btn.dataset.value;
+    });
+  });
+
+  // Stripeセッション作成
+  document.getElementById("chargeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const amount = document.getElementById("chargeAmount").value;
+
+    const res = await fetch("/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount })
+    });
+
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("セッション作成に失敗しました");
+    }
+  });
+</script>
+
+<!-- ギフトコード入力フォーム -->
+<div class="container py-4 text-light">
+  <h3 class="mb-3">🎁 ギフト / クーポンコード</h3>
+  <form action="/redeem" method="POST" class="bg-dark p-3 rounded border border-info">
+    <div class="mb-3">
+      <label for="code" class="form-label fw-bold">コードを入力してください</label>
+      <input type="text" id="code" name="code" class="form-control bg-dark text-light border-info" required>
+    </div>
+    <button type="submit" class="btn btn-info w-100 fw-bold">適用する</button>
+  </form>
+</div>

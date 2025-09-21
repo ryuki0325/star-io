@@ -1,0 +1,65 @@
+<% title = '注文履歴' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">📜 注文履歴</h2>
+
+  <% if (!orders || orders.length === 0) { %>
+    <p class="text-center text-muted">まだ注文履歴はありません。</p>
+  <% } else { %>
+    <div class="d-flex flex-column gap-3">
+      <% orders.forEach(order => { %>
+        <div class="order-card border border-info rounded p-3 shadow-sm">
+
+          <!-- 上段: 注文ID & 日付 -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-info text-dark fw-bold px-3 py-2">
+              ID: <%= order.id %>
+            </span>
+
+            <span class="badge bg-dark text-white">
+              📅 
+              <% if (order.created_at) { %>
+                <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+              <% } else { %>
+                不明
+              <% } %>
+            </span>
+          </div>
+
+          <!-- サービス名 -->
+          <h5 class="text-white mb-2" style="word-break: break-word;">
+            ✨ <%= order.service_name || "サービス名不明" %>
+          </h5>
+
+          <!-- サービス詳細 -->
+          <p class="mb-1">
+            🔗 
+            <% if (order.link) { %>
+              <a href="<%= order.link %>" target="_blank" class="text-decoration-underline text-info">リンク</a>
+            <% } else { %>
+              <span class="text-muted">リンクなし</span>
+            <% } %>
+          </p>
+          <p class="mb-1">
+            📦 数量: <span class="fw-bold text-warning"><%= order.quantity || 0 %></span>
+          </p>
+          <p class="mb-1">
+            💰 金額: <span class="fw-bold text-success"><%= Number(order.price_jpy || 0).toFixed(2) %> 円</span>
+          </p>
+
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<style>
+  .order-card {
+    background: #111; /* 黒背景 */
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .order-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
+  }
+</style>

@@ -1,0 +1,80 @@
+/* === グローバル設定 === */
+body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding: 20px;
+}
+
+h1, h2, h3, h4, h5 {
+  color: #ffffff;
+}
+
+/* === カード風コンテナ === */
+.order-container, .card {
+  background-color: #161b22;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+/* === フォーム要素 === */
+.form-label {
+  color: #c9d1d9;
+  margin-bottom: 5px;
+}
+
+.form-control, .form-select {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 2px rgba(88,166,255,0.3);
+  outline: none;
+}
+
+/* === ボタン === */
+.btn-primary {
+  background-color: #238636;
+  border-color: #2ea043;
+  color: white;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 6px;
+}
+
+.btn-primary:hover {
+  background-color: #2ea043;
+  border-color: #238636;
+}
+
+/* === ナビタブ === */
+.nav-tabs .nav-link {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  margin-right: 5px;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #0d1117;
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+/* === メディア対応 === */
+@media screen and (max-width: 768px) {
+  .order-container {
+    padding: 15px;
+  }
+}
+
+/* 入力は必ず黒文字に */
+.form-control { color: #000 !important; background: #fff !important; }
+.form-control::placeholder { color: #6c757d; }

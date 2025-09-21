@@ -1,0 +1,24 @@
+<% title = cat + ' サービス' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4"><%= cat %> サービス</h2>
+
+  <% if (services.length === 0) { %>
+    <p>このカテゴリにはサービスがありません。</p>
+  <% } else { %>
+    <div class="row">
+      <% services.forEach(svc => { %>
+        <div class="col-md-4 mb-3">
+          <div class="card bg-dark text-light border-secondary h-100">
+            <div class="card-body">
+              <h5><%= svc.name %></h5>
+              <p>価格: 約 ¥<%= Math.ceil(Number(svc.rate) * 150) %> / 1000</p>
+              <p>範囲: <%= svc.min %> - <%= svc.max %></p>
+              <a href="/order?serviceId=<%= svc.service %>" class="btn btn-outline-primary btn-sm">注文する</a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

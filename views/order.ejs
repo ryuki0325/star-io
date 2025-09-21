@@ -1,0 +1,202 @@
+<% title = '新規注文' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">新規注文</h2>
+
+  <!-- ✅ 残高 -->
+  <p class="mb-4">残高: <%= Number(balance || 0) %> 円</p>
+
+  <form action="/order" method="POST" class="bg-dark p-4 rounded border border-info-subtle shadow">
+    <!-- ==== クイック選択 ==== -->
+    <div class="mb-3">
+      <label class="form-label mb-2">クイック選択</label>
+      <div class="d-flex flex-wrap gap-2">
+        <% const emojiMap = {
+             TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️",
+             Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽"
+           };
+           const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
+        %>
+        <% quickApps.forEach(q => { if (grouped[q]) { %>
+          <button type="button"
+                  class="app-chip btn btn-outline-info"
+                  data-app="<%= q %>">
+            <span class="me-1"><%= emojiMap[q] || "🧩" %></span><%= q %>
+          </button>
+        <% } }) %>
+      </div>
+    </div>
+
+    <!-- ==== アプリ選択 ==== -->
+    <div class="mb-3">
+      <label for="appSelect" class="form-label">アプリを選択</label>
+      <div class="select-wrap border border-3 border-info rounded">
+        <select class="form-select bg-dark text-light border-0" id="appSelect" onchange="updateTypes()">
+          <option value="">選択してください</option>
+          <% (appOrder || []).forEach(app => { %>
+            <option value="<%= app %>" <%= selectedApp === app ? "selected" : "" %>>
+              <%= (emojiMap[app] || "🧩") + " " + app %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+
+    <!-- ==== 種類選択 ==== -->
+    <div class="mb-3">
+      <label for="typeSelect" class="form-label">種類を選択</label>
+      <div class="select-wrap border border-3 border-info rounded">
+        <select class="form-select bg-dark text-light border-0" id="typeSelect" onchange="updateServices()">
+          <option value="">先にアプリを選んでください</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ==== サービス選択 ==== -->
+    <div class="mb-3">
+      <label for="serviceSelect" class="form-label">サービスを選択（安い順）</label>
+      <div class="select-wrap border border-3 border-info rounded">
+        <select class="form-select bg-dark text-light border-0" id="serviceSelect" name="serviceId" onchange="updatePrice()">
+          <option value="">先に種類を選んでください</option>
+        </select>
+      </div>
+      <div class="form-text text-secondary mt-1">「単価: xx円/1000」は1000単位あたりの金額です</div>
+    </div>
+
+    <!-- ==== リンク ==== -->
+    <div class="mb-3">
+      <label for="link" class="form-label">リンク</label>
+      <input type="text" class="form-control bg-dark text-light border border-2 border-info" id="link" name="link" required>
+    </div>
+
+    <!-- ==== 数量 ==== -->
+    <div class="mb-3">
+      <label for="quantity" class="form-label">数量</label>
+      <input type="number" class="form-control bg-dark text-light border border-2 border-info" id="quantity" name="quantity" min="1" required oninput="updatePrice()">
+    </div>
+
+    <!-- ✅ 金額表示 -->
+    <div class="card bg-black border border-3 border-info p-3 mb-3">
+      <p id="priceDisplay" class="text-info fs-5 mb-0">金額: 0 円</p>
+    </div>
+
+    <button type="submit" class="btn btn-info w-100 fw-bold py-2">注文する</button>
+  </form>
+</div>
+
+<style>
+  .select-wrap { overflow: hidden; }
+  .select-wrap:focus-within { box-shadow: 0 0 0.6rem rgba(13, 202, 240, 0.5); }
+  .app-chip{
+    border-width: 2px !important;
+    border-radius: 999px;
+    padding: .45rem .9rem;
+    font-weight: 600;
+    backdrop-filter: blur(2px);
+  }
+  .app-chip.active,
+  .app-chip:hover{
+    background:#0dcaf0;
+    color:#000;
+  }
+</style>
+
+<script>
+  const grouped   = <%- JSON.stringify(grouped) %>;
+  const selectedApp = "<%= selectedApp %>";
+
+  const typeIcons = {
+    "フォロワー": "👥",
+    "いいね": "❤️",
+    "再生数": "▶️",
+    "コメント": "💬",
+    "シェア": "🔗",
+    "その他": "✨"
+  };
+
+  // ✅ クイック選択クリック
+  document.addEventListener("click", (e) => {
+    const chip = e.target.closest(".app-chip");
+    if (!chip) return;
+    const app = chip.dataset.app;
+    document.querySelectorAll(".app-chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    document.getElementById("appSelect").value = app;
+    updateTypes();
+  });
+
+  function updateTypes() {
+    const app = document.getElementById("appSelect").value;
+    const typeSelect = document.getElementById("typeSelect");
+    typeSelect.innerHTML = '<option value="">種類を選択</option>';
+
+    if (grouped[app]) {
+      Object.keys(grouped[app]).forEach(type => {
+        const opt = document.createElement("option");
+        opt.value = type;
+        opt.textContent = typeIcons[type] ? `${typeIcons[type]} ${type}` : type;
+        typeSelect.appendChild(opt);
+      });
+    }
+    resetServiceSelect();
+    updatePrice();
+  }
+
+  // ✅ サービス選択（安い順）
+  function updateServices() {
+    const app = document.getElementById("appSelect").value;
+    const type = document.getElementById("typeSelect").value;
+    const serviceSelect = document.getElementById("serviceSelect");
+    resetServiceSelect();
+
+    if (grouped[app] && grouped[app][type]) {
+      // 🔽 単価でソート（安い順）
+      const sortedServices = [...grouped[app][type]].sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
+
+      sortedServices.forEach(svc => {
+        const rate = parseFloat(svc.rate || 0);
+        const icon = typeIcons[type] || "";
+        const displayRate = Number.isInteger(rate) ? rate : rate.toFixed(2);
+
+        const opt = document.createElement("option");
+        opt.value = svc.service;
+        opt.textContent = `${svc.service} - ${svc.name} ｜ 単価: ${displayRate}円/1000${icon} （Min ${svc.min} - Max ${svc.max}）`;
+        opt.dataset.rate = rate;
+        serviceSelect.appendChild(opt);
+      });
+    }
+    updatePrice();
+  }
+
+  function resetServiceSelect() {
+    document.getElementById("serviceSelect").innerHTML = '<option value="">サービスを選択</option>';
+  }
+
+  // ✅ 金額計算
+  function updatePrice() {
+    const serviceSelect = document.getElementById("serviceSelect");
+    const quantityInput = document.getElementById("quantity");
+    const display = document.getElementById("priceDisplay");
+    const rate = parseFloat(serviceSelect.selectedOptions[0]?.dataset.rate || 0);
+    const quantity = Number(quantityInput.value || 0);
+
+    if (rate > 0 && quantity > 0) {
+      const total = (rate / 1000 * quantity);
+      const displayPrice = Number.isInteger(total) ? total : total.toFixed(2);
+      display.textContent = `金額: ${displayPrice} 円`;
+    } else {
+      display.textContent = "金額: 0 円";
+    }
+  }
+
+  // ✅ ページ初期化
+  window.addEventListener("load", () => {
+    if (selectedApp) {
+      document.getElementById("appSelect").value = selectedApp;
+      document.querySelectorAll(".app-chip").forEach(c => {
+        if (c.dataset.app === selectedApp) c.classList.add("active");
+      });
+    }
+    updateTypes();
+  });
+</script>

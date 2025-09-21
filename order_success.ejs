@@ -1,0 +1,14 @@
+<% title = '注文完了' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">🎉 注文が完了しました</h2>
+
+  <p><strong>注文ID:</strong> <%= orderId %></p>
+  <p><strong>サービス:</strong> <%= serviceName %></p>
+  <p><strong>数量:</strong> <%= quantity %></p>
+  <p><strong>金額:</strong> <%= amount %> 円</p>
+  <p><strong>残高:</strong> <%= balance %> 円</p>
+
+  <a href="/orders" class="btn btn-info mt-3">注文履歴を見る</a>
+</div>
+

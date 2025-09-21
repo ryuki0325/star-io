@@ -1,0 +1,16 @@
+<% title = 'スタッフログイン' %>
+<div class="container py-4 text-light">
+  <h2 class="mb-4">🔑 スタッフログイン</h2>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <form action="/staff/login" method="POST" class="bg-dark p-4 rounded border border-info">
+    <div class="mb-3">
+      <label for="password" class="form-label">パスワード</label>
+      <input type="password" class="form-control bg-dark text-light" id="password" name="password" required>
+    </div>
+    <button type="submit" class="btn btn-info w-100">ログイン</button>
+  </form>
+</div>

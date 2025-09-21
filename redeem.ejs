@@ -1,0 +1,20 @@
+<% title = 'ギフトコード' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">🎁 ギフトコード / クーポン入力</h2>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <form action="/redeem" method="POST" class="bg-dark p-4 rounded border border-info shadow">
+    <div class="mb-3">
+      <label for="code" class="form-label fw-bold">コードを入力</label>
+      <input type="text" id="code" name="code" class="form-control bg-dark text-light border-info" required>
+    </div>
+    <button type="submit" class="btn btn-info w-100 fw-bold py-2">送信</button>
+  </form>
+</div>

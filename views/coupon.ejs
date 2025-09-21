@@ -1,0 +1,27 @@
+<div class="container py-4">
+  <h2 class="mb-3">🎁 ギフト / クーポンコード</h2>
+
+  <p class="mb-3">現在の残高: <%= user.balance %> 円</p>
+
+  <form action="/redeem" method="POST" class="row g-2">
+    <div class="col-md-6">
+      <input
+        type="text"
+        name="code"
+        class="form-control bg-white text-dark"
+        placeholder="コードを入力してください"
+        autocomplete="off"
+      />
+    </div>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-primary w-100">適用する</button>
+    </div>
+  </form>
+
+  <% if (success) { %>
+    <div class="alert alert-success mt-3"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-danger mt-3"><%= error %></div>
+  <% } %>
+</div>

@@ -1,0 +1,41 @@
+<div class="container py-4 text-light">
+  <h2 class="mb-4">お問い合わせ</h2>
+
+  <% if (error) { %>
+    <div class="alert alert-info"><%= error %></div>
+  <% } %>
+
+  <form action="/inquiry" method="POST" class="bg-dark p-4 rounded border border-info shadow">
+    <div class="mb-3">
+      <label class="form-label">カテゴリ</label>
+      <select class="form-select bg-dark text-light" name="category" required>
+        <option value="Orders">Orders</option>
+        <option value="Service">Service</option>
+        <option value="Payments">Payments</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">サブカテゴリ</label>
+      <select class="form-select bg-dark text-light" name="subcategory" required>
+        <option value="Refill">Refill</option>
+        <option value="Cancel">Cancel</option>
+        <option value="Speed up">Speed up</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">注文ID (任意)</label>
+      <input type="text" class="form-control bg-dark text-light" name="orderId">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">メッセージ</label>
+      <textarea class="form-control bg-dark text-light" name="message" rows="4" required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-info w-100">送信</button>
+  </form>
+</div>

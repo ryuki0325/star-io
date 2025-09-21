@@ -1,0 +1,26 @@
+<% title = 'チャージ成功' %>
+
+<div class="container py-5 text-light text-center">
+  <h2 class="mb-4 fw-bold text-success">🎉 チャージが完了しました！</h2>
+
+  <div class="card bg-dark border-success shadow-lg mx-auto" style="max-width: 500px;">
+    <div class="card-body">
+      <h4 class="text-warning fw-bold">💰 チャージ金額</h4>
+      <p class="display-6 fw-bold text-light">
+        <%= chargeAmount ? chargeAmount.toLocaleString() : "?" %> 円
+      </p>
+      <hr class="border-secondary">
+
+      <h4 class="text-info fw-bold">💳 チャージ後の残高</h4>
+      <p class="display-5 fw-bold text-success">
+        <%= balance ? balance.toLocaleString() : "0" %> 円
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="/mypage" class="btn btn-outline-info btn-lg fw-bold">
+      🏠 マイページへ戻る
+    </a>
+  </div>
+</div>

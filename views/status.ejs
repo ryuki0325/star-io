@@ -1,0 +1,30 @@
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="mb-3">ステータス確認</h5>
+        <form method="POST" action="/status">
+          <div class="mb-2">
+            <input type="text" name="orderId" class="form-control" placeholder="SMM注文IDを入力" required>
+          </div>
+          <button class="btn btn-primary">確認する</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <% if (status) { %>
+      <div class="card">
+        <div class="card-body">
+          <h6 class="mb-2">結果</h6>
+          <pre class="mb-0"><%= JSON.stringify(status, null, 2) %></pre>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>

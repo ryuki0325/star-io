@@ -1,0 +1,75 @@
+<div class="order-container">
+  <h2 class="mb-4">新規注文</h2>
+
+  <!-- タブ -->
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <a class="nav-link active" href="#">New Order</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Search</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Mass Order</a>
+    </li>
+  </ul>
+
+  <!-- 注文フォーム -->
+  <form method="post" action="/order">
+    <div class="mb-3">
+      <label class="form-label">カテゴリ</label>
+      <select class="form-select" id="categorySelect">
+        <option value="">選択してください</option>
+        <% 
+          const categories = {};
+          services.forEach(s => {
+            const cat = s.rawName.split(" ")[0]; // Instagram / TikTokなど
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(s);
+          });
+          for (let cat in categories) { 
+        %>
+          <option value="<%= cat %>"><%= cat %></option>
+        <% } %>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">サービス</label>
+      <select class="form-select" name="service_id" id="serviceSelect">
+        <option value="">カテゴリを先に選んでください</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">リンク</label>
+      <input type="text" name="link" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">数量</label>
+      <input type="number" name="quantity" class="form-control" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">注文する</button>
+  </form>
+</div>
+
+<script>
+  const categories = <%- JSON.stringify(categories) %>;
+
+  document.getElementById('categorySelect').addEventListener('change', function() {
+    const cat = this.value;
+    const serviceSelect = document.getElementById('serviceSelect');
+    serviceSelect.innerHTML = '';
+
+    if (categories[cat]) {
+      categories[cat].forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.rawName} （¥${s.perKJpy}/1000）`;
+        serviceSelect.appendChild(opt);
+      });
+    }
+  });
+</script>

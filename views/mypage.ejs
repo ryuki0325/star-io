@@ -1,0 +1,102 @@
+<% title = 'マイページ' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">マイページ</h2>
+
+  <!-- ユーザー情報 -->
+  <div class="card bg-dark border border-info mb-4 p-3">
+    <p class="mb-2 text-white">📧 メール: <span class="fw-bold text-white"><%= user.email %></span></p>
+    <p class="mb-0 text-white">💰 残高: <span class="fw-bold text-success"><%= Number(user.balance).toFixed(2) %> 円</span></p>
+  </div>
+
+  <!-- 🔑 パスワード変更フォーム -->
+  <div class="card bg-dark text-light mb-4">
+    <div class="card-body">
+      <h4 class="card-title">🔑 パスワード変更</h4>
+
+      <% if (pwdError) { %>
+        <div class="alert alert-danger"><%= pwdError %></div>
+      <% } %>
+
+      <% if (pwdSuccess) { %>
+        <div class="alert alert-success"><%= pwdSuccess %></div>
+      <% } %>
+
+      <form action="/change-password" method="POST">
+        <div class="mb-3">
+          <label class="form-label">現在のパスワード</label>
+          <input type="password" name="currentPassword" class="form-control bg-dark text-light border-info" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">新しいパスワード</label>
+          <input type="password" name="newPassword" class="form-control bg-dark text-light border-info" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">新しいパスワード（再入力）</label>
+          <input type="password" name="confirmPassword" class="form-control bg-dark text-light border-info" required>
+        </div>
+        <button type="submit" class="btn btn-info w-100">変更する</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 📝 注文履歴 -->
+  <h3 class="mb-3 text-white">📝 注文履歴</h3>
+
+  <% if (!orders || orders.length === 0) { %>
+    <p class="text-center text-secondary">まだ注文履歴がありません。</p>
+  <% } else { %>
+    <div class="d-flex flex-column gap-3">
+      <% orders.forEach(order => { %>
+        <div class="order-card border border-info rounded p-3 shadow-sm">
+          
+          <!-- サービスID & 日時 -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-info text-dark fw-bold px-3 py-2">
+              サービスID: <%= order.service_id %>
+            </span>
+            <span class="badge bg-dark text-white">
+              📅 <%= order.created_at || "不明" %>
+            </span>
+          </div>
+
+          <!-- サービス名 -->
+          <h5 class="text-white mb-2" style="word-break: break-word;">
+            ✨ <%= order.service_name %>
+          </h5>
+
+          <!-- サービス詳細 -->
+          <p class="mb-1 text-white">
+            🔗 <a href="<%= order.link %>" target="_blank" class="text-decoration-underline text-info">リンク</a>
+          </p>
+          <p class="mb-1 text-white">
+            📦 数量: <span class="fw-bold text-warning"><%= order.quantity %></span>
+          </p>
+          <p class="mb-1 text-white">
+            💰 金額: <span class="fw-bold text-success"><%= Number(order.price_jpy).toFixed(2) %> 円</span>
+          </p>
+
+          <!-- ステータス -->
+          <p class="mb-0 text-white">
+            📌 ステータス: 
+            <span class="badge <%= order.status === 'completed' ? 'bg-success' : order.status === 'pending' ? 'bg-warning text-dark' : 'bg-secondary' %>">
+              <%= order.status || "不明" %>
+            </span>
+          </p>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<style>
+  .order-card {
+    background: #111; /* 黒背景 */
+    transition: transform 0.2s, box-shadow 0.2s;
+    color: white; /* カード内の文字を白に */
+  }
+  .order-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
+  }
+</style>

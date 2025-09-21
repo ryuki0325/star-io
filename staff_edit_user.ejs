@@ -1,0 +1,54 @@
+<% title = 'ユーザー編集' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">✏️ ユーザー編集</h2>
+
+  <!-- ユーザー編集フォーム -->
+  <form action="/staff/user/<%= user.id %>/edit" method="POST" class="bg-dark p-4 rounded border border-info shadow mb-4">
+    <div class="mb-3">
+      <label class="form-label">ユーザーID</label>
+      <input type="text" class="form-control bg-dark text-light" value="<%= user.id %>" disabled>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">メールアドレス</label>
+      <input type="email" class="form-control bg-dark text-light" value="<%= user.email %>" disabled>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">残高 (円)</label>
+      <input type="number" step="0.01" class="form-control bg-dark text-light" name="balance" value="<%= user.balance %>" required>
+    </div>
+
+    <button type="submit" class="btn btn-info w-100 fw-bold">更新する</button>
+  </form>
+
+  <!-- 購入履歴 -->
+  <h3 class="mb-3">📜 最近の注文履歴</h3>
+  <% if (!orders || orders.length === 0) { %>
+    <p class="text-muted">注文履歴はありません。</p>
+  <% } else { %>
+    <table class="table table-dark table-striped table-sm">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>サービス名</th>
+          <th>数量</th>
+          <th>金額</th>
+          <th>日付</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% orders.forEach(o => { %>
+          <tr>
+            <td><%= o.id %></td>
+            <td><%= o.service_name %></td>
+            <td><%= o.quantity %></td>
+            <td><%= Number(o.price_jpy).toFixed(2) %> 円</td>
+            <td><%= new Date(o.created_at + " UTC").toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
