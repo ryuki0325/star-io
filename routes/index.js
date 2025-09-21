@@ -251,19 +251,38 @@ router.post("/create-checkout-session", async (req, res) => {
 });
 
 // ====== Stripe チャージの成功ページ ======
-router.get("/funds/success", (req, res) => {
+// ====== Stripe チャージの成功ページ ======
+router.get("/funds/success", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
   const db = req.app.locals.db;
   const chargeAmount = req.query.amount ? parseInt(req.query.amount, 10) : null;
 
-  const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
-const row = result.rows[0];
-return res.render("funds-success", {
-  title: "チャージ成功",
-  user: req.session.user,
-  chargeAmount,
-  balance: row ? Math.floor(row.balance) : 0
-});
+  try {
+    // DBから最新のユーザー情報を取得
+    const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    const row = result.rows[0];
 
+    if (row) {
+      // ✅ セッションのユーザー情報を最新化
+      req.session.user = row;
+    }
+
+    return res.render("funds-success", {
+      title: "チャージ成功",
+      user: req.session.user,
+      chargeAmount,
+      balance: row ? Math.floor(row.balance) : 0
+    });
+  } catch (err) {
+    console.error("funds/success エラー:", err);
+    return res.render("funds-success", {
+      title: "チャージ成功",
+      user: req.session.user,
+      chargeAmount,
+      balance: 0
+    });
+  }
+});
 
 // ====== Stripe チャージのキャンセルページ ======
 router.get("/funds/cancel", (req, res) => {
@@ -384,7 +403,7 @@ router.get("/coupon", (req, res) => {
 });
 
 // ================== ギフトコード適用 (POST /redeem) ==================
-router.post("/redeem", (req, res) => {
+router.post("/redeem", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const db = req.app.locals.db;
@@ -399,9 +418,12 @@ router.post("/redeem", (req, res) => {
     });
   }
 
-  // クーポン検索
-  db.get("SELECT * FROM coupons WHERE code = ?", [code], (err, coupon) => {
-    if (err || !coupon) {
+  try {
+    // クーポン検索
+    const result = await db.query("SELECT * FROM coupons WHERE code = $1", [code]);
+    const coupon = result.rows[0];
+
+    if (!coupon) {
       return res.render("coupon", {
         title: "ギフトコード",
         user: req.session.user,
@@ -421,7 +443,7 @@ router.post("/redeem", (req, res) => {
     }
 
     // 使用回数上限チェック
-    if (coupon.max_uses != null && coupon.used_count >= coupon.max_uses) {
+    if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
       return res.render("coupon", {
         title: "ギフトコード",
         user: req.session.user,
@@ -431,91 +453,60 @@ router.post("/redeem", (req, res) => {
     }
 
     // 重複使用チェック
-    db.get(
-      "SELECT id FROM coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
-      [coupon.id, req.session.userId],
-      (e2, redeemed) => {
-        if (e2) {
-          return res.render("coupon", {
-            title: "ギフトコード",
-            user: req.session.user,
-            success: null,
-            error: "サーバーエラーが発生しました。"
-          });
-        }
-        if (redeemed) {
-          return res.render("coupon", {
-            title: "ギフトコード",
-            user: req.session.user,
-            success: null,
-            error: "このコードは既に使用済みです。"
-          });
-        }
-
-        // 残高付与処理
-        db.run(
-          "UPDATE users SET balance = balance + ? WHERE id = ?",
-          [coupon.discount_value, req.session.userId],
-          (e3) => {
-            if (e3) {
-              return res.render("coupon", {
-                title: "ギフトコード",
-                user: req.session.user,
-                success: null,
-                error: "残高更新に失敗しました。"
-              });
-            }
-
-            db.run(
-              "UPDATE coupons SET used_count = used_count + 1 WHERE id = ?",
-              [coupon.id],
-              (e4) => {
-                if (e4) {
-                  return res.render("coupon", {
-                    title: "ギフトコード",
-                    user: req.session.user,
-                    success: null,
-                    error: "コード適用処理に失敗しました。"
-                  });
-                }
-
-                db.run(
-                  "INSERT INTO coupon_redemptions (coupon_id, user_id) VALUES (?, ?)",
-                  [coupon.id, req.session.userId],
-                  (e5) => {
-                    if (e5) {
-                      return res.render("coupon", {
-                        title: "ギフトコード",
-                        user: req.session.user,
-                        success: null,
-                        error: "履歴の保存に失敗しました。"
-                      });
-                    }
-
-                    // 最新のユーザー情報を取得してセッション更新
-                    db.get(
-                      "SELECT * FROM users WHERE id = ?",
-                      [req.session.userId],
-                      (e6, freshUser) => {
-                        if (!e6 && freshUser) req.session.user = freshUser;
-
-                        res.render("coupon", {
-                          title: "ギフトコード",
-                          user: req.session.user,
-                          success: `🎁 コード「${code}」を適用しました！ ${coupon.discount_value} 円が残高に追加されました。`,
-                          error: null
-                        });
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
-      }
+    const redeemed = await db.query(
+      "SELECT id FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2",
+      [coupon.id, req.session.userId]
     );
-  });
+    if (redeemed.rows.length > 0) {
+      return res.render("coupon", {
+        title: "ギフトコード",
+        user: req.session.user,
+        success: null,
+        error: "このコードは既に使用済みです。"
+      });
+    }
+
+    // トランザクション開始
+    await db.query("BEGIN");
+
+    // 残高付与
+    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      coupon.discount_value,
+      req.session.userId,
+    ]);
+
+    // クーポン使用回数更新
+    await db.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = $1", [coupon.id]);
+
+    // 履歴保存
+    await db.query("INSERT INTO coupon_redemptions (coupon_id, user_id) VALUES ($1, $2)", [
+      coupon.id,
+      req.session.userId,
+    ]);
+
+    // コミット
+    await db.query("COMMIT");
+
+    // 最新のユーザー情報を取得してセッション更新
+    const freshUser = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    if (freshUser.rows[0]) req.session.user = freshUser.rows[0];
+
+    res.render("coupon", {
+      title: "ギフトコード",
+      user: req.session.user,
+      success: `🎁 コード「${code}」を適用しました！ ${coupon.discount_value} 円が残高に追加されました。`,
+      error: null
+    });
+  } catch (err) {
+    console.error("ギフトコード適用エラー:", err);
+    await db.query("ROLLBACK"); // エラー時はロールバック
+    res.render("coupon", {
+      title: "ギフトコード",
+      user: req.session.user,
+      success: null,
+      error: "コード適用中にエラーが発生しました。"
+    });
+  }
 });
 
 // ================== 注文処理 ==================
@@ -558,50 +549,51 @@ router.post("/order", async (req, res) => {
     // ✅ 最終金額 (円)
     const amount = (unitRate / 1000) * Number(quantity);
 
-    // 残高確認
-    db.get("SELECT balance FROM users WHERE id = ?", [req.session.userId], async (err, row) => {
-      if (err) return res.send("サーバーエラー");
-      const balance = parseFloat(row?.balance || 0);
+    // ✅ 残高確認
+    const balanceResult = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
+    const balance = parseFloat(balanceResult.rows[0]?.balance || 0);
 
-      if (balance < amount) {
-        return res.send("残高不足です");
-      }
+    if (balance < amount) {
+      return res.send("残高不足です");
+    }
 
-      // ✅ 残高を減算
-      db.run(
-        "UPDATE users SET balance = balance - ? WHERE id = ?",
-        [amount, req.session.userId],
-        async (err2) => {
-          if (err2) return res.send("残高更新に失敗しました");
+    // ✅ トランザクション開始
+    await db.query("BEGIN");
 
-          try {
-            // ✅ SMMFlare APIに注文送信
-            const orderRes = await smm.createOrder(serviceId, link, quantity);
+    // ✅ 残高を減算
+    await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [
+      amount,
+      req.session.userId,
+    ]);
 
-            // ✅ 注文をDB保存
-            db.run(
-              "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES (?,?,?,?,?,?)",
-              [req.session.userId, serviceId, svc.name, link, quantity, amount],
-              function (err3) {
-                if (err3) return res.send("注文保存に失敗しました");
+    try {
+      // ✅ SMMFlare APIに注文送信
+      const orderRes = await smm.createOrder(serviceId, link, quantity);
 
-                res.render("order_success", {
-                  title: "注文完了",
-                  orderId: orderRes.order,     // APIから返ってきた注文ID
-                  serviceName: svc.name,
-                  quantity,
-                  amount: amount.toFixed(2),   // 表示は小数2桁
-                  balance: (balance - amount).toFixed(2) // 更新後残高
-                });
-              }
-            );
-          } catch (apiErr) {
-            console.error("SMMFlare注文エラー:", apiErr.response?.data || apiErr.message);
-            res.send("注文送信に失敗しました");
-          }
-        }
+      // ✅ 注文をDB保存
+      await db.query(
+        "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
+        [req.session.userId, serviceId, svc.name, link, quantity, amount]
       );
-    });
+
+      // ✅ コミット
+      await db.query("COMMIT");
+
+      res.render("order_success", {
+        title: "注文完了",
+        orderId: orderRes.order,     // APIから返ってきた注文ID
+        serviceName: svc.name,
+        quantity,
+        amount: amount.toFixed(2),   // 表示は小数2桁
+        balance: (balance - amount).toFixed(2) // 更新後残高
+      });
+
+    } catch (apiErr) {
+      await db.query("ROLLBACK");
+      console.error("SMMFlare注文エラー:", apiErr.response?.data || apiErr.message);
+      res.send("注文送信に失敗しました");
+    }
+
   } catch (e) {
     console.error("注文処理エラー:", e.message);
     res.send("サーバーエラー");
