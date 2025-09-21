@@ -556,9 +556,12 @@ router.post("/order", async (req, res) => {
     let amount = (unitRate / 1000) * qty;
     amount = Math.round(amount * 100) / 100;  // 小数第3位で四捨五入
 
-    // ✅ 残高確認
+   // ✅ 残高確認
+const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
+const balance = result.rows[0]?.balance || 0;
+
 if (balance < amount) {
-  return res.render("order_form", {
+  return res.render("order", {   // ← order_form ではなく order.ejs に合わせる
     title: "新規注文",
     user: req.session.user,
     error: "残高が不足しています。チャージしてください。",
