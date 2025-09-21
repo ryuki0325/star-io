@@ -207,7 +207,7 @@ router.post("/create-checkout-session", async (req, res) => {
         },
       ],
       mode: "payment",
-      success_url: `https://star-io-hc9c.onrender.com/funds/success`,
+      success_url: `https://star-io-hc9c.onrender.com/funds/success?amount=${amount}`,
       cancel_url: `https://star-io-hc9c.onrender.com/funds/cancel`,
       metadata: {
         userId: req.session.userId.toString(),
