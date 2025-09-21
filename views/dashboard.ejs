@@ -1,6 +1,23 @@
 <% title = 'ホーム' %>
 
 <div class="container-fluid py-4 text-light">
+
+  <!-- 🔹 サービス概要（Stripe用にも見せる帯） -->
+  <section class="hero-sns mb-4">
+    <h1 class="h4 mb-2">SNS運用サポート / マーケティング支援</h1>
+    <p class="mb-2">
+      $tar.io は <strong>チャージ式</strong>で、TikTok・Instagram・YouTube など
+      主要SNSのアカウント運用を支援するサービスです。  
+      必要なときに残高からご利用いただける <strong>セルフサービス型のプラットフォーム</strong>です。
+    </p>
+    <ul class="mb-3 hero-list">
+      <li>残高チャージ → 即注文できる仕組み</li>
+      <li>透明な料金体系と日本語サポート</li>
+      <li>利用規約に準拠した安心運用</li>
+    </ul>
+  </section>
+
+  <!-- 🔹 ようこそ -->
   <h2 class="mb-4">🚀 ようこそ <span class="text-info"><%= user?.email || "ゲスト" %></span> さん</h2>
 
   <!-- 🔹 残高・注文数・ランク -->
@@ -64,4 +81,18 @@
   .btn:hover {
     transform: translateY(-2px);
   }
+   /* --- Hero（サービス説明帯） --- */
+.hero-sns {
+  background:#0f1420;
+  border:1px solid #2b88b8;
+  border-radius:10px;
+  padding:16px 18px;
+}
+.hero-sns .hero-list {
+  margin:0;
+  padding-left:1.2rem;
+}
+.hero-sns .hero-list li {
+  margin:2px 0;
+}
 </style>
