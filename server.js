@@ -130,18 +130,24 @@ app.use(
 app.locals.PRICE_MULTIPLIER = parseFloat(process.env.PRICE_MULTIPLIER || "1");
 
 // ====== 全ページでユーザーとスタッフ情報を共有 ======
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   if (req.session.userId) {
-    db.get("SELECT * FROM users WHERE id = ?", [req.session.userId], (err, user) => {
-      if (!err && user) {
-        req.session.user = user;
-        res.locals.user = user;
+    try {
+      const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+      const user = result.rows[0];
+
+      if (user) {
+        req.session.user = user;   // セッションに保存
+        res.locals.user = user;    // EJSで使えるようにする
       } else {
         res.locals.user = null;
       }
-      res.locals.isStaff = !!req.session.isStaff;
-      next();
-    });
+    } catch (err) {
+      console.error("❌ DB error in middleware:", err);
+      res.locals.user = null;
+    }
+    res.locals.isStaff = !!req.session.isStaff;
+    next();
   } else {
     res.locals.user = null;
     res.locals.isStaff = !!req.session.isStaff;
