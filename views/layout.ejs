@@ -7,28 +7,49 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-  /* サイドバーの開閉アニメーション */
+  /* 🎨 サイドバーの基本スタイル */
+#sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background-color: #000; /* 背景色: 黒 */
+  transition: transform 0.3s ease, margin-left 0.3s ease;
+}
+
+/* サイドバーを閉じたとき */
+#sidebar.closed {
+  transform: translateX(-220px); /* 左にスライドして非表示 */
+}
+
+/* 📱 スマホ対応 */
+@media (max-width: 768px) {
   #sidebar {
-    transition: transform 0.3s ease;
-  }
-  #sidebar.closed {
-    transform: translateX(-220px); /* 左に隠れる */
+    position: absolute;  /* サイドバーを画面に重ねる */
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    height: 100%;
   }
 
-  /* ✅ スマホ対応 */
-  @media (max-width: 768px) {
-    #sidebar {
-      position: absolute; /* サイドバーを画面に重ねる */
-      z-index: 1000;
-      height: 100%;
-    }
-    #sidebar.closed {
-      transform: translateX(-220px);
-    }
-    .flex-grow-1 {
-      margin-left: 0 !important; /* サイドバーが閉じたら余白なくす */
-    }
+  #sidebar.closed {
+    transform: translateX(-220px); /* 非表示アニメーション */
   }
+
+  /* メインコンテンツの余白を調整 */
+  .flex-grow-1 {
+    margin-left: 0 !important; /* サイドバー閉じたら余白ゼロ */
+  }
+}
+
+/* 💻 PC用: サイドバーを固定表示 */
+@media (min-width: 769px) {
+  .flex-grow-1 {
+    margin-left: 220px; /* サイドバー分だけ右に寄せる */
+  }
+
+  #sidebar.closed {
+    transform: translateX(0); /* PCでは閉じない仕様 */
+  }
+}
 </style>
 </head>
 <body class="bg-dark text-light">
