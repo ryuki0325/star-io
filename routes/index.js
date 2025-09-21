@@ -340,23 +340,25 @@ router.get("/order", async (req, res) => {
     if (!grouped[app]) grouped[app] = {};
     if (!grouped[app][type]) grouped[app][type] = [];
 
-// 1ドルあたりの円換算レート（envから取得、デフォルト150円）
-const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+(raw || []).forEach(s => {
+  // 1ドルあたりの円換算レート（envから取得、デフォルト150円）
+  const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
 
-// APIのレート（ドル建て）を円換算
-s.baseRate = parseFloat(s.rate) * JPY_RATE;
+  // APIのレート（ドル建て）を円換算
+  s.baseRate = parseFloat(s.rate) * JPY_RATE;
 
-// 段階的な倍率を適用
-s.rate = applyPriceMultiplier(s.baseRate);
+  // 段階的な倍率を適用
+  s.rate = applyPriceMultiplier(s.baseRate);
 
-// 👑おすすめ判定
-const serviceId = parseInt(s.service, 10); // s.service が数値 or 文字列どちらでもOK
-if (recommendedServices.includes(serviceId)) {
-  s.name = "👑おすすめ " + s.name;
-}
+  // 👑おすすめ判定
+  const serviceId = parseInt(s.service, 10); // s.service が数値 or 文字列どちらでもOK
+  if (recommendedServices.includes(serviceId)) {
+    s.name = "👑おすすめ " + s.name;
+  }
 
-// ✅ 最後にまとめて追加
-grouped[app][type].push(s);
+  // ✅ 最後にまとめて追加
+  grouped[app][type].push(s);
+});
     
   // --- アプリ順序を決定 ---
   const appOrder = Object.keys(grouped).sort((a, b) => {
