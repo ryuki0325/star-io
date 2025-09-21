@@ -75,6 +75,17 @@ h1, h2, h3, h4, h5 {
   }
 }
 
+#sidebar {
+  width: 200px;              /* 初期の幅 */
+  transition: width 0.3s, opacity 0.3s; 
+  overflow: hidden;          /* コンテンツがはみ出さないように */
+}
+
+#sidebar.hidden {
+  width: 0;
+  opacity: 0;
+}
+
 /* 入力は必ず黒文字に */
 .form-control { color: #000 !important; background: #fff !important; }
 .form-control::placeholder { color: #6c757d; }
