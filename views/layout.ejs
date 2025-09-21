@@ -19,7 +19,7 @@
 <body class="bg-dark text-light">
 
   <!-- ✅ 開閉ボタン -->
-  <button id="menu-toggle" class="btn btn-dark m-2">☰</button>
+  <button id="menu-toggle" class="btn btn-dark m-2" onclick="toggleSidebar()">☰</button>
 
   <div class="d-flex">
     <!-- ✅ サイドバー -->
@@ -39,7 +39,6 @@
         <a href="/orders" class="btn btn-outline-info mb-2">🧾 注文履歴</a>
 
         <% if (typeof isStaff !== "undefined" && isStaff) { %>
-          <!-- ★ 管理者だけに表示されるボタン -->
           <a href="/staff/dashboard" class="btn w-100 fw-bold mb-2"
              style="background:#ffc107; border-color:#ffc107; color:#000;">
             🛠️ スタッフ専用ページ
@@ -58,7 +57,6 @@
         <a href="/terms" class="btn btn-outline-info w-100">📜 利用規約 & SNS</a>
       </li>
 
-      <!-- ✅ 残高表示 -->
       <% if (user) { %>
         <div class="card bg-dark border-info text-info p-2 mt-4">
           <p class="mb-0">現在の残高</p>
@@ -76,7 +74,7 @@
   <!-- ✅ 開閉用スクリプト -->
   <script>
     function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('hidden');
+      document.getElementById('sidebar').classList.toggle('closed');
     }
   </script>
 </body>
