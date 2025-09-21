@@ -89,3 +89,25 @@ h1, h2, h3, h4, h5 {
 /* 入力は必ず黒文字に */
 .form-control { color: #000 !important; background: #fff !important; }
 .form-control::placeholder { color: #6c757d; }
+
+/* === スマホ対応 === */
+@media screen and (max-width: 768px) {
+  /* サイドバーをオーバーレイ化 */
+  #sidebar {
+    position: absolute;
+    z-index: 1000;
+    height: 100%;
+    width: 200px;  /* 開いているときの幅 */
+    background: #000; /* 背景をしっかり黒にする */
+  }
+
+  #sidebar.hidden {
+    transform: translateX(-220px); /* 左に隠す */
+    opacity: 0;
+  }
+
+  /* メインコンテンツをフル幅に */
+  .flex-grow-1 {
+    margin-left: 0 !important;
+  }
+}
