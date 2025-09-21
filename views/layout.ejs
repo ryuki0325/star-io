@@ -75,9 +75,9 @@
 
   <!-- ✅ 開閉用スクリプト -->
   <script>
-    document.getElementById("menu-toggle").addEventListener("click", () => {
-      document.getElementById("sidebar").classList.toggle("closed");
-    });
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('hidden');
+    }
   </script>
 </body>
 </html>
