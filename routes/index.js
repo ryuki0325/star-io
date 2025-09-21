@@ -207,8 +207,8 @@ router.post("/create-checkout-session", async (req, res) => {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:3000/funds/success?amount=${amount}`,
-      cancel_url: `http://localhost:3000/funds/cancel`,
+      success_url: `https://star-io-hc9c.onrender.com/funds/success`,
+      cancel_url: `https://star-io-hc9c.onrender.com/funds/cancel`,
       metadata: {
         userId: req.session.userId.toString(),
         amount: amount.toString()
