@@ -9,7 +9,7 @@ const smm = require("../lib/smmClient");
 // 👑 おすすめサービスIDを.envから読み込み
 const recommendedServices = (process.env.RECOMMENDED_SERVICES || "")
   .split(",")
-  .map(id => parseInt(id.trim(), 10))  // ← trim() を追加
+  .map(id => parseInt(id.trim(), 10))
   .filter(id => !isNaN(id));
 
 // 優先アプリ
@@ -25,30 +25,16 @@ const excludedApps = [
   "The","Tidal","Trovo","Wiki"
 ];
 
-// 絵文字マップ
-const emojiMap = {
-  TikTok: "🎵",
-  Instagram: "📸",
-  YouTube: "▶️",
-  Twitter: "🐦",
-  Spotify: "🎧",
-  Telegram: "✉️",
-  Twitch: "🎮",
-  Facebook: "📘",
-  Reddit: "👽"
-};
-
 // ================== ホーム ==================
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   const apps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
   const db = req.app.locals.db;
 
-  // アイコンマップ
   const emojiMap = {
     TikTok: "🎵",
     Instagram: "📸",
     YouTube: "▶️",
-    Twitter: "🐦", // Xは🐦か✖️でもOK
+    Twitter: "🐦",
     Spotify: "🎧",
     Telegram: "✈️",
     Twitch: "🎮",
@@ -67,26 +53,29 @@ router.get("/", (req, res) => {
   }
 
   try {
-  const result = await db.query(
-    "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
-    [req.session.userId]
-  );
-  return res.render("dashboard", { 
-    title: "ホーム", 
-    apps, 
-    user: req.session.user, 
-    orders: result.rows,
-    emojiMap
-  });
-} catch (e) {
-  return res.render("dashboard", { 
-    title: "ホーム", 
-    apps, 
-    user: req.session.user, 
-    orders: [],
-    emojiMap
-  });
-}
+    const result = await db.query(
+      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
+      [req.session.userId]
+    );
+    return res.render("dashboard", { 
+      title: "ホーム", 
+      apps, 
+      user: req.session.user, 
+      orders: result.rows,
+      emojiMap
+    });
+  } catch (e) {
+    console.error("ホーム取得エラー:", e);
+    return res.render("dashboard", { 
+      title: "ホーム", 
+      apps, 
+      user: req.session.user, 
+      orders: [],
+      emojiMap
+    });
+  }
+});
+
 
 // ================== サインアップ ==================
 router.get("/signup", (req, res) => {
@@ -95,43 +84,36 @@ router.get("/signup", (req, res) => {
 
 router.post("/signup", async (req, res) => {
   const { email, password } = req.body;
-  const db = req.app.locals.db; // ← db.js の pool.query を呼ぶやつ
+  const db = req.app.locals.db;
   const hash = bcrypt.hashSync(password, 10);
 
   try {
-    // ✅ Postgres では RETURNING を使って挿入後の id を取得する
     const result = await db.query(
       "INSERT INTO users (email, password_hash, balance) VALUES ($1, $2, $3) RETURNING id",
-      [email, hash, 0] // balance は初期値 0
+      [email, hash, 0]
     );
 
-    // 新しいユーザーの id を取得
     const userId = result.rows[0].id;
-
-    // セッションに保存
     req.session.userId = userId;
     req.session.user = { id: userId, email, balance: 0 };
 
-    // ✅ マイページへリダイレクト
     res.redirect("/mypage");
 
   } catch (err) {
-    // ✅ もしユニーク制約違反（既存メールアドレス）なら
     if (err.code === "23505") {
       return res.render("signup", {
         title: "新規登録",
         error: "既にアカウントが存在します。"
       });
     }
-
-    // その他のエラー
-    console.error("DBエラー:", err);
+    console.error("サインアップエラー:", err);
     res.render("signup", {
       title: "新規登録",
       error: "登録に失敗しました。もう一度お試しください。"
     });
   }
 });
+
 
 // ================== ログイン / ログアウト ==================
 router.get("/login", (req, res) => {
@@ -142,12 +124,10 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Postgres でユーザーを検索
     const result = await req.app.locals.db.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
-
     const user = result.rows[0];
 
     if (!user) {
@@ -157,7 +137,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // パスワードチェック
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       return res.render("login", {
@@ -166,11 +145,9 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // セッションに保存
     req.session.userId = user.id;
     req.session.user = user;
 
-    // 管理者判定
     if (user.email === process.env.ADMIN_LOGIN_EMAIL) {
       req.session.isStaff = true;
       return res.redirect("/staff/dashboard");
@@ -178,7 +155,7 @@ router.post("/login", async (req, res) => {
 
     res.redirect("/mypage");
   } catch (err) {
-    console.error("DBエラー:", err);
+    console.error("ログインエラー:", err);
     res.render("login", {
       title: "ログイン",
       error: "サーバーエラーが発生しました。"
