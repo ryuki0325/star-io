@@ -83,19 +83,35 @@ router.get("/signup", (req, res) => {
   res.render("signup", { title: "新規登録", error: null });
 });
 
-router.post("/signup", (req, res) => {
+router.post("/signup", async (req, res) => {
   const { email, password } = req.body;
-  const db = req.app.locals.db;
+  const db = req.app.locals.db; // ← db.js の pool.query を呼ぶやつ
   const hash = bcrypt.hashSync(password, 10);
 
-  db.run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [email, hash], function(err) {
-    if (err) {
-      return res.render("signup", { title: "新規登録", error: "登録に失敗しました: " + err.message });
-    }
-    req.session.userId = this.lastID;
-    req.session.user = { id: this.lastID, email, balance: 0 };
+  try {
+    // ✅ Postgres では RETURNING を使って挿入後の id を取得する
+    const result = await db.query(
+      "INSERT INTO users (email, password_hash, balance) VALUES ($1, $2, $3) RETURNING id",
+      [email, hash, 0] // balance は初期値 0
+    );
+
+    // 新しいユーザーの id を取得
+    const userId = result.rows[0].id;
+
+    // セッションに保存
+    req.session.userId = userId;
+    req.session.user = { id: userId, email, balance: 0 };
+
+    // ✅ マイページへリダイレクト
     res.redirect("/mypage");
-  });
+
+  } catch (err) {
+    // 例: 重複メールアドレスなどで失敗した場合
+    res.render("signup", {
+      title: "新規登録",
+      error: "登録に失敗しました: " + err.message
+    });
+  }
 });
 
 // ================== ログイン / ログアウト ==================
