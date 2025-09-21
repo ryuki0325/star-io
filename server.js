@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 app.locals.db = db; // ✅ routes から使えるように共有
 
 // ====== Stripe Webhook（⚠️ express.json の前に置くこと！） ======
-app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
+app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
 
@@ -31,28 +31,26 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
   }
 
   // ✅ 決済成功イベント
- if (event.type === "checkout.session.completed") {
-  const session = event.data.object;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
 
-  const userId = session.metadata.userId;
-  const amount = session.amount_total; // ✅ 日本円ではそのまま使う
+    const userId = session.metadata.userId;
+    const amount = session.amount_total; // Stripe は日本円でも最小単位(円)で返す
 
-  console.log("📦 Stripe raw amount_total:", session.amount_total);
-  console.log(`💰 User ${userId} が ${amount}円 をチャージ成功`);
+    console.log("📦 Stripe raw amount_total:", session.amount_total);
+    console.log(`💰 User ${userId} が ${amount}円 をチャージ成功`);
 
-  // DBに残高を追加
-  app.locals.db.run(
-    "UPDATE users SET balance = balance + ? WHERE id = ?",
-    [amount, userId],
-    (err) => {
-      if (err) {
-        console.error("❌ DB update error:", err);
-      } else {
-        console.log(`✅ ユーザー${userId} の残高に ${amount}円 追加しました`);
-      }
+    try {
+      await app.locals.db.query(
+        "UPDATE users SET balance = balance + $1 WHERE id = $2",
+        [amount, userId]
+      );
+      console.log(`✅ ユーザー${userId} の残高に ${amount}円 追加しました`);
+    } catch (err) {
+      console.error("❌ DB update error:", err);
     }
-  );
-}
+  }
+
   res.json({ received: true });
 });
 
