@@ -78,49 +78,53 @@ app.use(
   })
 );
 
-// ====== DB接続 ======
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    balance INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    reset_token TEXT,
-    reset_expires DATETIME
-  )`);
+(async () => {
+  try {
+    await db.query(`CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      balance INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      reset_token TEXT,
+      reset_expires TIMESTAMP
+    )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    service_id TEXT,
-    service_name TEXT,
-    link TEXT,
-    quantity INTEGER,
-    price_jpy INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+    await db.query(`CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER,
+      service_id TEXT,
+      service_name TEXT,
+      link TEXT,
+      quantity INTEGER,
+      price_jpy INTEGER,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS coupons (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    discount_value INTEGER,
-    description TEXT,
-    valid_until DATE,
-    max_uses INTEGER DEFAULT 1,
-    used_count INTEGER DEFAULT 0
-  )`);
+    await db.query(`CREATE TABLE IF NOT EXISTS coupons (
+      id SERIAL PRIMARY KEY,
+      code TEXT UNIQUE,
+      discount_value INTEGER,
+      description TEXT,
+      valid_until DATE,
+      max_uses INTEGER DEFAULT 1,
+      used_count INTEGER DEFAULT 0
+    )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS coupon_redemptions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    coupon_id INTEGER,
-    user_id INTEGER,
-    redeemed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coupon_id) REFERENCES coupons(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  )`);
-});
-app.locals.db = db;
+    await db.query(`CREATE TABLE IF NOT EXISTS coupon_redemptions (
+      id SERIAL PRIMARY KEY,
+      coupon_id INTEGER,
+      user_id INTEGER,
+      redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (coupon_id) REFERENCES coupons(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
+    console.log("✅ Database tables are ready");
+  } catch (err) {
+    console.error("❌ DB setup error:", err);
+  }
+})();
 
 // ====== 料金倍率をアプリ全体に共有 ======
 app.locals.PRICE_MULTIPLIER = parseFloat(process.env.PRICE_MULTIPLIER || "1");
