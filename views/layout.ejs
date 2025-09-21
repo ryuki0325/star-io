@@ -59,13 +59,21 @@
   ☰
 </button>
   <div class="d-flex">
-    <!-- ✅ サイドバー -->
-    <div id="sidebar" class="bg-black p-3 border-end">
-      <!-- サイト名＋アイコン -->
-      <h4 class="text-info mb-4 d-flex align-items-center justify-content-center">
-        <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
-        $tar.io
-      </h4>
+
+ <!-- ✅ サイドバー -->
+<div id="sidebar" class="bg-black p-3 border-end">
+
+  <!-- 小さな「閉じる」リンク -->
+  <small id="close-sidebar" class="text-muted" 
+         style="cursor:pointer; display:block; text-align:right; margin-bottom:8px;">
+    閉じる ✖
+  </small>
+
+  <!-- サイト名＋アイコン -->
+  <h4 class="text-info mb-4 d-flex align-items-center justify-content-center">
+    <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
+    $tar.io
+  </h4>
 
       <nav class="nav flex-column">
         <a href="/" class="btn btn-outline-info mb-2">🏠 ホーム</a>
@@ -108,7 +116,7 @@
     </div>
   </div>
 
-  <!-- ✅ 開閉用スクリプト -->
+    <!-- ✅ 開閉用スクリプト -->
   <script>
     const sidebar = document.getElementById("sidebar");
     const toggleBtn = document.getElementById("menu-toggle");
@@ -128,6 +136,15 @@
         localStorage.setItem("sidebar", "open");
       }
     });
+
+    // 「閉じる」リンク
+    const closeBtn = document.getElementById("close-sidebar");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        sidebar.classList.add("closed");
+        localStorage.setItem("sidebar", "closed");
+      });
+    }
   </script>
 </body>
 </html>
