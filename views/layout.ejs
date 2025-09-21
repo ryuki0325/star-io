@@ -87,10 +87,26 @@
   </div>
 
   <!-- ✅ 開閉用スクリプト -->
-  <script>
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('closed');
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('menu-toggle');
+
+  // ✅ ページ読み込み時に前回の状態を反映
+  if (localStorage.getItem('sidebar') === 'hidden') {
+    sidebar.classList.add('hidden');
+  }
+
+  // ✅ トグルボタン押下時に状態を切り替え
+  toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('hidden');
+
+    // ✅ 状態を保存
+    if (sidebar.classList.contains('hidden')) {
+      localStorage.setItem('sidebar', 'hidden');
+    } else {
+      localStorage.setItem('sidebar', 'shown');
     }
-  </script>
+  });
+</script>
 </body>
 </html>
