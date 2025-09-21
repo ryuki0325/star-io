@@ -7,14 +7,29 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    /* サイドバーの開閉アニメーション */
+  /* サイドバーの開閉アニメーション */
+  #sidebar {
+    transition: transform 0.3s ease;
+  }
+  #sidebar.closed {
+    transform: translateX(-220px); /* 左に隠れる */
+  }
+
+  /* ✅ スマホ対応 */
+  @media (max-width: 768px) {
     #sidebar {
-      transition: transform 0.3s ease;
+      position: absolute; /* サイドバーを画面に重ねる */
+      z-index: 1000;
+      height: 100%;
     }
     #sidebar.closed {
-      transform: translateX(-220px); /* 左に隠れる */
+      transform: translateX(-220px);
     }
-  </style>
+    .flex-grow-1 {
+      margin-left: 0 !important; /* サイドバーが閉じたら余白なくす */
+    }
+  }
+</style>
 </head>
 <body class="bg-dark text-light">
 
@@ -66,9 +81,9 @@
     </div>
 
     <!-- ✅ メインコンテンツ -->
-    <div class="flex-grow-1 p-4">
-      <%- body %>
-    </div>
+    <div class="flex-grow-1 p-4 container" style="max-width: 900px;">
+  <%- body %>
+</div>
   </div>
 
   <!-- ✅ 開閉用スクリプト -->
