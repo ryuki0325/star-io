@@ -23,103 +23,163 @@ router.get("/dashboard", (req, res) => {
 });
 
 // ===== アカウント検索 =====
-router.get("/users", (req, res) => {
+router.get("/users", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
   const db = req.app.locals.db;
   const q = req.query.q || "";
 
-  db.all("SELECT id, email, balance, created_at FROM users WHERE email LIKE ? ORDER BY id DESC", 
-    [`%${q}%`], 
-    (err, users) => {
-      res.render("staff_users", { title: "アカウント管理", users: users || [], q });
-    }
-  );
+  try {
+    const result = await db.query(
+      "SELECT id, email, balance, created_at FROM users WHERE email LIKE $1 ORDER BY id DESC",
+      [`%${q}%`]
+    );
+    res.render("staff_users", { title: "アカウント管理", users: result.rows || [], q });
+  } catch (err) {
+    console.error("❌ staff/users エラー:", err);
+    res.render("staff_users", { title: "アカウント管理", users: [], q, error: "データ取得に失敗しました" });
+  }
 });
 
 // ===== 残高調整 =====
-router.post("/users/:id/balance", (req, res) => {
+router.post("/users/:id/balance", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
   const db = req.app.locals.db;
   const { id } = req.params;
   const { amount } = req.body;
 
-  db.run("UPDATE users SET balance = balance + ? WHERE id = ?", [amount, id], (err) => {
-    if (err) return res.send("エラーが発生しました");
+  try {
+    await db.query(
+      "UPDATE users SET balance = balance + $1 WHERE id = $2",
+      [amount, id]
+    );
     res.redirect("/staff/users?q=");
-  });
+  } catch (err) {
+    console.error("❌ 残高調整エラー:", err);
+    res.status(500).send("エラーが発生しました");
+  }
 });
 
-// ===== クーポン発行 =====
-router.get("/coupons", (req, res) => {
+// ===== クーポン発行・管理 =====
+router.get("/coupons", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
   const db = req.app.locals.db;
 
-  db.all("SELECT * FROM coupons ORDER BY id DESC", (err, coupons) => {
-    res.render("staff_coupons", { title: "クーポン発行・管理", coupons: coupons || [] });
-  });
+  try {
+    const result = await db.query("SELECT * FROM coupons ORDER BY id DESC");
+    res.render("staff_coupons", { title: "クーポン発行・管理", coupons: result.rows || [] });
+  } catch (err) {
+    console.error("❌ クーポン一覧取得エラー:", err);
+    res.render("staff_coupons", { title: "クーポン発行・管理", coupons: [], error: "データ取得に失敗しました" });
+  }
 });
 
-router.post("/coupons", (req, res) => {
+router.post("/coupons", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
   const db = req.app.locals.db;
   const { code, discount_value, description, valid_until, max_uses } = req.body;
 
-  db.run("INSERT INTO coupons (code, discount_value, description, valid_until, max_uses) VALUES (?,?,?,?,?)",
-    [code, discount_value, description, valid_until, max_uses],
-    (err) => {
-      if (err) return res.send("クーポン作成に失敗しました");
-      res.redirect("/staff/coupons");
-    }
-  );
+  try {
+    await db.query(
+      "INSERT INTO coupons (code, discount_value, description, valid_until, max_uses) VALUES ($1, $2, $3, $4, $5)",
+      [code, discount_value, description, valid_until, max_uses]
+    );
+    res.redirect("/staff/coupons");
+  } catch (err) {
+    console.error("❌ クーポン作成エラー:", err);
+    res.status(500).send("クーポン作成に失敗しました");
+  }
 });
 
 // ===== ユーザー購入履歴 =====
-router.get("/user/:id/orders", (req, res) => {
+router.get("/user/:id/orders", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
   const db = req.app.locals.db;
 
-  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [req.params.id], (err, orders) => {
-    if (err) return res.send("注文履歴の取得に失敗しました");
+  try {
+    // 注文履歴を取得
+    const ordersResult = await db.query(
+      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
+      [req.params.id]
+    );
+    const orders = ordersResult.rows;
 
-    db.get("SELECT id, email FROM users WHERE id = ?", [req.params.id], (err2, user) => {
-      if (err2 || !user) return res.send("ユーザーが見つかりません");
+    // ユーザー情報を取得
+    const userResult = await db.query(
+      "SELECT id, email FROM users WHERE id = $1",
+      [req.params.id]
+    );
+    const user = userResult.rows[0];
 
-      res.render("staff_user_orders", { 
-        title: `購入履歴 - ${user.email}`, 
-        user, 
-        orders 
-      });
+    if (!user) {
+      return res.send("ユーザーが見つかりません");
+    }
+
+    // ビューに渡す
+    res.render("staff_user_orders", {
+      title: `購入履歴 - ${user.email}`,
+      user,
+      orders,
     });
-  });
+  } catch (err) {
+    console.error("❌ 注文履歴取得エラー:", err);
+    res.status(500).send("注文履歴の取得に失敗しました");
+  }
 });
 
 // ===== ユーザー編集 =====
-router.get("/user/:id/edit", (req, res) => {
+router.get("/user/:id/edit", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
   const db = req.app.locals.db;
 
-  db.get("SELECT * FROM users WHERE id = ?", [req.params.id], (err, user) => {
-    if (err || !user) return res.send("ユーザーが見つかりません");
+  try {
+    // ユーザー取得
+    const userResult = await db.query(
+      "SELECT * FROM users WHERE id = $1",
+      [req.params.id]
+    );
+    const user = userResult.rows[0];
 
-    db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 10", [req.params.id], (err, orders) => {
-      if (err) orders = [];
-      res.render("staff_edit_user", { title: "ユーザー編集", user, orders });
+    if (!user) {
+      return res.send("ユーザーが見つかりません");
+    }
+
+    // 注文履歴（直近10件）
+    const ordersResult = await db.query(
+      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
+      [req.params.id]
+    );
+    const orders = ordersResult.rows;
+
+    res.render("staff_edit_user", {
+      title: "ユーザー編集",
+      user,
+      orders,
     });
-  });
+  } catch (err) {
+    console.error("❌ ユーザー編集画面エラー:", err);
+    res.status(500).send("データ取得に失敗しました");
+  }
 });
 
-router.post("/user/:id/edit", (req, res) => {
+router.post("/user/:id/edit", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
-  
+
   let balance = parseFloat(req.body.balance);
   if (isNaN(balance)) balance = 0;
-  balance = Math.round(balance * 100) / 100;
+  balance = Math.round(balance * 100) / 100; // 小数点2桁まで丸め
 
   const db = req.app.locals.db;
-  db.run("UPDATE users SET balance = ? WHERE id = ?", [balance, req.params.id], (err) => {
-    if (err) return res.send("更新に失敗しました");
+
+  try {
+    await db.query(
+      "UPDATE users SET balance = $1 WHERE id = $2",
+      [balance, req.params.id]
+    );
     res.redirect("/staff/users");
-  });
+  } catch (err) {
+    console.error("❌ ユーザー残高更新エラー:", err);
+    res.status(500).send("更新に失敗しました");
+  }
 });
 
 // ===== ログアウト =====
