@@ -1,7 +1,7 @@
 require("dotenv").config();
 const path = require("path");
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
+const db = require("./db");
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -11,6 +11,8 @@ const staffRoutes = require("./routes/staff");   // スタッフ専用ルート
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.locals.db = db; // ✅ routes から使えるように共有
 
 // ====== Stripe Webhook（⚠️ express.json の前に置くこと！） ======
 app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
