@@ -552,8 +552,9 @@ router.post("/order", async (req, res) => {
     // ✅ ドル価格を円換算 → 倍率適用
     const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
 
-    // ✅ 最終金額 (円)
-    const amount = (unitRate / 1000) * qty;
+    // ✅ 最終金額 (円) 小数第2位まで
+    let amount = (unitRate / 1000) * qty;
+    amount = Math.round(amount * 100) / 100;  // 小数第3位で四捨五入
 
     // ✅ 残高確認
     const balanceResult = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
