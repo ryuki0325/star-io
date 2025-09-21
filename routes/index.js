@@ -11,7 +11,7 @@ const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "T
 
 // 除外アプリ
 const excludedApps = [
-  "------------","Article","Blog","CNTOKEN","Cancel","Refill","Category",
+  "------------","Article","Blog","CNTOKEN","Cancel","Category",
   "CoinsGods","DA30＋","DA50＋","DA70＋","EDU","EMERGENCY","Exploit",
   "Forum","FreshCoins","Keyword","Kick","Kick.com","LOCO.GG","Likee",
   "Mentimeter.com","MixCloud","Mixed","PinterestPremium","Quora","Rnal",
@@ -235,6 +235,33 @@ router.get("/funds/success", (req, res) => {
       balance: row ? row.balance : 0
     });
   });
+});
+
+// ================== Stripe Webhook ==================
+router.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("Webhook signature error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+
+    const userId = session.metadata.userId;
+    const amount = parseInt(session.metadata.amount, 10);
+
+    const db = req.app.locals.db;
+    db.run("UPDATE users SET balance = balance + ? WHERE id = ?", [amount, userId], (err) => {
+      if (err) console.error("残高更新エラー:", err);
+    });
+  }
+
+  res.status(200).send("ok");
 });
 
 // ====== Stripe チャージのキャンセルページ ======
