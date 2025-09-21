@@ -117,7 +117,8 @@ router.get("/user/:id/orders", async (req, res) => {
     // ビューに渡す
     res.render("staff_user_orders", {
       title: `購入履歴 - ${user.email}`,
-      user,
+      user,           // ← user.email や user.id を使える
+      userId: user.id, // ← EJS 側で <%= userId %> が使えるように追加
       orders,
     });
   } catch (err) {
