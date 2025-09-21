@@ -103,34 +103,52 @@ router.get("/login", (req, res) => {
   res.render("login", { title: "ログイン", error: null });
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const db = req.app.locals.db;
 
-  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
-    if (err) {
-      console.error("DBエラー:", err);
-      return res.render("login", { title: "ログイン", error: "サーバーエラーが発生しました。" });
-    }
+  try {
+    // Postgres でユーザーを検索
+    const result = await req.app.locals.db.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+
+    const user = result.rows[0];
+
     if (!user) {
-      return res.render("login", { title: "ログイン", error: "ユーザーが存在しません。" });
+      return res.render("login", {
+        title: "ログイン",
+        error: "ユーザーが存在しません。"
+      });
     }
 
+    // パスワードチェック
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.render("login", { title: "ログイン", error: "メールアドレスまたはパスワードが間違っています。" });
+      return res.render("login", {
+        title: "ログイン",
+        error: "メールアドレスまたはパスワードが間違っています。"
+      });
     }
 
+    // セッションに保存
     req.session.userId = user.id;
     req.session.user = user;
 
+    // 管理者判定
     if (user.email === process.env.ADMIN_LOGIN_EMAIL) {
       req.session.isStaff = true;
       return res.redirect("/staff/dashboard");
     }
 
     res.redirect("/mypage");
-  });
+  } catch (err) {
+    console.error("DBエラー:", err);
+    res.render("login", {
+      title: "ログイン",
+      error: "サーバーエラーが発生しました。"
+    });
+  }
 });
 
 router.get("/logout", (req, res) => {
