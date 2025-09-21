@@ -232,7 +232,7 @@ router.get("/funds/success", (req, res) => {
       title: "チャージ成功",
       user: req.session.user,
       chargeAmount: chargeAmount,
-      balance: row ? row.balance : 0
+      balance: row ? Math.floor(row.balance) : 0
     });
   });
 });
