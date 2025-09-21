@@ -529,15 +529,10 @@ router.post("/order", async (req, res) => {
     const high = parseFloat(process.env.MULTIPLIER_HIGH || "1.3");
     const top  = parseFloat(process.env.MULTIPLIER_TOP  || "1.1");
 
-    if (price <= 100) {
-      return price * low;
-    } else if (price <= 1000) {
-      return price * mid;
-    } else if (price <= 1600) {
-      return price * high;
-    } else {
-      return price * top;
-    }
+    if (price <= 100) return price * low;
+    if (price <= 1000) return price * mid;
+    if (price <= 1600) return price * high;
+    return price * top;
   }
 
   try {
@@ -552,9 +547,9 @@ router.post("/order", async (req, res) => {
     // ✅ ドル価格を円換算 → 倍率適用
     const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
 
-    // ✅ 最終金額 (円) 小数第2位まで
+    // ✅ 最終金額を小数第2位で四捨五入
     let amount = (unitRate / 1000) * qty;
-    amount = Math.round(amount * 100) / 100;  // 小数第3位で四捨五入
+    amount = Math.round(amount * 100) / 100;
 
     // ✅ 残高を取得
     const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
@@ -568,24 +563,24 @@ router.post("/order", async (req, res) => {
         error: "残高が不足しています。チャージしてください。",
         serviceId,
         link,
-        quantity,
-        balance,         // ← 追加
-        grouped: {},     // 必要ならここで渡す
-        appOrder: [],    // 必要ならここで渡す
-        selectedApp: ""  // 必要ならここで渡す
+        quantity: qty,
+        balance: Number(balance).toFixed(2),
+        grouped: {},
+        appOrder: [],
+        selectedApp: ""
       });
     }
 
     // ✅ トランザクション開始
     await db.query("BEGIN");
 
-    // ✅ 残高を減算
-    await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [
-      amount,
-      req.session.userId,
-    ]);
-
     try {
+      // ✅ 残高を減算
+      await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [
+        amount,
+        req.session.userId,
+      ]);
+
       // ✅ SMMFlare APIに注文送信
       const orderRes = await smm.createOrder(serviceId, link, qty);
 
@@ -600,7 +595,7 @@ router.post("/order", async (req, res) => {
 
       res.render("order_success", {
         title: "注文完了",
-        orderId: orderRes.order,     
+        orderId: orderRes.order,
         serviceName: svc.name,
         quantity: qty,
         amount: amount.toFixed(2),
