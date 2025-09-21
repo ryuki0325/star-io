@@ -323,23 +323,7 @@ router.get("/order", async (req, res) => {
   }
 
   // --- サービスをグループ化 ---
-  const grouped = {};
-  (raw || []).forEach(s => {
-    let app = normalizeAppName(s.name);
-    const type = detectType(s.name);
-
-    // 除外条件
-    if (
-      excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
-      /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
-      /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
-    ) {
-      return;
-    }
-
-    if (!grouped[app]) grouped[app] = {};
-    if (!grouped[app][type]) grouped[app][type] = [];
-
+const grouped = {};
 (raw || []).forEach(s => {
   const app = normalizeAppName(s.name);
   const type = detectType(s.name);
@@ -374,7 +358,7 @@ router.get("/order", async (req, res) => {
   // まとめて格納
   grouped[app][type].push(s);
 });
-    
+  
   // --- アプリ順序を決定 ---
   const appOrder = Object.keys(grouped).sort((a, b) => {
     const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
