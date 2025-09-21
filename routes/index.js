@@ -106,10 +106,19 @@ router.post("/signup", async (req, res) => {
     res.redirect("/mypage");
 
   } catch (err) {
-    // 例: 重複メールアドレスなどで失敗した場合
+    // ✅ もしユニーク制約違反（既存メールアドレス）なら
+    if (err.code === "23505") {
+      return res.render("signup", {
+        title: "新規登録",
+        error: "既にアカウントが存在します。"
+      });
+    }
+
+    // その他のエラー
+    console.error("DBエラー:", err);
     res.render("signup", {
       title: "新規登録",
-      error: "登録に失敗しました: " + err.message
+      error: "登録に失敗しました。もう一度お試しください。"
     });
   }
 });
