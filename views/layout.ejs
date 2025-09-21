@@ -8,58 +8,57 @@
 
   <style>
   /* 🎨 サイドバーの基本スタイル */
-#sidebar {
-  width: 220px;
-  min-height: 100vh;
-  background-color: #000; /* 背景色: 黒 */
-  transition: transform 0.3s ease, margin-left 0.3s ease;
-}
-
-/* サイドバーを閉じたとき */
-#sidebar.closed {
-  transform: translateX(-220px); /* 左にスライドして非表示 */
-}
-
-/* 📱 スマホ対応 */
-@media (max-width: 768px) {
   #sidebar {
-    position: absolute;  /* サイドバーを画面に重ねる */
-    top: 0;
-    left: 0;
-    z-index: 1000;
-    height: 100%;
+    width: 220px;
+    min-height: 100vh;
+    background-color: #000;
+    transition: transform 0.3s ease, margin-left 0.3s ease;
   }
 
+  /* サイドバーを閉じたとき */
   #sidebar.closed {
-    transform: translateX(-220px); /* 非表示アニメーション */
+    transform: translateX(-220px);
   }
 
-  /* メインコンテンツの余白を調整 */
-  .flex-grow-1 {
-    margin-left: 0 !important; /* サイドバー閉じたら余白ゼロ */
-  }
-}
+  /* 📱 スマホ対応 */
+  @media (max-width: 768px) {
+    #sidebar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1000;
+      height: 100%;
+    }
 
-/* 💻 PC用: サイドバーを固定表示 */
-@media (min-width: 769px) {
-  .flex-grow-1 {
-    margin-left: 220px; /* サイドバー分だけ右に寄せる */
+    #sidebar.closed {
+      transform: translateX(-220px);
+    }
+
+    .flex-grow-1 {
+      margin-left: 0 !important;
+    }
   }
 
-  #sidebar.closed {
-    transform: translateX(0); /* PCでは閉じない仕様 */
+  /* 💻 PC用: サイドバー固定 */
+  @media (min-width: 769px) {
+    .flex-grow-1 {
+      margin-left: 220px;
+    }
+
+    #sidebar.closed {
+      transform: translateX(0); /* PCでは閉じられない */
+    }
   }
-}
-</style>
+  </style>
 </head>
 <body class="bg-dark text-light">
 
   <!-- ✅ 開閉ボタン -->
-  <button id="menu-toggle" class="btn btn-dark m-2" onclick="toggleSidebar()">☰</button>
+  <button id="menu-toggle" class="btn btn-dark m-2">☰</button>
 
   <div class="d-flex">
     <!-- ✅ サイドバー -->
-    <div id="sidebar" class="bg-black p-3 border-end" style="width:200px; min-height:100vh;">
+    <div id="sidebar" class="bg-black p-3 border-end">
       <!-- サイト名＋アイコン -->
       <h4 class="text-info mb-4 d-flex align-items-center justify-content-center">
         <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
@@ -103,31 +102,30 @@
 
     <!-- ✅ メインコンテンツ -->
     <div class="flex-grow-1 p-4 container" style="max-width: 900px;">
-  <%- body %>
-</div>
+      <%- body %>
+    </div>
   </div>
 
   <!-- ✅ 開閉用スクリプト -->
-<script>
-  const sidebar = document.getElementById('sidebar');
-  const toggleBtn = document.getElementById('menu-toggle');
+  <script>
+    const sidebar = document.getElementById("sidebar");
+    const toggleBtn = document.getElementById("menu-toggle");
 
-  // ✅ ページ読み込み時に前回の状態を反映
-  if (localStorage.getItem('sidebar') === 'hidden') {
-    sidebar.classList.add('hidden');
-  }
-
-  // ✅ トグルボタン押下時に状態を切り替え
-  toggleBtn.addEventListener('click', () => {
-    sidebar.classList.toggle('hidden');
-
-    // ✅ 状態を保存
-    if (sidebar.classList.contains('hidden')) {
-      localStorage.setItem('sidebar', 'hidden');
-    } else {
-      localStorage.setItem('sidebar', 'shown');
+    // ページ読み込み時に保存された状態を反映
+    if (localStorage.getItem("sidebar") === "closed") {
+      sidebar.classList.add("closed");
     }
-  });
-</script>
+
+    // トグルボタン押下時
+    toggleBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("closed");
+
+      if (sidebar.classList.contains("closed")) {
+        localStorage.setItem("sidebar", "closed");
+      } else {
+        localStorage.setItem("sidebar", "open");
+      }
+    });
+  </script>
 </body>
 </html>
