@@ -341,22 +341,37 @@ router.get("/order", async (req, res) => {
     if (!grouped[app][type]) grouped[app][type] = [];
 
 (raw || []).forEach(s => {
-  // 1ドルあたりの円換算レート（envから取得、デフォルト150円）
+  const app = normalizeAppName(s.name);
+  const type = detectType(s.name);
+
+  // 除外条件
+  if (
+    excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
+    /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
+    /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
+  ) {
+    return;
+  }
+
+  if (!grouped[app]) grouped[app] = {};
+  if (!grouped[app][type]) grouped[app][type] = [];
+
+  // 1ドルあたりの円換算レート
   const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
 
-  // APIのレート（ドル建て）を円換算
+  // APIレートを円換算
   s.baseRate = parseFloat(s.rate) * JPY_RATE;
 
-  // 段階的な倍率を適用
+  // 倍率を適用
   s.rate = applyPriceMultiplier(s.baseRate);
 
   // 👑おすすめ判定
-  const serviceId = parseInt(s.service, 10); // s.service が数値 or 文字列どちらでもOK
+  const serviceId = parseInt(s.service, 10);
   if (recommendedServices.includes(serviceId)) {
     s.name = "👑おすすめ " + s.name;
   }
 
-  // ✅ 最後にまとめて追加
+  // まとめて格納
   grouped[app][type].push(s);
 });
     
