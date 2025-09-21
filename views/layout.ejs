@@ -5,17 +5,30 @@
   <title><%= title %> - $tar.io</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* サイドバーの開閉アニメーション */
+    #sidebar {
+      transition: transform 0.3s ease;
+    }
+    #sidebar.closed {
+      transform: translateX(-220px); /* 左に隠れる */
+    }
+  </style>
 </head>
 <body class="bg-dark text-light">
 
+  <!-- ✅ 開閉ボタン -->
+  <button id="menu-toggle" class="btn btn-dark m-2">☰</button>
+
   <div class="d-flex">
-    <!-- ✅ 左のナビゲーション -->
-    <div class="bg-black p-3 border-end" style="width:200px; min-height:100vh;">
+    <!-- ✅ サイドバー -->
+    <div id="sidebar" class="bg-black p-3 border-end" style="width:200px; min-height:100vh;">
       <!-- サイト名＋アイコン -->
       <h4 class="text-info mb-4 d-flex align-items-center justify-content-center">
-  <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
-  $tar.io
-</h4>
+        <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
+        $tar.io
+      </h4>
 
       <nav class="nav flex-column">
         <a href="/" class="btn btn-outline-info mb-2">🏠 ホーム</a>
@@ -59,5 +72,12 @@
       <%- body %>
     </div>
   </div>
+
+  <!-- ✅ 開閉用スクリプト -->
+  <script>
+    document.getElementById("menu-toggle").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.toggle("closed");
+    });
+  </script>
 </body>
 </html>
