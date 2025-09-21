@@ -1,6 +1,6 @@
 <% title = '購入履歴' %>
 <div class="container py-4 text-light">
-  <h2>📜 ユーザー <%= userId %> の購入履歴</h2>
+  <h2>📜 ユーザー <%= user.email %> (ID: <%= userId %>) の購入履歴</h2>
 
   <% if (!orders || orders.length === 0) { %>
     <p class="text-center text-muted">購入履歴はありません。</p>
@@ -9,7 +9,7 @@
       <% orders.forEach(order => { %>
         <div class="order-card border border-info rounded p-3 shadow-sm">
           <div class="d-flex justify-content-between">
-            <span class="badge bg-info text-dark">ID: <%= order.id %></span>
+            <span class="badge bg-info text-dark">注文ID: <%= order.id %></span>
             <span class="badge bg-secondary">
               📅 <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}) %>
             </span>
