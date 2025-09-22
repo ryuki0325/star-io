@@ -4,14 +4,18 @@
   <h2 class="mb-4">新規注文</h2>
 
   <!-- ✅ 残高 -->
-  <p class="mb-4">残高: <%= Number(balance || 0) %> 円</p>
+  <p class="mb-4">残高: <%= Number(balance || 0).toFixed(2) %> 円</p>
 
+  <!-- ✅ エラーメッセージ -->
   <% if (typeof error !== "undefined" && error) { %>
-  <div style="color: red; font-weight: bold; margin-bottom: 10px;">
-    <%= error %>
-  </div>
-<% } %>
+    <div style="color: red; font-weight: bold; margin-bottom: 10px;">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <!-- ✅ 注文フォーム -->
   <form action="/order" method="POST" class="bg-dark p-4 rounded border border-info-subtle shadow">
+    
     <!-- ==== クイック選択 ==== -->
     <div class="mb-3">
       <label class="form-label mb-2">クイック選択</label>
@@ -89,6 +93,7 @@
   </form>
 </div>
 
+<!-- ✅ スタイル -->
 <style>
   .select-wrap { overflow: hidden; }
   .select-wrap:focus-within { box-shadow: 0 0 0.6rem rgba(13, 202, 240, 0.5); }
@@ -106,6 +111,7 @@
   }
 </style>
 
+<!-- ✅ スクリプト -->
 <script>
   const grouped   = <%- JSON.stringify(grouped) %>;
   const selectedApp = "<%= selectedApp %>";
@@ -130,6 +136,7 @@
     updateTypes();
   });
 
+  // ✅ 種類選択を更新
   function updateTypes() {
     const app = document.getElementById("appSelect").value;
     const typeSelect = document.getElementById("typeSelect");
@@ -147,7 +154,7 @@
     updatePrice();
   }
 
-  // ✅ サービス選択（安い順）
+  // ✅ サービス選択（安い順に並べる）
   function updateServices() {
     const app = document.getElementById("appSelect").value;
     const type = document.getElementById("typeSelect").value;
@@ -155,7 +162,6 @@
     resetServiceSelect();
 
     if (grouped[app] && grouped[app][type]) {
-      // 🔽 単価でソート（安い順）
       const sortedServices = [...grouped[app][type]].sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
 
       sortedServices.forEach(svc => {
@@ -165,7 +171,7 @@
 
         const opt = document.createElement("option");
         opt.value = svc.service;
-        opt.textContent = `${svc.service} - ${svc.name} ｜ 単価: ${displayRate}円/1000${icon} （Min ${svc.min} - Max ${svc.max}）`;
+        opt.textContent = `${svc.name} ｜ 単価: ${displayRate}円/1000 ${icon} （Min ${svc.min} - Max ${svc.max}）`;
         opt.dataset.rate = rate;
         serviceSelect.appendChild(opt);
       });
@@ -205,3 +211,4 @@
     updateTypes();
   });
 </script>
+    
