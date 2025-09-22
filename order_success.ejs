@@ -1,14 +1,43 @@
 <% title = '注文完了' %>
 
-<div class="container py-4 text-light">
-  <h2 class="mb-4">🎉 注文が完了しました</h2>
+<div class="container py-5 text-center text-light">
+  <h2 class="mb-4 fw-bold">🎉 注文が完了しました 🎉</h2>
 
-  <p><strong>注文ID:</strong> <%= orderId %></p>
-  <p><strong>サービス:</strong> <%= serviceName %></p>
-  <p><strong>数量:</strong> <%= quantity %></p>
-  <p><strong>金額:</strong> <%= amount %> 円</p>
-  <p><strong>残高:</strong> <%= balance %> 円</p>
+  <div class="card shadow-lg border-0 mx-auto" 
+       style="max-width: 600px; background: linear-gradient(160deg, #1f1f1f, #0d0d0d); border: 1px solid #00ffcc;">
+    <div class="card-body text-start p-4">
+      <p class="fs-5 mb-3" style="color:#00ff88; text-shadow:0 0 8px rgba(0,255,136,0.7);">
+        ✅ <strong>注文ID:</strong> <span class="ms-2"><%= orderId %></span>
+      </p>
+      <p class="fs-6 mb-2 text-white" style="text-shadow:0 0 6px rgba(77,208,255,0.6);">
+        📦 <strong>サービス:</strong> 
+        <span class="ms-2"><%= serviceName %></span>
+      </p>
+      <p class="fs-6 mb-2 text-white">
+        🔢 <strong>数量:</strong> 
+        <span class="ms-2"><%= quantity %></span>
+      </p>
+      <p class="fs-6 mb-2" style="color:#ffd700; text-shadow:0 0 6px rgba(255,215,0,0.7);">
+        💰 <strong>金額:</strong> 
+        <span class="ms-2"><%= amount %> 円</span>
+      </p>
+      <hr class="border-secondary">
+      <p class="fs-5" style="color:#00aaff; font-weight:bold; text-shadow:0 0 6px rgba(0,170,255,0.8);">
+        💳 <strong>残高:</strong> 
+        <span class="ms-2"><%= balance %> 円</span>
+      </p>
+      <p class="text-warning mt-3" style="font-size: 0.9rem;">
+        ⚠️ 反映には時間がかかる場合があります。数日経っても反映されない場合はお問い合わせください。
+      </p>
+    </div>
+  </div>
 
-  <a href="/orders" class="btn btn-info mt-3">注文履歴を見る</a>
+  <div class="mt-4">
+    <a href="/orders" class="btn btn-outline-info btn-lg me-2 shadow-sm">
+      📜 注文履歴を見る
+    </a>
+    <a href="/order" class="btn btn-primary btn-lg shadow-sm">
+      ➕ もう一度注文する
+    </a>
+  </div>
 </div>
-
