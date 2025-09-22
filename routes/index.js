@@ -586,9 +586,16 @@ router.post("/order", async (req, res) => {
 
       // ✅ 注文をDB保存
       await db.query(
-        "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
-        [req.session.userId, serviceId, svc.name, link, qty, amount]
-      );
+  "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
+  [
+    req.session.userId,
+    serviceId,
+    svc.name,
+    link,
+    parseInt(qty, 10),                // ← 数量は整数に
+    parseFloat(amount.toFixed(2))     // ← 金額は小数第2位まで
+  ]
+);
 
       // ✅ コミット
       await db.query("COMMIT");
