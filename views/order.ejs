@@ -1,44 +1,12 @@
 <% title = '新規注文' %>
 
 <div class="container py-4 text-light">
-  <h2 class="mb-4">新規注文</h2>
+  <h2 class="mb-4">🚀 新規注文</h2>
 
-  <!-- 残高表示部分 -->
-<div class="balance-display">
-  💳 残高: <span class="balance-amount"><%= balance.toFixed(2) %> 円</span>
-</div>
-
-<style>
-.balance-display {
-  font-family: 'Orbitron', sans-serif; /* 未来感のあるフォント */
-  font-size: 1.6rem;
-  text-align: center;
-  color: #00eaff;
-  background: linear-gradient(135deg, #0a0f2c, #001f3f);
-  padding: 15px;
-  border: 2px solid #00eaff;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 0 20px rgba(0, 234, 255, 0.7);
-  animation: glow 1.5s infinite alternate;
-}
-
-.balance-amount {
-  font-weight: bold;
-  font-size: 2rem;
-  color: #39ff14;
-  text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
-}
-
-@keyframes glow {
-  from {
-    box-shadow: 0 0 10px #00eaff, 0 0 20px #00eaff;
-  }
-  to {
-    box-shadow: 0 0 20px #39ff14, 0 0 40px #39ff14;
-  }
-}
-</style>
+  <!-- 💳 残高表示部分 -->
+  <div class="balance-display">
+    💳 残高: <span class="balance-amount"><%= balance.toFixed(2) %> 円</span>
+  </div>
 
   <!-- ✅ エラーメッセージ -->
   <% if (typeof error !== "undefined" && error) { %>
@@ -127,8 +95,40 @@
   </form>
 </div>
 
-<!-- ✅ スタイル -->
+<!-- ✅ 残高用スタイル -->
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+  .balance-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.6rem;
+    text-align: center;
+    color: #00eaff;
+    background: linear-gradient(135deg, #0a0f2c, #001f3f);
+    padding: 15px;
+    border: 2px solid #00eaff;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(0, 234, 255, 0.7);
+    animation: glow 1.5s infinite alternate;
+  }
+
+  .balance-amount {
+    font-weight: bold;
+    font-size: 2rem;
+    color: #39ff14;
+    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 10px #00eaff, 0 0 20px #00eaff;
+    }
+    to {
+      box-shadow: 0 0 20px #39ff14, 0 0 40px #39ff14;
+    }
+  }
+
   .select-wrap { overflow: hidden; }
   .select-wrap:focus-within { box-shadow: 0 0 0.6rem rgba(13, 202, 240, 0.5); }
   .app-chip{
@@ -144,105 +144,4 @@
     color:#000;
   }
 </style>
-
-<!-- ✅ スクリプト -->
-<script>
-  const grouped   = <%- JSON.stringify(grouped) %>;
-  const selectedApp = "<%= selectedApp %>";
-
-  const typeIcons = {
-    "フォロワー": "👥",
-    "いいね": "❤️",
-    "再生数": "▶️",
-    "コメント": "💬",
-    "シェア": "🔗",
-    "その他": "✨"
-  };
-
-  // ✅ クイック選択クリック
-  document.addEventListener("click", (e) => {
-    const chip = e.target.closest(".app-chip");
-    if (!chip) return;
-    const app = chip.dataset.app;
-    document.querySelectorAll(".app-chip").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    document.getElementById("appSelect").value = app;
-    updateTypes();
-  });
-
-  // ✅ 種類選択を更新
-  function updateTypes() {
-    const app = document.getElementById("appSelect").value;
-    const typeSelect = document.getElementById("typeSelect");
-    typeSelect.innerHTML = '<option value="">種類を選択</option>';
-
-    if (grouped[app]) {
-      Object.keys(grouped[app]).forEach(type => {
-        const opt = document.createElement("option");
-        opt.value = type;
-        opt.textContent = typeIcons[type] ? `${typeIcons[type]} ${type}` : type;
-        typeSelect.appendChild(opt);
-      });
-    }
-    resetServiceSelect();
-    updatePrice();
-  }
-
-  // ✅ サービス選択（安い順に並べる）
-  function updateServices() {
-    const app = document.getElementById("appSelect").value;
-    const type = document.getElementById("typeSelect").value;
-    const serviceSelect = document.getElementById("serviceSelect");
-    resetServiceSelect();
-
-    if (grouped[app] && grouped[app][type]) {
-      const sortedServices = [...grouped[app][type]].sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
-
-      sortedServices.forEach(svc => {
-        const rate = parseFloat(svc.rate || 0);
-        const icon = typeIcons[type] || "";
-        const displayRate = Number.isInteger(rate) ? rate : rate.toFixed(2);
-
-        const opt = document.createElement("option");
-        opt.value = svc.service;
-        opt.textContent = `${svc.name} ｜ 単価: ${displayRate}円/1000 ${icon} （Min ${svc.min} - Max ${svc.max}）`;
-        opt.dataset.rate = rate;
-        serviceSelect.appendChild(opt);
-      });
-    }
-    updatePrice();
-  }
-
-  function resetServiceSelect() {
-    document.getElementById("serviceSelect").innerHTML = '<option value="">サービスを選択</option>';
-  }
-
-  // ✅ 金額計算
-  function updatePrice() {
-    const serviceSelect = document.getElementById("serviceSelect");
-    const quantityInput = document.getElementById("quantity");
-    const display = document.getElementById("priceDisplay");
-    const rate = parseFloat(serviceSelect.selectedOptions[0]?.dataset.rate || 0);
-    const quantity = Number(quantityInput.value || 0);
-
-    if (rate > 0 && quantity > 0) {
-      const total = (rate / 1000 * quantity);
-      const displayPrice = Number.isInteger(total) ? total : total.toFixed(2);
-      display.textContent = `金額: ${displayPrice} 円`;
-    } else {
-      display.textContent = "金額: 0 円";
-    }
-  }
-
-  // ✅ ページ初期化
-  window.addEventListener("load", () => {
-    if (selectedApp) {
-      document.getElementById("appSelect").value = selectedApp;
-      document.querySelectorAll(".app-chip").forEach(c => {
-        if (c.dataset.app === selectedApp) c.classList.add("active");
-      });
-    }
-    updateTypes();
-  });
-</script>
     
