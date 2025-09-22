@@ -295,7 +295,37 @@ router.get("/funds/cancel", (req, res) => {
 // ================== 注文ページ ==================
 router.get("/order", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
-  const raw = await smm.getServices();
+
+  try {
+    // ✅ SMMFlareのサービス一覧を取得
+    const raw = await smm.getServices();
+
+    // ✅ ユーザー残高をDBから取得
+    const result = await req.app.locals.db.query(
+      "SELECT balance FROM users WHERE id = $1",
+      [req.session.userId]
+    );
+    const balance = result.rows[0] ? parseFloat(result.rows[0].balance) : 0;
+
+    // ✅ grouped / appOrder の処理は今まで通り
+    const grouped = {}; 
+    const appOrder = []; 
+    // …ここに既存の grouped を作る処理があるはずです…
+
+    // ✅ render に balance を追加
+    res.render("order", {
+      title: "新規注文",
+      user: req.session.user,
+      balance,  // これが大事
+      grouped,
+      appOrder,
+      selectedApp: ""
+    });
+  } catch (err) {
+    console.error("注文ページ取得エラー:", err);
+    res.status(500).send("ページを読み込めませんでした");
+  }
+});
 
   // --- アプリ名を正規化する関数 ---
   function normalizeAppName(name) {
