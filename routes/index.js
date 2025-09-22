@@ -592,10 +592,22 @@ router.post("/order", async (req, res) => {
           serviceId,
           svc.name,
           link,
-          Math.floor(qty),                  // ← 数量は必ず整数に
-          parseFloat(amount.toFixed(2))     // ← 金額は小数第2位まで
+          Math.floor(qty),                  // 数量は整数
+          parseFloat(amount.toFixed(2))     // 金額は小数第2位まで
         ]
-       );
+      );
+
+      await db.query("COMMIT");
+
+      res.render("order_success", {
+        title: "注文完了",
+        orderId: orderRes.order,
+        serviceName: svc.name,
+        quantity: Math.floor(qty),          // 表示も整数に
+        amount: amount.toFixed(2),          // 表示は小数第2位まで
+        balance: (balance - amount).toFixed(2)
+      });
+      
       // ✅ コミット
       await db.query("COMMIT");
 
