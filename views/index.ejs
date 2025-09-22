@@ -36,7 +36,8 @@
 
     <div class="mb-3">
       <label class="form-label">サービス</label>
-      <select class="form-select" name="service_id" id="serviceSelect">
+      <!-- ✅ name を serviceId に修正 -->
+      <select class="form-select" name="serviceId" id="serviceSelect" required>
         <option value="">カテゴリを先に選んでください</option>
       </select>
     </div>
@@ -48,7 +49,7 @@
 
     <div class="mb-3">
       <label class="form-label">数量</label>
-      <input type="number" name="quantity" class="form-control" required>
+      <input type="number" name="quantity" class="form-control" min="1" required>
     </div>
 
     <button type="submit" class="btn btn-primary">注文する</button>
@@ -66,7 +67,7 @@
     if (categories[cat]) {
       categories[cat].forEach(s => {
         const opt = document.createElement('option');
-        opt.value = s.id;
+        opt.value = s.id; // ✅ サービスID
         opt.textContent = `${s.rawName} （¥${s.perKJpy}/1000）`;
         serviceSelect.appendChild(opt);
       });
