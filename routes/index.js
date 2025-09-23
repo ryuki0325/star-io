@@ -580,7 +580,7 @@ router.post("/order", async (req, res) => {
     const balance = parseFloat(result.rows[0]?.balance || "0");
 
     // ✅ 残高不足チェック
-    if (balance < amount) {
+   if (balance < amount) {
   // サービス一覧を再取得
   const services = await smm.getServices();
   const { grouped, appOrder } = buildCatalog(services);
@@ -588,7 +588,7 @@ router.post("/order", async (req, res) => {
   return res.status(400).render("order", {
     title: "新規注文",
     user: req.session.user,
-    balance: Number(balance).toFixed(2),
+    balance: Number(balance),   // ← 数値のまま渡す
     grouped,
     appOrder,
     selectedApp: normalizeAppName(svc.name),
