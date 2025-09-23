@@ -3,10 +3,15 @@
 <div class="container py-4 text-light">
   <h2 class="mb-4">🚀 新規注文</h2>
 
-  <!-- 💳 残高表示部分 -->
-  <div class="balance-display">
-    💳 残高: <span class="balance-amount"><%= balance.toFixed(2) %> 円</span>
-  </div>
+ <!-- 💳 残高表示部分 -->
+<div class="balance-display">
+  💳 残高: <span class="balance-amount"><%= balance.toFixed(2) %> 円</span>
+</div>
+
+<!-- 注文フォーム開始 -->
+<form action="/order" method="POST">
+  <!-- クイック選択やサービス選択など -->
+</form>
 
   <!-- ✅ エラーメッセージ -->
   <% if (typeof error !== "undefined" && error) { %>
@@ -108,23 +113,18 @@
   padding: 15px 30px;
   border: 2px solid #00eaff;
   border-radius: 12px;
-  margin: 20px auto;           /* 下に余白を確保 */
-  width: fit-content;          /* 必要以上に広がらない */
+  margin: 20px auto;      /* ✅ フォームと余白をとる */
+  width: fit-content;     /* ✅ 横幅は内容に合わせる */
+  display: inline-block;  /* ✅ 横幅を最小限に */
+  z-index: 1;
+  position: relative;     /* ✅ 他の要素を覆わないように */
   box-shadow: 0 0 20px rgba(0, 234, 255, 0.7);
   animation: glow 1.5s infinite alternate;
-
-  position: relative;          /* 他の要素を覆わないように */
-  z-index: 1;
-  display: inline-block;       /* テキストサイズに合わせる */
 }
 
 @keyframes glow {
-  from {
-    box-shadow: 0 0 10px rgba(0, 234, 255, 0.5);
-  }
-  to {
-    box-shadow: 0 0 25px rgba(0, 234, 255, 1);
-  }
+  from { box-shadow: 0 0 10px rgba(0, 234, 255, 0.5); }
+  to   { box-shadow: 0 0 25px rgba(0, 234, 255, 1); }
 }
 
   .balance-amount {
