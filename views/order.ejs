@@ -212,7 +212,7 @@ function updateTypes() {
     grouped[app][type].forEach(service => {
   const option = document.createElement("option");
   option.value = service.service; // ← IDが value に入る
-  option.textContent = `[ID:${service.service}] ${service.name} （単価: ${service.rate.toFixed(2)}円/1000）`;
+  option.textContent = `[${service.service}] ${service.name} （単価: ${service.rate.toFixed(2)}円/1000）`;
   serviceSelect.appendChild(option);
 });
   }
