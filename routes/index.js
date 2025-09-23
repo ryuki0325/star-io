@@ -530,20 +530,17 @@ router.post("/order", async (req, res) => {
   const { serviceId, link, quantity } = req.body;
   const db = req.app.locals.db;
 
-  // ✅ 数量を必ず整数にする
+  // ✅ 数量チェック
   const qty = parseInt(quantity, 10);
   if (!qty || qty <= 0) {
     return res.render("order", {
       title: "新規注文",
       user: req.session.user,
-      error: "数量が不正です。1以上の数字を入力してください。",
-      serviceId,
-      link,
-      quantity: 0,
       balance: 0,
       grouped: {},
       appOrder: [],
-      selectedApp: ""
+      selectedApp: "",
+      error: "数量が不正です。1以上の数字を入力してください。"
     });
   }
 
@@ -566,35 +563,45 @@ router.post("/order", async (req, res) => {
     const svc = services.find(s => s.service == serviceId);
     if (!svc) return res.send("サービスが見つかりません");
 
+    // ✅ サービスをアプリごとにグループ化
+    const grouped = {};
+    services.forEach(s => {
+      const app = s.category || "その他";
+      if (!grouped[app]) grouped[app] = [];
+      grouped[app].push(s);
+    });
+    const appOrder = Object.keys(grouped);
+
+    // ✅ 単価計算
     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
     const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
 
-    // ✅ 金額を小数第2位で四捨五入
+    // ✅ 金額計算（小数第2位で四捨五入）
     let amount = (unitRate / 1000) * qty;
     amount = Math.round(amount * 100) / 100;
 
-    // ✅ 残高確認
+    // ✅ 残高取得
     const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
-    const balance = result.rows[0]?.balance || 0;
+    const balance = parseFloat(result.rows[0]?.balance || "0");
 
-    // 残高確認
-if (balance < amount) {
-  return res.render("order", {
-    title: "新規注文",
-    user: req.session.user,
-    balance,
-    grouped,
-    appOrder,
-    selectedApp: serviceId,
-    error: "❌ 残高が不足しています。チャージしてください。"
-  });
-}
+    // ✅ 残高不足チェック
+    if (balance < amount) {
+      return res.render("order", {
+        title: "新規注文",
+        user: req.session.user,
+        balance,
+        grouped,
+        appOrder,
+        selectedApp: serviceId,
+        error: "❌ 残高が不足しています。チャージしてください。"
+      });
+    }
 
     // ✅ トランザクション開始
     await db.query("BEGIN");
 
     try {
-      // 残高減算
+      // 残高を減算
       await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [
         amount,
         req.session.userId,
@@ -603,7 +610,7 @@ if (balance < amount) {
       // ✅ SMMFlare APIに注文送信
       const orderRes = await smm.createOrder(serviceId, link, qty);
 
-      // 注文をDB保存
+      // ✅ 注文をDBに保存
       await db.query(
         "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
         [
@@ -611,14 +618,14 @@ if (balance < amount) {
           serviceId,
           svc.name,
           link,
-          qty,                              // ←整数
-          parseFloat(amount.toFixed(2))     // ←小数第2位まで
+          qty,                              // 整数
+          parseFloat(amount.toFixed(2))     // 小数第2位まで
         ]
       );
 
       await db.query("COMMIT");
 
-      // ✅ 成功ページ
+      // ✅ 成功画面を表示
       return res.render("order_success", {
         title: "注文完了",
         orderId: orderRes.order,
