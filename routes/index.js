@@ -577,20 +577,18 @@ router.post("/order", async (req, res) => {
     const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
     const balance = result.rows[0]?.balance || 0;
 
-    if (balance < amount) {
-      return res.render("order", {
-        title: "新規注文",
-        user: req.session.user,
-        error: "残高が不足しています。チャージしてください。",
-        serviceId,
-        link,
-        quantity: qty,
-        balance: Number(balance).toFixed(2),
-        grouped: {},
-        appOrder: [],
-        selectedApp: ""
-      });
-    }
+    // 残高確認
+if (balance < amount) {
+  return res.render("order", {
+    title: "新規注文",
+    user: req.session.user,
+    balance,
+    grouped,
+    appOrder,
+    selectedApp: serviceId,
+    error: "❌ 残高が不足しています。チャージしてください。"
+  });
+}
 
     // ✅ トランザクション開始
     await db.query("BEGIN");
