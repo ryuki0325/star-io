@@ -172,20 +172,30 @@
   const grouped = <%- JSON.stringify(grouped) %>;
 
   // ==== アプリを選んだら種類を更新 ====
-  function updateTypes() {
-    const app = document.getElementById("appSelect").value;
-    const typeSelect = document.getElementById("typeSelect");
-    typeSelect.innerHTML = "<option value=''>種類を選んでください</option>";
+function updateTypes() {
+  const app = document.getElementById("appSelect").value;
+  const typeSelect = document.getElementById("typeSelect");
+  typeSelect.innerHTML = "<option value=''>種類を選んでください</option>";
 
-    if (!app || !grouped[app]) return;
+  if (!app || !grouped[app]) return;
 
-    Object.keys(grouped[app]).forEach(type => {
-      const option = document.createElement("option");
-      option.value = type;
-      option.textContent = type;
-      typeSelect.appendChild(option);
-    });
-  }
+  // 種類ごとの絵文字マップ
+  const typeEmojiMap = {
+    "再生数": "▶️",
+    "いいね": "❤️",
+    "フォロワー": "👥",
+    "コメント": "💬",
+    "シェア": "🔄",
+    "その他": "✨"
+  };
+
+  Object.keys(grouped[app]).forEach(type => {
+    const option = document.createElement("option");
+    option.value = type;
+    option.textContent = (typeEmojiMap[type] || "🧩") + " " + type;
+    typeSelect.appendChild(option);
+  });
+}
 
   // ==== 種類を選んだらサービスを更新 ====
   function updateServices() {
