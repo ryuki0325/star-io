@@ -392,12 +392,12 @@ router.get("/order", async (req, res) => {
 
     // --- レンダリング ---
     res.render("order", {
-      title: "新規注文",
-      grouped,
-      appOrder,
-      selectedApp: req.query.app || "",
-      balance: Number(balance).toFixed(2)
-    });
+  title: "新規注文",
+  grouped,
+  appOrder,
+  selectedApp: req.query.app || "",
+  balance: Number(balance)  // 数値で渡す
+});
 
   } catch (err) {
     console.error("注文ページ取得エラー:", err);
