@@ -200,22 +200,28 @@ function updateTypes() {
   });
 }
 
-  // ==== 種類を選んだらサービスを更新 ====
-  function updateServices() {
-    const app = document.getElementById("appSelect").value;
-    const type = document.getElementById("typeSelect").value;
-    const serviceSelect = document.getElementById("serviceSelect");
-    serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
+// ==== 種類を選んだらサービスを更新 ====
+function updateServices() {
+  const app = document.getElementById("appSelect").value;
+  const type = document.getElementById("typeSelect").value;
+  const serviceSelect = document.getElementById("serviceSelect");
+  serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
 
-    if (!app || !type || !grouped[app][type]) return;
+  // データが無い場合は終了
+  if (!app || !type || !grouped[app][type]) return;
 
-    grouped[app][type].forEach(service => {
-  const option = document.createElement("option");
-  option.value = service.service; // ← IDが value に入る
-  option.textContent = `[${service.service}] ${service.name} （単価: ${service.rate.toFixed(2)}円/1000）`;
-  serviceSelect.appendChild(option);
-});
-  }
+  grouped[app][type].forEach(service => {
+    const option = document.createElement("option");
+
+    // ✅ IDを value に入れる（注文時に使う）
+    option.value = service.service;
+
+    // ✅ 表示は「ID + 名前 + 最終価格」
+    option.textContent = `[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
+
+    serviceSelect.appendChild(option);
+  });
+}
 
   // ==== サービスを選んだら金額を更新 ====
   function updatePrice() {
