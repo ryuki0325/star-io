@@ -586,16 +586,20 @@ router.post("/order", async (req, res) => {
 
     // ✅ 残高不足チェック
     if (balance < amount) {
-      return res.render("order", {
-        title: "新規注文",
-        user: req.session.user,
-        balance,
-        grouped,
-        appOrder,
-        selectedApp: serviceId,
-        error: "❌ 残高が不足しています。チャージしてください。"
-      });
-    }
+  // サービス一覧を再取得
+  const services = await smm.getServices();
+  const { grouped, appOrder } = buildCatalog(services);
+
+  return res.render("order", {
+    title: "新規注文",
+    user: req.session.user,
+    balance: Number(balance).toFixed(2),
+    grouped,
+    appOrder,
+    selectedApp: normalizeAppName(svc.name),
+    error: "❌ 残高が不足しています。チャージしてください。"
+  });
+}
 
     // ✅ トランザクション開始
     await db.query("BEGIN");
