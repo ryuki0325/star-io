@@ -251,7 +251,6 @@ router.post("/create-checkout-session", async (req, res) => {
 });
 
 // ====== Stripe チャージの成功ページ ======
-// ====== Stripe チャージの成功ページ ======
 router.get("/funds/success", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   const db = req.app.locals.db;
@@ -312,15 +311,6 @@ router.get("/order", async (req, res) => {
     const appOrder = []; 
     // …ここに既存の grouped を作る処理があるはずです…
 
-    // ✅ render に balance を追加
-    res.render("order", {
-      title: "新規注文",
-      user: req.session.user,
-      balance,  // これが大事
-      grouped,
-      appOrder,
-      selectedApp: ""
-    });
   } catch (err) {
     console.error("注文ページ取得エラー:", err);
     res.status(500).send("ページを読み込めませんでした");
