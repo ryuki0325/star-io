@@ -679,6 +679,9 @@ function buildCatalog(raw) {
     grouped[app][type].push(s);
   });
 
+  return { grouped, appOrder: Object.keys(grouped) };
+}
+
 // ================== 注文履歴 ==================
 router.get("/orders", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
