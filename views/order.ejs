@@ -146,4 +146,23 @@
     color:#000;
   }
 </style>
+
+<!-- ✅ クイック選択を反映するスクリプト -->
+<script>
+  document.querySelectorAll(".app-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const app = btn.getAttribute("data-app");
+      const appSelect = document.getElementById("appSelect");
+
+      if (appSelect) {
+        appSelect.value = app;
+        appSelect.dispatchEvent(new Event("change"));
+      }
+
+      // ハイライト処理
+      document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+</script>
     
