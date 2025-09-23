@@ -379,7 +379,7 @@ router.get("/order", async (req, res) => {
       s.baseRate = parseFloat(s.rate) * JPY_RATE;
 
       // 倍率を適用
-      s.rate = applyPriceMultiplier(s.baseRate);
+      s.finalRate = applyMultiplier(s.baseRate);
 
       // 👑おすすめ判定
       const serviceId = parseInt(s.service, 10);
