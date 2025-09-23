@@ -684,6 +684,43 @@ function buildCatalog(raw) {
     grouped[app][type].push(s);
   });
 
+  // ================== アプリ名を正規化 ==================
+function normalizeAppName(name) {
+  if (!name) return "";
+  let app = name.toLowerCase();
+
+  if (app.includes("tiktok")) return "TikTok";
+  if (app.includes("instagram")) return "Instagram";
+  if (app.includes("youtube")) return "YouTube";
+  if (app.includes("twitter") || app.includes("x ")) return "Twitter";
+  if (app.includes("spotify")) return "Spotify";
+  if (app.includes("telegram")) return "Telegram";
+  if (app.includes("twitch")) return "Twitch";
+  if (app.includes("facebook")) return "Facebook";
+  if (app.includes("reddit")) return "Reddit";
+
+  // fallback
+  return name.trim();
+}
+
+// ================== サービス種類を判定 ==================
+function detectType(name) {
+  if (!name) return "その他";
+  const lower = name.toLowerCase();
+  if (lower.includes("view") || lower.includes("play")) return "再生数";
+  if (lower.includes("like") || lower.includes("heart")) return "いいね";
+  if (lower.includes("follower") || lower.includes("subs")) return "フォロワー";
+  if (lower.includes("comment")) return "コメント";
+  if (lower.includes("share")) return "シェア";
+  return "その他";
+}
+
+// ================== 価格倍率をかける ==================
+function applyPriceMultiplier(base) {
+  const multiplier = parseFloat(process.env.PRICE_MULTIPLIER || "1.1");
+  return Math.round(base * multiplier * 100) / 100;
+}
+
   // 並び順
   const appOrder = Object.keys(grouped).sort((a, b) => {
     const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
