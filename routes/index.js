@@ -325,6 +325,20 @@ function applyPriceMultiplier(base) {
   return Math.round(base * multiplier * 100) / 100;
 }
 
+function applyMultiplier(rate) {
+  let result;
+  if (rate <= 100) {
+    result = rate * parseFloat(process.env.MULTIPLIER_LOW);
+  } else if (rate <= 1000) {
+    result = rate * parseFloat(process.env.MULTIPLIER_MID);
+  } else if (rate <= 1600) {
+    result = rate * parseFloat(process.env.MULTIPLIER_HIGH);
+  } else {
+    result = rate * parseFloat(process.env.MULTIPLIER_TOP);
+  }
+  return Math.round(result * 100) / 100; // ✅ 小数第2位まで
+}
+
 // ================== 注文ページ ==================
 router.get("/order", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
