@@ -590,7 +590,7 @@ router.post("/order", async (req, res) => {
   const services = await smm.getServices();
   const { grouped, appOrder } = buildCatalog(services);
 
-  return res.render("order", {
+  return res.status(400).render("order", {
     title: "新規注文",
     user: req.session.user,
     balance: Number(balance).toFixed(2),
@@ -650,6 +650,50 @@ router.post("/order", async (req, res) => {
     return res.send("サーバーエラー");
   }
 });
+
+// ================== サービス一覧をアプリごとにまとめる関数 ==================
+function buildCatalog(raw) {
+  const grouped = {};
+
+  (raw || []).forEach(s => {
+    const app  = normalizeAppName(s.name);
+    const type = detectType(s.name);
+
+    if (
+      excludedApps.includes(app) ||
+      /^[0-9]+$/.test(app) ||
+      /^[-]+$/.test(app) ||
+      /\p{Emoji}/u.test(app) ||
+      /^[A-Z]{2,3}$/i.test(app) ||
+      /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
+    ) return;
+
+    if (!grouped[app]) grouped[app] = {};
+    if (!grouped[app][type]) grouped[app][type] = [];
+
+    // JPY換算
+    const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+    s.baseRate = parseFloat(s.rate) * JPY_RATE;
+    s.rate = applyPriceMultiplier(s.baseRate);
+
+    const serviceId = parseInt(s.service, 10);
+    if (recommendedServices.includes(serviceId)) {
+      s.name = "👑おすすめ " + s.name;
+    }
+
+    grouped[app][type].push(s);
+  });
+
+  // 並び順
+  const appOrder = Object.keys(grouped).sort((a, b) => {
+    const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
+    const bP = priorityApps.includes(b) ? priorityApps.indexOf(b) : Infinity;
+    if (aP !== bP) return aP - bP;
+    return a.localeCompare(b);
+  });
+
+  return { grouped, appOrder };
+}
 
 // ================== 注文履歴 ==================
 router.get("/orders", async (req, res) => {
