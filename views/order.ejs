@@ -73,9 +73,9 @@
            grouped[selectedApp][selectedType]
            .sort((a, b) => a.rate - b.rate)  // ✅ 最終価格でソート
            .forEach(s => { %>
-        <option value="<%= s.service %>">
-          ID:<%= s.service %> | <%= s.name %> （単価: <%= s.rate.toFixed(2) %>円/1000）
-        </option>
+        <option value="<%= s.service %>" data-final-rate="<%= s.finalRate %>">
+  [ID:<%= s.service %>] <%= s.name %> （最終価格: <%= s.finalRate.toFixed(2) %>円/1000）
+</option>
       <% }) } %>
     </select>
   </div>
@@ -223,29 +223,26 @@ function updateServices() {
   });
 }
 
-  // ==== サービスを選んだら金額を更新 ====
-  function updatePrice() {
-    const serviceId = document.getElementById("serviceSelect").value;
-    const quantity = parseInt(document.getElementById("quantity").value, 10) || 0;
-    const priceDisplay = document.getElementById("priceDisplay");
+// ==== サービスを選んだら金額を更新 ====
+function updatePrice() {
+  const serviceSelect = document.getElementById("serviceSelect");
+  const qty = parseInt(document.getElementById("quantity").value, 10) || 0;
+  const priceDisplay = document.getElementById("priceDisplay");
 
-    let unitRate = 0;
-    Object.values(grouped).forEach(types => {
-      Object.values(types).forEach(services => {
-        services.forEach(s => {
-          if (s.service == serviceId) {
-            unitRate = s.rate;
-          }
-        });
-      });
-    });
-
-    if (unitRate && quantity > 0) {
-      const price = Math.round((unitRate / 1000) * quantity * 100) / 100;
-      priceDisplay.textContent = `金額: ${price} 円`;
-    } else {
-      priceDisplay.textContent = "金額: 0 円";
-    }
+  if (!serviceSelect.value) {
+    priceDisplay.textContent = "金額: 0 円";
+    return;
   }
+
+  // ✅ 選択中の option から data-final-rate を取得
+  const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+  const finalRate = parseFloat(selectedOption.dataset.finalRate || "0");
+
+  // ✅ 金額計算
+  const price = Math.round((finalRate / 1000) * qty * 100) / 100;
+
+  // ✅ 表示更新
+  priceDisplay.textContent = `金額: ${price} 円`;
+}
 </script>
     
