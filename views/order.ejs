@@ -8,8 +8,8 @@
   💳 残高: <span class="balance-amount"><%= balance.toFixed(2) %> 円</span>
 </div>
 
-<!-- 注文フォーム開始 -->
-<form action="/order" method="POST">
+<!-- ✅ 注文フォーム -->
+<form action="/order" method="POST" class="bg-dark p-4 rounded border border-info-subtle shadow">
   <!-- クイック選択やサービス選択など -->
 </form>
 
@@ -106,34 +106,30 @@
 
  .balance-display {
   font-family: 'Orbitron', sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   text-align: center;
   color: #00eaff;
-  background: linear-gradient(135deg, #0a0f2c, #001f3f);
-  padding: 15px 30px;
-  border: 2px solid #00eaff;
-  border-radius: 12px;
-  margin: 20px auto;      /* ✅ フォームと余白をとる */
-  width: fit-content;     /* ✅ 横幅は内容に合わせる */
-  display: inline-block;  /* ✅ 横幅を最小限に */
-  z-index: 1;
-  position: relative;     /* ✅ 他の要素を覆わないように */
-  box-shadow: 0 0 20px rgba(0, 234, 255, 0.7);
+  background: #000814;  /* ✅ 黒系で統一 */
+  padding: 15px;
+  border: 2px solid #0dcaf0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  width: 100%;          /* ✅ フォームやカードと同じ幅 */
+  box-shadow: 0 0 10px rgba(13, 202, 240, 0.6);
   animation: glow 1.5s infinite alternate;
 }
 
 @keyframes glow {
-  from { box-shadow: 0 0 10px rgba(0, 234, 255, 0.5); }
-  to   { box-shadow: 0 0 25px rgba(0, 234, 255, 1); }
+  from { box-shadow: 0 0 10px rgba(13, 202, 240, 0.4); }
+  to   { box-shadow: 0 0 20px rgba(13, 202, 240, 0.9); }
 }
 
-  .balance-amount {
-    font-weight: bold;
-    font-size: 2rem;
-    color: #39ff14;
-    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
-  }
-
+.balance-amount {
+  font-weight: bold;
+  font-size: 1.8rem;
+  color: #39ff14;
+  text-shadow: 0 0 8px #39ff14, 0 0 15px #39ff14;
+}
 
   .select-wrap { overflow: hidden; }
   .select-wrap:focus-within { box-shadow: 0 0 0.6rem rgba(13, 202, 240, 0.5); }
