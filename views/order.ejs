@@ -99,19 +99,33 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
-  .balance-display {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.6rem;
-    text-align: center;
-    color: #00eaff;
-    background: linear-gradient(135deg, #0a0f2c, #001f3f);
-    padding: 15px;
-    border: 2px solid #00eaff;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 0 20px rgba(0, 234, 255, 0.7);
-    animation: glow 1.5s infinite alternate;
+ .balance-display {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.6rem;
+  text-align: center;
+  color: #00eaff;
+  background: linear-gradient(135deg, #0a0f2c, #001f3f);
+  padding: 15px 30px;
+  border: 2px solid #00eaff;
+  border-radius: 12px;
+  margin: 20px auto;           /* 下に余白を確保 */
+  width: fit-content;          /* 必要以上に広がらない */
+  box-shadow: 0 0 20px rgba(0, 234, 255, 0.7);
+  animation: glow 1.5s infinite alternate;
+
+  position: relative;          /* 他の要素を覆わないように */
+  z-index: 1;
+  display: inline-block;       /* テキストサイズに合わせる */
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px rgba(0, 234, 255, 0.5);
   }
+  to {
+    box-shadow: 0 0 25px rgba(0, 234, 255, 1);
+  }
+}
 
   .balance-amount {
     font-weight: bold;
@@ -120,14 +134,6 @@
     text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
   }
 
-  @keyframes glow {
-    from {
-      box-shadow: 0 0 10px #00eaff, 0 0 20px #00eaff;
-    }
-    to {
-      box-shadow: 0 0 20px #39ff14, 0 0 40px #39ff14;
-    }
-  }
 
   .select-wrap { overflow: hidden; }
   .select-wrap:focus-within { box-shadow: 0 0 0.6rem rgba(13, 202, 240, 0.5); }
