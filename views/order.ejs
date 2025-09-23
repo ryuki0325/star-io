@@ -165,4 +165,68 @@
     });
   });
 </script>
+
+<!-- ✅ 種類・サービス選択スクリプト -->
+<script>
+  // grouped はサーバーから渡されるデータ
+  const grouped = <%- JSON.stringify(grouped) %>;
+
+  // ==== アプリを選んだら種類を更新 ====
+  function updateTypes() {
+    const app = document.getElementById("appSelect").value;
+    const typeSelect = document.getElementById("typeSelect");
+    typeSelect.innerHTML = "<option value=''>種類を選んでください</option>";
+
+    if (!app || !grouped[app]) return;
+
+    Object.keys(grouped[app]).forEach(type => {
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = type;
+      typeSelect.appendChild(option);
+    });
+  }
+
+  // ==== 種類を選んだらサービスを更新 ====
+  function updateServices() {
+    const app = document.getElementById("appSelect").value;
+    const type = document.getElementById("typeSelect").value;
+    const serviceSelect = document.getElementById("serviceSelect");
+    serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
+
+    if (!app || !type || !grouped[app][type]) return;
+
+    grouped[app][type].forEach(service => {
+      const option = document.createElement("option");
+      option.value = service.service;
+      option.textContent = `${service.name} （単価: ${service.rate.toFixed(2)}円/1000）`;
+      serviceSelect.appendChild(option);
+    });
+  }
+
+  // ==== サービスを選んだら金額を更新 ====
+  function updatePrice() {
+    const serviceId = document.getElementById("serviceSelect").value;
+    const quantity = parseInt(document.getElementById("quantity").value, 10) || 0;
+    const priceDisplay = document.getElementById("priceDisplay");
+
+    let unitRate = 0;
+    Object.values(grouped).forEach(types => {
+      Object.values(types).forEach(services => {
+        services.forEach(s => {
+          if (s.service == serviceId) {
+            unitRate = s.rate;
+          }
+        });
+      });
+    });
+
+    if (unitRate && quantity > 0) {
+      const price = Math.round((unitRate / 1000) * quantity * 100) / 100;
+      priceDisplay.textContent = `金額: ${price} 円`;
+    } else {
+      priceDisplay.textContent = "金額: 0 円";
+    }
+  }
+</script>
     
