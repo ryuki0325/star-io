@@ -306,109 +306,103 @@ router.get("/order", async (req, res) => {
     );
     const balance = result.rows[0] ? parseFloat(result.rows[0].balance) : 0;
 
-    // ✅ grouped / appOrder の処理は今まで通り
-    const grouped = {}; 
-    const appOrder = []; 
-    // …ここに既存の grouped を作る処理があるはずです…
+    // --- アプリ名を正規化する関数 ---
+    function normalizeAppName(name) {
+      const app = (name.split(" ")[0] || "その他").trim().toLowerCase();
+      if (["tiktok","tik tok"].includes(app)) return "TikTok";
+      if (["instagram","insta"].includes(app)) return "Instagram";
+      if (["twitter","x"].includes(app)) return "Twitter";
+      if (["youtube","yt"].includes(app)) return "YouTube";
+      if (["spotify"].includes(app)) return "Spotify";
+      if (["telegram"].includes(app)) return "Telegram";
+      if (["twitch"].includes(app)) return "Twitch";
+      if (["facebook","fb"].includes(app)) return "Facebook";
+      if (["reddit"].includes(app)) return "Reddit";
+      return app.charAt(0).toUpperCase() + app.slice(1);
+    }
+
+    // --- サービス種別を判定する関数 ---
+    function detectType(name) {
+      const lower = name.toLowerCase();
+      if (lower.includes("follower")) return "フォロワー";
+      if (lower.includes("like")) return "いいね";
+      if (lower.includes("view")) return "再生数";
+      if (lower.includes("comment")) return "コメント";
+      if (lower.includes("share")) return "シェア";
+      return "その他";
+    }
+
+    // --- 環境変数ベースの倍率ロジック ---
+    function applyPriceMultiplier(price) {
+      if (price <= 100) {
+        return price * parseFloat(process.env.MULTIPLIER_LOW || 2.0);
+      } else if (price <= 1000) {
+        return price * parseFloat(process.env.MULTIPLIER_MID || 1.5);
+      } else if (price <= 1600) {
+        return price * parseFloat(process.env.MULTIPLIER_HIGH || 1.3);
+      } else {
+        return price * parseFloat(process.env.MULTIPLIER_TOP || 1.1);
+      }
+    }
+
+    // --- サービスをグループ化 ---
+    const grouped = {};
+    (raw || []).forEach(s => {
+      const app = normalizeAppName(s.name);
+      const type = detectType(s.name);
+
+      // 除外条件
+      if (
+        excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
+        /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
+        /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
+      ) {
+        return;
+      }
+
+      if (!grouped[app]) grouped[app] = {};
+      if (!grouped[app][type]) grouped[app][type] = [];
+
+      // 1ドルあたりの円換算レート
+      const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+
+      // APIレートを円換算
+      s.baseRate = parseFloat(s.rate) * JPY_RATE;
+
+      // 倍率を適用
+      s.rate = applyPriceMultiplier(s.baseRate);
+
+      // 👑おすすめ判定
+      const serviceId = parseInt(s.service, 10);
+      if (recommendedServices.includes(serviceId)) {
+        s.name = "👑おすすめ " + s.name;
+      }
+
+      // まとめて格納
+      grouped[app][type].push(s);
+    });
+
+    // --- アプリ順序を決定 ---
+    const appOrder = Object.keys(grouped).sort((a, b) => {
+      const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
+      const bP = priorityApps.includes(b) ? priorityApps.indexOf(b) : Infinity;
+      if (aP !== bP) return aP - bP;
+      return a.localeCompare(b);
+    });
+
+    // --- レンダリング ---
+    res.render("order", {
+      title: "新規注文",
+      grouped,
+      appOrder,
+      selectedApp: req.query.app || "",
+      balance: Number(balance).toFixed(2)
+    });
 
   } catch (err) {
     console.error("注文ページ取得エラー:", err);
     res.status(500).send("ページを読み込めませんでした");
   }
-});
-
-  // --- アプリ名を正規化する関数 ---
-  function normalizeAppName(name) {
-    const app = (name.split(" ")[0] || "その他").trim().toLowerCase();
-    if (["tiktok","tik tok"].includes(app)) return "TikTok";
-    if (["instagram","insta"].includes(app)) return "Instagram";
-    if (["twitter","x"].includes(app)) return "Twitter";
-    if (["youtube","yt"].includes(app)) return "YouTube";
-    if (["spotify"].includes(app)) return "Spotify";
-    if (["telegram"].includes(app)) return "Telegram";
-    if (["twitch"].includes(app)) return "Twitch";
-    if (["facebook","fb"].includes(app)) return "Facebook";
-    if (["reddit"].includes(app)) return "Reddit";
-    return app.charAt(0).toUpperCase() + app.slice(1);
-  }
-
-  // --- サービス種別を判定する関数 ---
-  function detectType(name) {
-    const lower = name.toLowerCase();
-    if (lower.includes("follower")) return "フォロワー";
-    if (lower.includes("like")) return "いいね";
-    if (lower.includes("view")) return "再生数";
-    if (lower.includes("comment")) return "コメント";
-    if (lower.includes("share")) return "シェア";
-    return "その他";
-  }
-
-  // --- 環境変数ベースの倍率ロジック ---
-  function applyPriceMultiplier(price) {
-    if (price <= 100) {
-      return price * parseFloat(process.env.MULTIPLIER_LOW || 2.0);
-    } else if (price <= 1000) {
-      return price * parseFloat(process.env.MULTIPLIER_MID || 1.5);
-    } else if (price <= 1600) {
-      return price * parseFloat(process.env.MULTIPLIER_HIGH || 1.3);
-    } else {
-      return price * parseFloat(process.env.MULTIPLIER_TOP || 1.1);
-    }
-  }
-
-  // --- サービスをグループ化 ---
-const grouped = {};
-(raw || []).forEach(s => {
-  const app = normalizeAppName(s.name);
-  const type = detectType(s.name);
-
-  // 除外条件
-  if (
-    excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
-    /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
-    /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
-  ) {
-    return;
-  }
-
-  if (!grouped[app]) grouped[app] = {};
-  if (!grouped[app][type]) grouped[app][type] = [];
-
-  // 1ドルあたりの円換算レート
-  const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
-
-  // APIレートを円換算
-  s.baseRate = parseFloat(s.rate) * JPY_RATE;
-
-  // 倍率を適用
-  s.rate = applyPriceMultiplier(s.baseRate);
-
-  // 👑おすすめ判定
-  const serviceId = parseInt(s.service, 10);
-  if (recommendedServices.includes(serviceId)) {
-    s.name = "👑おすすめ " + s.name;
-  }
-
-  // まとめて格納
-  grouped[app][type].push(s);
-});
-  
-  // --- アプリ順序を決定 ---
-  const appOrder = Object.keys(grouped).sort((a, b) => {
-    const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
-    const bP = priorityApps.includes(b) ? priorityApps.indexOf(b) : Infinity;
-    if (aP !== bP) return aP - bP;
-    return a.localeCompare(b);
-  });
-
-  // --- レンダリング ---
-  res.render("order", {
-    title: "新規注文",
-    grouped,
-    appOrder,
-    selectedApp: req.query.app || "",
-    balance: Number(req.session.user?.balance || 0).toFixed(2)
-  });
 });
 
 // ================== ギフトコード (ページ) ==================
