@@ -213,8 +213,11 @@ function updateServices() {
   grouped[app][type].forEach(service => {
     const option = document.createElement("option");
 
-    // ✅ IDを value に入れる（注文時に使う）
+    // ✅ IDを value に入れる
     option.value = service.service;
+
+    // ✅ dataset に finalRate をセット（updatePrice で使う）
+    option.dataset.finalRate = service.finalRate;
 
     // ✅ 表示は「ID + 名前 + 最終価格」
     option.textContent = `[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
