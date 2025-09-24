@@ -170,14 +170,33 @@ router.get("/logout", (req, res) => {
 });
 
 // ================== 残高チャージ ==================
-router.get("/funds", (req, res) => {
+router.get("/funds", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
-  res.render("funds", { 
-    title: "残高チャージ", 
-    user: req.session.user,
-    balance: req.session.user?.balance || 0,
-    error: null
-  });
+  const db = req.app.locals.db;
+
+  try {
+    // DBから最新の残高を取得
+    const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
+    const balance = result.rows[0] ? Number(result.rows[0].balance) : 0;
+
+    // セッションの残高も最新化
+    req.session.user.balance = balance;
+
+    res.render("funds", { 
+      title: "残高チャージ", 
+      user: req.session.user,
+      balance,   // ← DBの最新値
+      error: null
+    });
+  } catch (err) {
+    console.error("残高取得エラー:", err);
+    res.render("funds", { 
+      title: "残高チャージ", 
+      user: req.session.user,
+      balance: req.session.user?.balance || 0,
+      error: "残高を取得できませんでした"
+    });
+  }
 });
 
 // ================== 通常の（ダミー）チャージ処理 ==================
