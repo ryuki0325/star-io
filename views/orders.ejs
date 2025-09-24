@@ -26,9 +26,9 @@
             </span>
           </div>
 
-          <!-- サービス名 -->
+          <!-- サービス名 + 商品ID -->
           <h5 class="text-white mb-2 fw-bold" style="word-break: break-word;">
-            ✨ <%= order.service_name || "サービス名不明" %>
+            ✨ [ID:<%= order.service_id %>] <%= order.service_name || "サービス名不明" %>
           </h5>
 
           <!-- サービス詳細 -->
