@@ -12,21 +12,20 @@ html, body {
   margin: 0;
 }
 
-/* 🎨 全体のレイアウト調整 */
-.d-flex {
-  min-height: 100vh; /* ページ全体の高さに合わせる */
-}
-
 /* 🎨 サイドバーの基本スタイル */
 #sidebar {
+  position: fixed;         /* ← PCでは固定配置にする */
+  top: 0;
+  left: 0;
   width: 220px;
-  min-height: 100vh;       /* ページ全体に黒を伸ばす */
+  min-height: 100vh;       /* 画面の高さに常に合わせる */
   background-color: #000;
-  transition: transform 0.3s ease, margin-left 0.3s ease;
-  overflow-y: auto;        /* 内容が長い場合スクロール */
+  transition: transform 0.3s ease;
+  overflow-y: auto;        /* 内容が長い場合はスクロール */
+  z-index: 1000;
 }
 
-/* サイドバーを閉じたとき */
+/* サイドバーを閉じたとき（スマホ用） */
 #sidebar.closed {
   transform: translateX(-220px);
 }
@@ -34,25 +33,18 @@ html, body {
 /* 📱 スマホ対応 */
 @media (max-width: 768px) {
   #sidebar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-  }
-
-  #sidebar.closed {
-    transform: translateX(-220px);
+    position: absolute;    /* スマホでは上からかぶせる */
   }
 
   .flex-grow-1 {
-    margin-left: 0 !important;
+    margin-left: 0 !important; /* コンテンツは横幅全体を使う */
   }
 }
 
 /* 💻 PC用: サイドバー固定 */
 @media (min-width: 769px) {
   .flex-grow-1 {
-    margin-left: 220px; /* サイドバーの分だけ右にずらす */
+    margin-left: 220px;    /* サイドバー分だけ右に余白を取る */
   }
 
   #sidebar.closed {
