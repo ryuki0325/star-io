@@ -37,7 +37,7 @@ html, body {
     top: 0;
     left: 0;
     width: 220px;
-    min-height: calc(var(--vh, 1vh) * 100); /* ← JSで設定される高さ */
+    height: calc(var(--vh, 1vh) * 100); /* JSで設定した高さを使う */
     background-color: #000;
     z-index: 1000;
     transition: transform 0.3s ease;
@@ -45,11 +45,11 @@ html, body {
   }
 
   #sidebar.closed {
-    transform: translateX(-220px); /* 閉じたときに隠す */
+    transform: translateX(-220px);
   }
 
   .flex-grow-1 {
-    margin-left: 0 !important; /* スマホは全幅を使う */
+    margin-left: 0 !important;
   }
 }
 
@@ -132,6 +132,19 @@ html, body {
 
     <!-- ✅ 開閉用スクリプト -->
   <script>
+
+   function updateVH() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+
+  // 初回設定
+  updateVH();
+
+  // 画面サイズが変わった時に再計算
+  window.addEventListener('resize', updateVH);
+  window.addEventListener('orientationchange', updateVH);
+
     const sidebar = document.getElementById("sidebar");
     const toggleBtn = document.getElementById("menu-toggle");
 
