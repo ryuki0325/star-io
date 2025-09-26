@@ -37,8 +37,7 @@ html, body {
     top: 0;
     left: 0;
     width: 220px;
-    min-height: 100vh;       /* フォールバック */
-    min-height: 100dvh;      /* iPhoneでも黒を下まで伸ばす */
+    min-height: calc(var(--vh, 1vh) * 100); /* ← JSで設定される高さ */
     background-color: #000;
     z-index: 1000;
     transition: transform 0.3s ease;
