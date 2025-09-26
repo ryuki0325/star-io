@@ -29,24 +29,25 @@ html, body {
     transform: translateX(-220px);
   }
 
-  /* 📱 スマホ対応 */
-  @media (max-width: 768px) {
-    #sidebar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1000;
-      height: 100%;
-    }
-
-    #sidebar.closed {
-      transform: translateX(-220px);
-    }
-
-    .flex-grow-1 {
-      margin-left: 0 !important;
-    }
+ /* 📱 スマホ対応 */
+@media (max-width: 768px) {
+  #sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    min-height: 100vh;  /* 画面全体 */
+    height: auto;       /* 内容が長ければ伸びる */
   }
+
+  #sidebar.closed {
+    transform: translateX(-220px);
+  }
+
+  .flex-grow-1 {
+    margin-left: 0 !important;
+  }
+}
 
   /* 💻 PC用: サイドバー固定 */
   @media (min-width: 769px) {
