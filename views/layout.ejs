@@ -33,11 +33,24 @@ html, body {
 /* 📱 スマホ対応 */
 @media (max-width: 768px) {
   #sidebar {
-    position: absolute;    /* スマホでは上からかぶせる */
+    position: absolute;      /* スマホでは上からかぶせる */
+    top: 0;
+    left: 0;
+    width: 220px;
+    min-height: 100vh;       /* フォールバック */
+    min-height: 100dvh;      /* iPhoneでも黒を下まで伸ばす */
+    background-color: #000;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    overflow-y: auto;        /* 中身が多い場合はスクロール */
+  }
+
+  #sidebar.closed {
+    transform: translateX(-220px); /* 閉じたときに隠す */
   }
 
   .flex-grow-1 {
-    margin-left: 0 !important; /* コンテンツは横幅全体を使う */
+    margin-left: 0 !important; /* スマホは全幅を使う */
   }
 }
 
