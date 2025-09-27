@@ -19,24 +19,24 @@
   <% } %>
 
   <!-- ==== クイック選択 ==== -->
-  <div class="mb-3">
-    <label class="form-label mb-2">クイック選択</label>
-    <div class="d-flex flex-wrap gap-2">
-      <% const emojiMap = {
-           TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️",
-           Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽"
-         };
-         const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
-      %>
-      <% quickApps.forEach(q => { if (grouped[q]) { %>
-        <button type="button"
-                class="app-chip btn btn-outline-info"
-                data-app="<%= q %>">
-          <span class="me-1"><%= emojiMap[q] || "🧩" %></span><%= q %>
-        </button>
-      <% } }) %>
-    </div>
+<div class="mb-3">
+  <label class="form-label mb-2">クイック選択</label>
+  <div class="d-flex flex-wrap gap-2">
+    <% const emojiMap = {
+         TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️",
+         Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽"
+       };
+       const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
+    %>
+    <% quickApps.forEach(q => { if (grouped[q]) { %>
+      <button type="button"
+              class="app-chip btn <%= selectedApp === q ? 'btn-info active' : 'btn-outline-info' %>"
+              data-app="<%= q %>">
+        <span class="me-1"><%= emojiMap[q] || "🧩" %></span><%= q %>
+      </button>
+    <% } }) %>
   </div>
+</div>
 
     <!-- ==== アプリ選択 ==== -->
     <div class="mb-3">
