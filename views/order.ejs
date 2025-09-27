@@ -150,22 +150,34 @@
   }
 </style>
 
-<!-- ✅ クイック選択を反映するスクリプト -->
 <script>
-  document.querySelectorAll(".app-chip").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const app = btn.getAttribute("data-app");
-      const appSelect = document.getElementById("appSelect");
+  document.addEventListener("DOMContentLoaded", () => {
+    const appSelect = document.getElementById("appSelect");
 
-      if (appSelect) {
-        appSelect.value = app;
-        appSelect.dispatchEvent(new Event("change"));
-      }
+    // ==== クイック選択ボタンのクリック処理 ====
+    document.querySelectorAll(".app-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const app = btn.getAttribute("data-app");
 
-      // ハイライト処理
-      document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+        if (appSelect) {
+          appSelect.value = app;
+          appSelect.dispatchEvent(new Event("change")); // 種類更新
+        }
+
+        // ハイライト更新
+        document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
     });
+
+    // ==== 初期表示時に appSelect が選択済みなら対応ボタンをハイライト ====
+    if (appSelect && appSelect.value) {
+      const activeBtn = document.querySelector(`.app-chip[data-app="${appSelect.value}"]`);
+      if (activeBtn) {
+        document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
+        activeBtn.classList.add("active");
+      }
+    }
   });
 </script>
 
