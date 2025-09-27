@@ -424,6 +424,7 @@ router.get("/order", async (req, res) => {
   grouped,
   appOrder,
   selectedApp: req.query.app || "",
+  selectedType: req.query.type || "",  // ✅ 追加
   balance: Number(balance)  // 数値で渡す
 });
 
