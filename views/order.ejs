@@ -67,16 +67,25 @@
 <div class="mb-3">
   <label for="serviceSelect" class="form-label">サービスを選択（最終価格順）</label>
   <div class="select-wrap border border-3 border-info rounded">
-    <select class="form-select bg-dark text-light border-0" id="serviceSelect" name="serviceId" onchange="updatePrice()">
+    <select class="form-select bg-dark text-light border-0" 
+            id="serviceSelect" 
+            name="serviceId" 
+            onchange="updatePrice()">
       <option value="">先に種類を選んでください</option>
-      <% if (grouped[selectedApp] && grouped[selectedApp][selectedType]) { 
-           grouped[selectedApp][selectedType]
-           .sort((a, b) => a.rate - b.rate)  // ✅ 最終価格でソート
-           .forEach(s => { %>
-        <option value="<%= s.service %>" data-final-rate="<%= s.finalRate %>">
-  [ID:<%= s.service %>] <%= s.name %> （最終価格: <%= s.finalRate.toFixed(2) %>円/1000）
-</option>
-      <% }) } %>
+
+      <% if (typeof selectedApp !== "undefined" && 
+             typeof selectedType !== "undefined" && 
+             grouped[selectedApp] && 
+             grouped[selectedApp][selectedType]) { %>
+
+        <% grouped[selectedApp][selectedType]
+             .sort((a, b) => a.rate - b.rate) // ✅ 最終価格でソート
+             .forEach(s => { %>
+          <option value="<%= s.service %>" data-final-rate="<%= s.finalRate %>">
+            [ID:<%= s.service %>] <%= s.name %> 
+            （最終価格: <%= s.finalRate.toFixed(2) %>円/1000）
+          </option>
+        <% }) %>
     </select>
   </div>
   <div class="form-text text-secondary mt-1">「単価: xx円/1000」は最終価格です</div>
