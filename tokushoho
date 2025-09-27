@@ -1,0 +1,54 @@
+<% layout('layout') %>
+
+<div class="card bg-dark text-light p-4 shadow-lg border border-info">
+  <h2 class="text-info mb-4 text-center">特定商取引法に基づく表記</h2>
+
+  <div class="mb-3">
+    <p><strong>販売事業者：</strong> $tar.io（エスター）</p>
+    <p><strong>運営責任者：</strong> 前嶋 隆希</p>
+  </div>
+
+  <div class="mb-3">
+    <p><strong>所在地：</strong><br>
+      〒236-0052<br>
+      神奈川県横浜市金沢区富岡西1丁目55番11号
+    </p>
+    <p><strong>連絡先：</strong><br>
+      E-mail：<a href="mailto:star.company527@gmail.com" class="text-info">star.company527@gmail.com</a>
+    </p>
+  </div>
+
+  <div class="mb-3">
+    <p><strong>販売価格：</strong><br>
+      各サービスの注文ページに個別に記載しております。表示価格は消費税込みの金額です。
+    </p>
+    <p><strong>商品代金以外の必要料金：</strong><br>
+      なし（インターネット接続にかかる通信料はお客様のご負担となります）
+    </p>
+  </div>
+
+  <div class="mb-3">
+    <p><strong>お支払い方法：</strong><br>
+      クレジットカード決済（Stripe）をご利用いただけます。
+    </p>
+    <p><strong>お支払い時期：</strong><br>
+      ご入金いただいた金額は、アカウント残高として反映され、各種SNS運用サービスのご利用に充てていただけます。
+    </p>
+  </div>
+
+  <div class="mb-3">
+    <p><strong>商品の引渡し時期：</strong><br>
+      決済完了後、即時にシステムを通じてサービスを提供いたします。
+    </p>
+    <p><strong>返品・キャンセルについて：</strong><br>
+      デジタルサービスの特性上、提供開始後の返品・キャンセルには応じられません。<br>
+      ただし、システム障害など弊社に起因する不具合が認められる場合は、個別に対応いたします。
+    </p>
+  </div>
+
+  <hr class="border-info">
+
+  <p class="text-muted small mb-0">
+    本表記は「特定商取引に関する法律」第11条に基づき表示しています。
+  </p>
+</div>
