@@ -944,6 +944,13 @@ router.post("/reset/:token", async (req, res) => {
     res.send("サーバーエラーが発生しました。");
   }
 });
+
+// ================== 特商法ページ ==================
+router.get("/tokushoho", (req, res) => {
+  res.render("tokushoho", {
+    title: "特定商取引法に基づく表記"
+  });
+});
   
 // ================== パスワード変更（マイページ） ==================
 router.post("/change-password", async (req, res) => {
