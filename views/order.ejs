@@ -161,7 +161,7 @@
 
         if (appSelect) {
           appSelect.value = app;
-          appSelect.dispatchEvent(new Event("change")); // 種類更新
+          appSelect.dispatchEvent(new Event("change")); // 種類リストを更新
         }
 
         // ハイライト更新
@@ -170,12 +170,18 @@
       });
     });
 
-    // ==== 初期表示時に appSelect が選択済みなら対応ボタンをハイライト ====
+    // ==== 初期表示時 ====
     if (appSelect && appSelect.value) {
+      // 1. ボタンをハイライト
       const activeBtn = document.querySelector(`.app-chip[data-app="${appSelect.value}"]`);
       if (activeBtn) {
         document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
         activeBtn.classList.add("active");
+      }
+
+      // 2. 種類リストを更新（←これが抜けていた）
+      if (typeof updateTypes === "function") {
+        updateTypes();
       }
     }
   });
