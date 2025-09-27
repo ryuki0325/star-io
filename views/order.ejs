@@ -74,7 +74,7 @@
            .sort((a, b) => a.rate - b.rate)  // ✅ 最終価格でソート
            .forEach(s => { %>
         <option value="<%= s.service %>" data-final-rate="<%= s.finalRate %>">
-  [ID:<%= s.service %>] <%= s.name %> （最終価格: <%= s.finalRate.toFixed(2) %>円/1000）
+  [ID:<%= s.service %>] <%= s.name %> （単価: <%= s.finalRate.toFixed(2) %>円/1000）
 </option>
       <% }) } %>
     </select>
