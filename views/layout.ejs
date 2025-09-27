@@ -18,7 +18,8 @@ html, body {
   top: 0;
   left: 0;
   width: 220px;
-  min-height: 100vh;       /* PCでは固定 */
+  height: 100vh;             /* 通常ブラウザ用 */
+  height: calc(var(--vh, 1vh) * 100); /* iPhone Safari 用 */
   background-color: #000;
   transition: transform 0.3s ease;
   overflow-y: auto;
