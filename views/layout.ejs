@@ -7,11 +7,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
-
 /* ✅ 全ページ共通: メインコンテンツを中央寄せ */
 .main-content {
-  max-width: 900px;   /* 横幅を制限（お好みで調整） */
-  margin: 0 auto;     /* 中央寄せ */
+  max-width: 900px;
+  margin: 0 auto;      /* 中央寄せ */
+  padding: 0 1rem;     /* 横の余白（小さい画面用） */
 }
 
 html, body {
@@ -25,8 +25,8 @@ html, body {
   top: 0;
   left: 0;
   width: 220px;
-  height: 100vh;             /* 通常ブラウザ用 */
-  height: calc(var(--vh, 1vh) * 100); /* iPhone Safari 用 */
+  height: 100vh;                          /* 通常ブラウザ用 */
+  height: calc(var(--vh, 1vh) * 100);     /* iPhone Safari 用 */
   background-color: #000;
   transition: transform 0.3s ease;
   overflow-y: auto;
@@ -41,7 +41,7 @@ html, body {
 /* 📱 スマホ対応 */
 @media (max-width: 768px) {
   #sidebar {
-    position: absolute;      
+    position: absolute;
     height: calc(var(--vh, 1vh) * 100); /* iPhoneでも全画面高さを確保 */
   }
 
@@ -57,7 +57,7 @@ html, body {
 /* 💻 PC用 */
 @media (min-width: 769px) {
   .flex-grow-1 {
-    margin-left: 220px;    /* サイドバー分の余白 */
+    margin-left: 220px;   /* サイドバー分の余白 */
   }
 
   #sidebar.closed {
@@ -68,73 +68,73 @@ html, body {
 </head>
 <body class="bg-dark text-light">
 
- <!-- ✅ 開閉ボタン -->
+<!-- ✅ 開閉ボタン -->
 <button id="menu-toggle" class="btn btn-dark"
         style="position: fixed; top: 10px; left: 10px; z-index: 1100;">
   ☰
 </button>
-  <div class="d-flex">
 
- <!-- ✅ サイドバー -->
-<div id="sidebar" class="bg-black p-3 border-end">
+<div class="d-flex">
+  <!-- ✅ サイドバー -->
+  <div id="sidebar" class="bg-black p-3 border-end">
+    <!-- 小さな「閉じる」リンク -->
+    <small id="close-sidebar" class="text-white"
+           style="cursor:pointer; display:block; text-align:right; margin-bottom:8px;">
+      閉じる ✖
+    </small>
 
-  <!-- 小さな「閉じる」リンク -->
-  <small id="close-sidebar" class="text-white" 
-         style="cursor:pointer; display:block; text-align:right; margin-bottom:8px;">
-    閉じる ✖
-  </small>
+    <!-- サイト名＋アイコン -->
+    <h4 class="text-info mb-4 d-flex align-items-center justify-content-center">
+      <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
+      $tar.io
+    </h4>
 
-  <!-- サイト名＋アイコン -->
-  <h4 class="text-info mb-4 d-flex align-items-center justify-content-center">
-    <img src="/images/logo-icon.png" alt="Logo" width="28" height="28" class="me-2">
-    $tar.io
-  </h4>
+    <nav class="nav flex-column">
+      <a href="/" class="btn btn-outline-info mb-2">🏠 ホーム</a>
+      <a href="/order" class="btn btn-outline-info mb-2">🛒 新規注文</a>
+      <a href="/funds" class="btn btn-outline-info mb-2">💰 残高チャージ</a>
+      <a href="/mypage" class="btn btn-outline-info mb-2">👤 マイページ</a>
+      <a href="/contact" class="btn btn-outline-info mb-2">📩 お問い合わせ</a>
+      <a href="/orders" class="btn btn-outline-info mb-2">🧾 注文履歴</a>
 
-  <nav class="nav flex-column">
-    <a href="/" class="btn btn-outline-info mb-2">🏠 ホーム</a>
-    <a href="/order" class="btn btn-outline-info mb-2">🛒 新規注文</a>
-    <a href="/funds" class="btn btn-outline-info mb-2">💰 残高チャージ</a>
-    <a href="/mypage" class="btn btn-outline-info mb-2">👤 マイページ</a>
-    <a href="/contact" class="btn btn-outline-info mb-2">📩 お問い合わせ</a>
-    <a href="/orders" class="btn btn-outline-info mb-2">🧾 注文履歴</a>
+      <% if (typeof isStaff !== "undefined" && isStaff) { %>
+        <a href="/staff/dashboard" class="btn w-100 fw-bold mb-2"
+           style="background:#ffc107; border-color:#ffc107; color:#000;">
+          🛠️ スタッフ専用ページ
+        </a>
+      <% } %>
 
-    <% if (typeof isStaff !== "undefined" && isStaff) { %>
-      <a href="/staff/dashboard" class="btn w-100 fw-bold mb-2"
-         style="background:#ffc107; border-color:#ffc107; color:#000;">
-        🛠️ スタッフ専用ページ
-      </a>
-    <% } %>
+      <% if (user) { %>
+        <a href="/logout" class="btn btn-outline-danger mt-3">🚪 ログアウト</a>
+      <% } else { %>
+        <a href="/login" class="btn btn-outline-light mt-3">ログイン</a>
+        <a href="/signup" class="btn btn-outline-light mt-2">新規登録</a>
+      <% } %>
+    </nav>
+
+    <div class="mt-3">
+      <a href="/terms" class="btn btn-outline-info w-100">📜 利用規約 & SNS</a>
+    </div>
 
     <% if (user) { %>
-      <a href="/logout" class="btn btn-outline-danger mt-3">🚪 ログアウト</a>
-    <% } else { %>
-      <a href="/login" class="btn btn-outline-light mt-3">ログイン</a>
-      <a href="/signup" class="btn btn-outline-light mt-2">新規登録</a>
+      <div class="card bg-dark border-info text-info p-2 mt-4">
+        <p class="mb-0">現在の残高</p>
+        <p class="fw-bold mb-0"><%= Number(user.balance).toFixed(2) %> 円</p>
+      </div>
     <% } %>
-  </nav>
-
-  <div class="mt-3">
-    <a href="/terms" class="btn btn-outline-info w-100">📜 利用規約 & SNS</a>
   </div>
 
-  <% if (user) { %>
-    <div class="card bg-dark border-info text-info p-2 mt-4">
-      <p class="mb-0">現在の残高</p>
-      <p class="fw-bold mb-0"><%= Number(user.balance).toFixed(2) %> 円</p>
+  <!-- ✅ メインコンテンツ -->
+  <div class="flex-grow-1 p-4">
+    <div class="main-content">
+      <%- body %>
     </div>
-  <% } %>
-</div>
-
-<!-- ✅ メインコンテンツ -->
-<div class="flex-grow-1 p-4">
-  <div class="main-content">
-    <%- body %>
   </div>
 </div>
 
 <!-- ✅ 開閉用スクリプト -->
 <script>
-  // iPhone Safari の 100vh 問題対応
+  // iPhone Safari の 100vh 問題対策
   function updateVH() {
     const vh = window.innerHeight * 0.01;
     document.documentElement.style.setProperty('--vh', `${vh}px`);
