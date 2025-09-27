@@ -423,11 +423,13 @@ router.get("/order", async (req, res) => {
   title: "新規注文",
   grouped,
   appOrder,
-  selectedApp: req.query.app || "",
-  selectedType: req.query.type || "",  // ✅ 追加
+  // クエリで ?app=xxx が来ていればそれを使う。なければ最初のアプリをデフォルトに。
+  selectedApp: req.query.app || (appOrder.length > 0 ? appOrder[0] : ""),
+  // クエリで ?type=xxx が来ていればそれを使う。なければ空文字に。
+  selectedType: req.query.type || "",
   balance: Number(balance)  // 数値で渡す
 });
-
+    
   } catch (err) {
     console.error("注文ページ取得エラー:", err);
     res.status(500).send("ページを読み込めませんでした");
