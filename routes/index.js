@@ -410,20 +410,22 @@ router.get("/order", async (req, res) => {
       grouped[app][type].push(s);
     });
 
-    // --- 並べ替え処理 (安い順 & おすすめを先頭) ---
+    // --- 並べ替え処理 (おすすめを先頭 → その後は安い順) ---
 for (const app in grouped) {
   for (const type in grouped[app]) {
     let services = grouped[app][type];
 
-    // 1. 安い順に並べ替え
-    services.sort((a, b) => a.finalRate - b.finalRate);
+    services.sort((a, b) => {
+      // 👑おすすめは必ず最優先
+      const aRec = a.name.includes("👑おすすめ");
+      const bRec = b.name.includes("👑おすすめ");
 
-    // 2. おすすめを先頭に移動
-    const recommendedIndex = services.findIndex(s => s.is_recommended);
-    if (recommendedIndex !== -1) {
-      const [recommended] = services.splice(recommendedIndex, 1);
-      services.unshift(recommended);
-    }
+      if (aRec && !bRec) return -1; // a がおすすめ → 先頭
+      if (!aRec && bRec) return 1;  // b がおすすめ → 先頭
+
+      // どちらもおすすめ or どちらも通常なら料金で比較
+      return a.finalRate - b.finalRate;
+    });
 
     grouped[app][type] = services;
   }
