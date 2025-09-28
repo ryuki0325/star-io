@@ -410,6 +410,25 @@ router.get("/order", async (req, res) => {
       grouped[app][type].push(s);
     });
 
+    // --- 並べ替え処理 (安い順 & おすすめを先頭) ---
+for (const app in grouped) {
+  for (const type in grouped[app]) {
+    let services = grouped[app][type];
+
+    // 1. 安い順に並べ替え
+    services.sort((a, b) => a.finalRate - b.finalRate);
+
+    // 2. おすすめを先頭に移動
+    const recommendedIndex = services.findIndex(s => s.is_recommended);
+    if (recommendedIndex !== -1) {
+      const [recommended] = services.splice(recommendedIndex, 1);
+      services.unshift(recommended);
+    }
+
+    grouped[app][type] = services;
+  }
+}
+
     // --- アプリ順序を決定 ---
     const appOrder = Object.keys(grouped).sort((a, b) => {
       const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
