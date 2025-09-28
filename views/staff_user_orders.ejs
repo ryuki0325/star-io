@@ -10,9 +10,11 @@
         <div class="order-card border border-info rounded p-3 shadow-sm">
           <div class="d-flex justify-content-between">
             <span class="badge bg-info text-dark">注文ID: <%= order.id %></span>
-            <span class="badge bg-secondary">
-              📅 <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}) %>
-            </span>
+    <span class="badge bg-warning text-dark">商品ID: <%= order.service_id %></span> <!-- ←商品IDを追加 -->
+    <span class="badge bg-secondary">
+      📅 <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}) %>
+    </span>
+
           </div>
           <h6 class="mt-2 text-white"><%= order.service_name %></h6>
           <p class="mb-1">🔗 <a href="<%= order.link %>" target="_blank" class="text-info">リンク</a></p>
