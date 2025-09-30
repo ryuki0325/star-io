@@ -780,6 +780,7 @@ router.get("/contact", (req, res) => {
 router.post("/contact", async (req, res) => {
   const { category, subcategory, orderId, email, message } = req.body;
 
+  // 入力チェック
   if (!email || !message) {
     return res.render("contact", {
       title: "お問い合わせ",
@@ -788,20 +789,22 @@ router.post("/contact", async (req, res) => {
     });
   }
 
-  // Nodemailer設定
+  // Nodemailer設定 (SMTP)
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // SSL を利用
     auth: {
-      user: process.env.CONTACT_EMAIL,
-      pass: process.env.CONTACT_EMAIL_PASS,
+      user: process.env.CONTACT_EMAIL,      // 環境変数に保存した Gmail
+      pass: process.env.CONTACT_EMAIL_PASS, // アプリパスワード
     },
   });
 
   // 送信内容
   const mailOptions = {
-    from: process.env.CONTACT_EMAIL,
-    to: process.env.CONTACT_EMAIL,
-    replyTo: email,
+    from: process.env.CONTACT_EMAIL,   // 送信元
+    to: process.env.CONTACT_EMAIL,     // 自分宛
+    replyTo: email,                    // ユーザーのメールを返信先に
     subject: `【お問い合わせ】${category || "未選択"} - ${subcategory || "未選択"}`,
     text: `
 カテゴリ: ${category}
@@ -815,8 +818,10 @@ ${message}
   };
 
   try {
+    // メール送信
     await transporter.sendMail(mailOptions);
     console.log("✅ メール送信成功");
+
     return res.render("contact", {
       title: "お問い合わせ",
       success: "送信が完了しました！ご記入いただいた内容を確認いたします。",
@@ -824,6 +829,7 @@ ${message}
     });
   } catch (err) {
     console.error("❌ メール送信エラー:", err);
+
     return res.render("contact", {
       title: "お問い合わせ",
       success: null,
