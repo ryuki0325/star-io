@@ -792,13 +792,16 @@ router.post("/contact", async (req, res) => {
   // Nodemailer設定 (SMTP)
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // SSL を利用
+    port: 587,
+    secure: false, // SSL を利用
     auth: {
       user: process.env.CONTACT_EMAIL,      // 環境変数に保存した Gmail
       pass: process.env.CONTACT_EMAIL_PASS, // アプリパスワード
-    },
-  });
+      },
+  tls: {
+    rejectUnauthorized: false  // 証明書エラーを無視（必要なら）
+  }
+})
 
   // 送信内容
   const mailOptions = {
