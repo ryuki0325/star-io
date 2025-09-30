@@ -777,7 +777,7 @@ router.get("/contact", (req, res) => {
 });
 
 // ================== お問い合わせ送信 ==================
-router.post("/contact", (req, res) => {
+router.post("/contact", async (req, res) => {
   const { category, subcategory, orderId, email, message } = req.body;
 
   if (!email || !message) {
@@ -792,16 +792,16 @@ router.post("/contact", (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.CONTACT_EMAIL,       // Gmail アドレス
-      pass: process.env.CONTACT_EMAIL_PASS,  // アプリパスワード
+      user: process.env.CONTACT_EMAIL,
+      pass: process.env.CONTACT_EMAIL_PASS,
     },
   });
 
   // 送信内容
   const mailOptions = {
-    from: process.env.CONTACT_EMAIL,      // 送信元（Gmailアカウント）
-    to: process.env.CONTACT_EMAIL,        // 自分宛に送信
-    replyTo: email,                       // ユーザーが入力したメールを返信先に
+    from: process.env.CONTACT_EMAIL,
+    to: process.env.CONTACT_EMAIL,
+    replyTo: email,
     subject: `【お問い合わせ】${category || "未選択"} - ${subcategory || "未選択"}`,
     text: `
 カテゴリ: ${category}
@@ -811,26 +811,25 @@ router.post("/contact", (req, res) => {
 
 内容:
 ${message}
-    `
+    `,
   };
 
-  // メール送信
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("メール送信エラー:", err);
-      return res.render("contact", {
-        title: "お問い合わせ",
-        success: null,
-        error: "メール送信に失敗しました。"
-      });
-    }
-    console.log("メール送信成功:", info.response);
-    res.render("contact", {
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("✅ メール送信成功");
+    return res.render("contact", {
       title: "お問い合わせ",
       success: "送信が完了しました！ご記入いただいた内容を確認いたします。",
       error: null
     });
-  });
+  } catch (err) {
+    console.error("❌ メール送信エラー:", err);
+    return res.render("contact", {
+      title: "お問い合わせ",
+      success: null,
+      error: "メール送信に失敗しました。時間をおいて再度お試しください。"
+    });
+  }
 });
 
 // ================== マイページ ==================
