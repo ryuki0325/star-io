@@ -777,10 +777,9 @@ router.get("/contact", (req, res) => {
 });
 
 // ================== お問い合わせ送信 ==================
-router.post("/contact", async (req, res) => {
+router.post("/contact", (req, res) => {
   const { category, subcategory, orderId, email, message } = req.body;
 
-  // 入力チェック
   if (!email || !message) {
     return res.render("contact", {
       title: "お問い合わせ",
@@ -789,25 +788,20 @@ router.post("/contact", async (req, res) => {
     });
   }
 
-  // Nodemailer設定 (SMTP)
+  // Nodemailer設定
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // SSL を利用
+    service: "gmail",
     auth: {
-      user: process.env.CONTACT_EMAIL,      // 環境変数に保存した Gmail
-      pass: process.env.CONTACT_EMAIL_PASS, // アプリパスワード
-      },
-  tls: {
-    rejectUnauthorized: false  // 証明書エラーを無視（必要なら）
-  }
-})
+      user: process.env.CONTACT_EMAIL,       // Gmail アドレス
+      pass: process.env.CONTACT_EMAIL_PASS,  // アプリパスワード
+    },
+  });
 
   // 送信内容
   const mailOptions = {
-    from: process.env.CONTACT_EMAIL,   // 送信元
-    to: process.env.CONTACT_EMAIL,     // 自分宛
-    replyTo: email,                    // ユーザーのメールを返信先に
+    from: process.env.CONTACT_EMAIL,      // 送信元（Gmailアカウント）
+    to: process.env.CONTACT_EMAIL,        // 自分宛に送信
+    replyTo: email,                       // ユーザーが入力したメールを返信先に
     subject: `【お問い合わせ】${category || "未選択"} - ${subcategory || "未選択"}`,
     text: `
 カテゴリ: ${category}
@@ -817,28 +811,26 @@ router.post("/contact", async (req, res) => {
 
 内容:
 ${message}
-    `,
+    `
   };
 
-  try {
-    // メール送信
-    await transporter.sendMail(mailOptions);
-    console.log("✅ メール送信成功");
-
-    return res.render("contact", {
+  // メール送信
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error("メール送信エラー:", err);
+      return res.render("contact", {
+        title: "お問い合わせ",
+        success: null,
+        error: "メール送信に失敗しました。"
+      });
+    }
+    console.log("メール送信成功:", info.response);
+    res.render("contact", {
       title: "お問い合わせ",
       success: "送信が完了しました！ご記入いただいた内容を確認いたします。",
       error: null
     });
-  } catch (err) {
-    console.error("❌ メール送信エラー:", err);
-
-    return res.render("contact", {
-      title: "お問い合わせ",
-      success: null,
-      error: "メール送信に失敗しました。時間をおいて再度お試しください。"
-    });
-  }
+  });
 });
 
 // ================== マイページ ==================
