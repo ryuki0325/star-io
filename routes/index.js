@@ -106,21 +106,26 @@ router.post("/signup", (req, res) => {
 });
 
 // ================== ログイン / ログアウト ==================
+
+// ログインページ表示
 router.get("/login", (req, res) => {
   res.render("login", { title: "ログイン", error: null });
 });
 
-router.post("/login", async (req, res) => {   // ✅ async を付ける
+// ログイン処理
+router.post("/login", async (req, res) => {   // ← async 必須
   const { email, password } = req.body;
   const db = req.app.locals.db;
 
   try {
+    // ユーザーを検索
     const result = await db.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
-    const user = result.rows[0];  // 1件だけ取得
+    const user = result.rows[0];
 
+    // ユーザーが存在しない
     if (!user) {
       return res.render("login", { 
         title: "ログイン", 
@@ -128,6 +133,7 @@ router.post("/login", async (req, res) => {   // ✅ async を付ける
       });
     }
 
+    // パスワードチェック
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       return res.render("login", { 
@@ -140,12 +146,13 @@ router.post("/login", async (req, res) => {   // ✅ async を付ける
     req.session.userId = user.id;
     req.session.user = user;
 
-    // 管理者ログイン
+    // 管理者ログインの場合
     if (user.email === process.env.ADMIN_LOGIN_EMAIL) {
       req.session.isStaff = true;
       return res.redirect("/staff/dashboard");
     }
 
+    // 一般ユーザーはマイページへ
     res.redirect("/mypage");
   } catch (err) {
     console.error("DBエラー:", err);
@@ -156,20 +163,10 @@ router.post("/login", async (req, res) => {   // ✅ async を付ける
   }
 });
 
+// ログアウト処理
 router.get("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/login");
-  });
-});
-
-// ================== 残高チャージ ==================
-router.get("/funds", (req, res) => {
-  if (!req.session.userId) return res.redirect("/login");
-  res.render("funds", { 
-    title: "残高チャージ", 
-    user: req.session.user,
-    balance: req.session.user?.balance || 0,
-    error: null
   });
 });
 
