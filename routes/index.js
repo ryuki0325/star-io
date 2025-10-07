@@ -33,7 +33,7 @@ const emojiMap = {
 };
 
 // ================== ホーム ==================
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {   // ← async を追加！
   const apps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
   const db = req.app.locals.db;
 
@@ -61,29 +61,30 @@ router.get("/", (req, res) => {
   }
 
   try {
-  const result = await db.query(
-    "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
-    [req.session.userId]
-  );
-  const orders = result.rows;
+    const result = await db.query(
+      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
+      [req.session.userId]
+    );
+    const orders = result.rows;
 
-  res.render("dashboard", { 
-    title: "ホーム", 
-    apps, 
-    user: req.session.user, 
-    orders,
-    emojiMap
-  });
-} catch (err) {
-  console.error("❌ ダッシュボード注文取得エラー:", err);
-  res.render("dashboard", { 
-    title: "ホーム", 
-    apps, 
-    user: req.session.user, 
-    orders: [],
-    emojiMap
-  });
-}
+    res.render("dashboard", { 
+      title: "ホーム", 
+      apps, 
+      user: req.session.user, 
+      orders,
+      emojiMap
+    });
+  } catch (err) {
+    console.error("❌ ダッシュボード注文取得エラー:", err);
+    res.render("dashboard", { 
+      title: "ホーム", 
+      apps, 
+      user: req.session.user, 
+      orders: [],
+      emojiMap
+    });
+  }
+});
 
 // ================== サインアップ ==================
 router.get("/signup", (req, res) => {
