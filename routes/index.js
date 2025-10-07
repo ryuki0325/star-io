@@ -317,35 +317,39 @@ router.get("/order", async (req, res) => {
   }
 
   // --- サービスをグループ化 ---
-  const grouped = {};
-  (raw || []).forEach(s => {
-    let app = normalizeAppName(s.name);
-    const type = detectType(s.name);
+const grouped = {};
+(raw || []).forEach(s => {
+  let app = normalizeAppName(s.name);
+  const type = detectType(s.name);
 
-    // 除外条件
-    if (
-      excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
-      /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
-      /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
-    ) {
-      return;
-    }
+  // 除外条件
+  if (
+    excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
+    /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
+    /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
+  ) {
+    return;
+  }
 
-    if (!grouped[app]) grouped[app] = {};
-    if (!grouped[app][type]) grouped[app][type] = [];
+  if (!grouped[app]) grouped[app] = {};
+  if (!grouped[app][type]) grouped[app][type] = [];
 
-    // ✅ 基本レートを保持 & 倍率を適用
-  // 1ドルあたりの円換算レート（envから取得、デフォルト150円）
-     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+  // ✅ 基本レートを保持 & 倍率を適用
+  const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
 
-   // APIのレート（ドル建て）をまず円換算
-      s.baseRate = parseFloat(s.rate) * JPY_RATE;
+  // APIのレート（ドル建て）をまず円換算
+  const baseRate = parseFloat(s.rate) * JPY_RATE;
 
-// 段階的な倍率を適用
-      s.rate = applyPriceMultiplier(s.baseRate);
+  // 段階的な倍率を適用
+  const finalRate = applyPriceMultiplier(baseRate);
 
-    grouped[app][type].push(s);
+  grouped[app][type].push({
+    service: s.service,
+    name: s.name,
+    baseRate,
+    finalRate  // ✅ ここで渡す
   });
+});
 
   // --- アプリ順序を決定 ---
   const appOrder = Object.keys(grouped).sort((a, b) => {
