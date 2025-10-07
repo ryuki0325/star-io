@@ -26,28 +26,33 @@
     <option value="twitter">Twitter</option>
   </select>
 
-  <!-- 種類を選択 -->
-  <h5>サービスを選択</h5>
-<select class="form-select mb-3">
-  <option selected>選択してください</option>
-  <option>アカウント運用コンサルティング - 10,000円</option>
-  <option>投稿改善アドバイス - 15,000円</option>
-  <option>広告キャンペーン最適化 - 20,000円</option>
-  <option>SNSアカウント分析レポート（1回） - 8,000円</option>
-  <option>マーケティング戦略提案（資料作成付き） - 30,000円</option>
+  <!-- サービス選択 -->
+<h5>サービスを選択</h5>
+<select id="serviceSelect" class="form-select mb-3">
+  <option value="0" selected>選択してください</option>
+  <option value="5000">アカウント運用コンサルティング - 5,000円</option>
+  <option value="2000">投稿改善アドバイス - 2,000円</option>
+  <option value="11000">広告キャンペーン最適化 - 11,000円</option>
+  <option value="8000">SNSアカウント分析レポート（1回） - 8,000円</option>
+  <option value="17000">マーケティング戦略提案（資料作成付き） - 17,000円</option>
 </select>
 
-<!-- URL入力欄 -->
-<h5>対象アカウント / 投稿URL</h5>
-<input type="url" class="form-control mb-3" placeholder="例: https://www.instagram.com/your_account/">
-
-  <!-- 数量 -->
-  <h5>数量</h5>
-  <input type="number" class="form-control mb-3" min="1" value="1">
-
-  <!-- 金額 -->
-  <p class="mb-3">💰 金額: <span class="text-success">0 円</span></p>
-
-  <!-- ボタン -->
-  <button class="btn btn-info w-100">注文する</button>
+<!-- 数量入力 -->
+<div class="mb-3">
+  <label for="quantity">数量</label>
+  <input type="number" id="quantity" class="form-control" min="1" value="1">
 </div>
+
+<!-- 合計金額表示 -->
+<p>💰 金額: <span id="totalPrice">0</span> 円</p>
+
+<script>
+  function calcTotal() {
+    const price = parseInt(document.getElementById("serviceSelect").value || 0, 10);
+    const qty = parseInt(document.getElementById("quantity").value || 0, 10);
+    document.getElementById("totalPrice").textContent = (price * qty).toLocaleString();
+  }
+
+  document.getElementById("serviceSelect").addEventListener("change", calcTotal);
+  document.getElementById("quantity").addEventListener("input", calcTotal);
+</script>
