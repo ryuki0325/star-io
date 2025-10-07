@@ -60,17 +60,30 @@ router.get("/", (req, res) => {
     });
   }
 
-  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [req.session.userId], (err, orders) => {
-    if (err) orders = [];
-    res.render("dashboard", { 
-      title: "ホーム", 
-      apps, 
-      user: req.session.user, 
-      orders,
-      emojiMap
-    });
+  try {
+  const result = await db.query(
+    "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
+    [req.session.userId]
+  );
+  const orders = result.rows;
+
+  res.render("dashboard", { 
+    title: "ホーム", 
+    apps, 
+    user: req.session.user, 
+    orders,
+    emojiMap
   });
-});
+} catch (err) {
+  console.error("❌ ダッシュボード注文取得エラー:", err);
+  res.render("dashboard", { 
+    title: "ホーム", 
+    apps, 
+    user: req.session.user, 
+    orders: [],
+    emojiMap
+  });
+}
 
 // ================== サインアップ ==================
 router.get("/signup", (req, res) => {
@@ -97,34 +110,50 @@ router.get("/login", (req, res) => {
   res.render("login", { title: "ログイン", error: null });
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {   // ✅ async を付ける
   const { email, password } = req.body;
   const db = req.app.locals.db;
 
-  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
-    if (err) {
-      console.error("DBエラー:", err);
-      return res.render("login", { title: "ログイン", error: "サーバーエラーが発生しました。" });
-    }
+  try {
+    const result = await db.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    const user = result.rows[0];  // 1件だけ取得
+
     if (!user) {
-      return res.render("login", { title: "ログイン", error: "ユーザーが存在しません。" });
+      return res.render("login", { 
+        title: "ログイン", 
+        error: "ユーザーが存在しません。" 
+      });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.render("login", { title: "ログイン", error: "メールアドレスまたはパスワードが間違っています。" });
+      return res.render("login", { 
+        title: "ログイン", 
+        error: "メールアドレスまたはパスワードが間違っています。" 
+      });
     }
 
+    // ✅ セッション保存
     req.session.userId = user.id;
     req.session.user = user;
 
+    // 管理者ログイン
     if (user.email === process.env.ADMIN_LOGIN_EMAIL) {
       req.session.isStaff = true;
       return res.redirect("/staff/dashboard");
     }
 
     res.redirect("/mypage");
-  });
+  } catch (err) {
+    console.error("DBエラー:", err);
+    return res.render("login", { 
+      title: "ログイン", 
+      error: "サーバーエラーが発生しました。" 
+    });
+  }
 });
 
 router.get("/logout", (req, res) => {
