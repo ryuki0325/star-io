@@ -9,6 +9,10 @@ const smm = require("../lib/smmClient");
 // 優先アプリ
 const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch", "Facebook"];
 
+// 除外アプリ
+const excludedApps = [
+];
+
 // 絵文字マップ
 const emojiMap = {
   TikTok: "🎵",
