@@ -46,6 +46,10 @@
 <!-- 合計金額表示 -->
 <p>💰 金額: <span id="totalPrice">0</span> 円</p>
 
+<!-- ボタン -->
+  <button class="btn btn-info w-100">注文する</button>
+</div>
+
 <script>
   function calcTotal() {
     const price = parseInt(document.getElementById("serviceSelect").value || 0, 10);
