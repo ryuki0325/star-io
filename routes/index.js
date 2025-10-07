@@ -6,18 +6,12 @@ const crypto = require("crypto");
 const router = express.Router();
 const smm = require("../lib/smmClient");
 
-// 👑 おすすめサービスIDを.envから読み込み
-const recommendedServices = (process.env.RECOMMENDED_SERVICES || "")
-  .split(",")
-  .map(id => parseInt(id.trim(), 10))
-  .filter(id => !isNaN(id));
-
 // 優先アプリ
 const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch"];
 
 // 除外アプリ
 const excludedApps = [
-  "------------","Article","Blog","CNTOKEN","Cancel","Category",
+  "------------","Article","Blog","CNTOKEN","Cancel","Refill","Category",
   "CoinsGods","DA30＋","DA50＋","DA70＋","EDU","EMERGENCY","Exploit",
   "Forum","FreshCoins","Keyword","Kick","Kick.com","LOCO.GG","Likee",
   "Mentimeter.com","MixCloud","Mixed","PinterestPremium","Quora","Rnal",
@@ -25,16 +19,30 @@ const excludedApps = [
   "The","Tidal","Trovo","Wiki"
 ];
 
+// 絵文字マップ
+const emojiMap = {
+  TikTok: "🎵",
+  Instagram: "📸",
+  YouTube: "▶️",
+  Twitter: "🐦",
+  Spotify: "🎧",
+  Telegram: "✉️",
+  Twitch: "🎮",
+  Facebook: "📘",
+  Reddit: "👽"
+};
+
 // ================== ホーム ==================
-router.get("/", async (req, res) => {
+router.get("/", (req, res) => {
   const apps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
   const db = req.app.locals.db;
 
+  // アイコンマップ
   const emojiMap = {
     TikTok: "🎵",
     Instagram: "📸",
     YouTube: "▶️",
-    Twitter: "🐦",
+    Twitter: "🐦", // Xは🐦か✖️でもOK
     Spotify: "🎧",
     Telegram: "✈️",
     Twitch: "🎮",
@@ -52,97 +60,59 @@ router.get("/", async (req, res) => {
     });
   }
 
-  try {
-    const result = await db.query(
-      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
-      [req.session.userId]
-    );
-    return res.render("dashboard", { 
+  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [req.session.userId], (err, orders) => {
+    if (err) orders = [];
+    res.render("dashboard", { 
       title: "ホーム", 
       apps, 
       user: req.session.user, 
-      orders: result.rows,
+      orders,
       emojiMap
     });
-  } catch (e) {
-    console.error("ホーム取得エラー:", e);
-    return res.render("dashboard", { 
-      title: "ホーム", 
-      apps, 
-      user: req.session.user, 
-      orders: [],
-      emojiMap
-    });
-  }
+  });
 });
-
 
 // ================== サインアップ ==================
 router.get("/signup", (req, res) => {
   res.render("signup", { title: "新規登録", error: null });
 });
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", (req, res) => {
   const { email, password } = req.body;
   const db = req.app.locals.db;
   const hash = bcrypt.hashSync(password, 10);
 
-  try {
-    const result = await db.query(
-      "INSERT INTO users (email, password_hash, balance) VALUES ($1, $2, $3) RETURNING id",
-      [email, hash, 0]
-    );
-
-    const userId = result.rows[0].id;
-    req.session.userId = userId;
-    req.session.user = { id: userId, email, balance: 0 };
-
-    res.redirect("/mypage");
-
-  } catch (err) {
-    if (err.code === "23505") {
-      return res.render("signup", {
-        title: "新規登録",
-        error: "既にアカウントが存在します。"
-      });
+  db.run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [email, hash], function(err) {
+    if (err) {
+      return res.render("signup", { title: "新規登録", error: "登録に失敗しました: " + err.message });
     }
-    console.error("サインアップエラー:", err);
-    res.render("signup", {
-      title: "新規登録",
-      error: "登録に失敗しました。もう一度お試しください。"
-    });
-  }
+    req.session.userId = this.lastID;
+    req.session.user = { id: this.lastID, email, balance: 0 };
+    res.redirect("/mypage");
+  });
 });
-
 
 // ================== ログイン / ログアウト ==================
 router.get("/login", (req, res) => {
   res.render("login", { title: "ログイン", error: null });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", (req, res) => {
   const { email, password } = req.body;
+  const db = req.app.locals.db;
 
-  try {
-    const result = await req.app.locals.db.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
-    );
-    const user = result.rows[0];
-
+  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+    if (err) {
+      console.error("DBエラー:", err);
+      return res.render("login", { title: "ログイン", error: "サーバーエラーが発生しました。" });
+    }
     if (!user) {
-      return res.render("login", {
-        title: "ログイン",
-        error: "ユーザーが存在しません。"
-      });
+      return res.render("login", { title: "ログイン", error: "ユーザーが存在しません。" });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.render("login", {
-        title: "ログイン",
-        error: "メールアドレスまたはパスワードが間違っています。"
-      });
+      return res.render("login", { title: "ログイン", error: "メールアドレスまたはパスワードが間違っています。" });
     }
 
     req.session.userId = user.id;
@@ -154,13 +124,7 @@ router.post("/login", async (req, res) => {
     }
 
     res.redirect("/mypage");
-  } catch (err) {
-    console.error("ログインエラー:", err);
-    res.render("login", {
-      title: "ログイン",
-      error: "サーバーエラーが発生しました。"
-    });
-  }
+  });
 });
 
 router.get("/logout", (req, res) => {
@@ -170,40 +134,23 @@ router.get("/logout", (req, res) => {
 });
 
 // ================== 残高チャージ ==================
-router.get("/funds", async (req, res) => {
+router.get("/funds", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
-  const db = req.app.locals.db;
-
-  try {
-    // DBから最新の残高を取得
-    const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
-    const balance = result.rows[0] ? Number(result.rows[0].balance) : 0;
-
-    // セッションの残高も最新化
-    req.session.user.balance = balance;
-
-    res.render("funds", { 
-      title: "残高チャージ", 
-      user: req.session.user,
-      balance,   // ← DBの最新値
-      error: null
-    });
-  } catch (err) {
-    console.error("残高取得エラー:", err);
-    res.render("funds", { 
-      title: "残高チャージ", 
-      user: req.session.user,
-      balance: req.session.user?.balance || 0,
-      error: "残高を取得できませんでした"
-    });
-  }
+  res.render("funds", { 
+    title: "残高チャージ", 
+    user: req.session.user,
+    balance: req.session.user?.balance || 0,
+    error: null
+  });
 });
 
 // ================== 通常の（ダミー）チャージ処理 ==================
-router.post("/funds", async (req, res) => {
+router.post("/funds", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
+
   const db = req.app.locals.db;
-  const addAmount = parseInt(req.body.amount, 10);
+  const { amount } = req.body;
+  const addAmount = parseInt(amount, 10);
 
   if (isNaN(addAmount) || addAmount <= 0) {
     return res.render("funds", { 
@@ -214,20 +161,26 @@ router.post("/funds", async (req, res) => {
     });
   }
 
-  try {
-    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [addAmount, req.session.userId]);
-    const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
-    req.session.user = result.rows[0];
-    return res.redirect("/mypage");
-  } catch (e) {
-    return res.render("funds", { 
-      title: "残高チャージ", 
-      user: req.session.user, 
-      balance: req.session.user?.balance || 0,
-      error: "残高更新に失敗しました。" 
-    });
-  }
+  db.run(
+    "UPDATE users SET balance = balance + ? WHERE id = ?",
+    [addAmount, req.session.userId],
+    (err) => {
+      if (err) {
+        return res.render("funds", { 
+          title: "残高チャージ", 
+          user: req.session.user, 
+          balance: req.session.user?.balance || 0,
+          error: "残高更新に失敗しました。" 
+        });
+      }
+      db.get("SELECT * FROM users WHERE id = ?", [req.session.userId], (err2, user) => {
+        if (!err2 && user) req.session.user = user;
+        res.redirect("/mypage");
+      });
+    }
+  );
 });
+
 // ================== Stripe決済 ==================
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
@@ -254,8 +207,8 @@ router.post("/create-checkout-session", async (req, res) => {
         },
       ],
       mode: "payment",
-      success_url: `https://star-io-hc9c.onrender.com/funds/success?amount=${amount}`,
-      cancel_url: `https://star-io-hc9c.onrender.com/funds/cancel`,
+      success_url: `http://localhost:3000/funds/success?amount=${amount}`,
+      cancel_url: `http://localhost:3000/funds/cancel`,
       metadata: {
         userId: req.session.userId.toString(),
         amount: amount.toString()
@@ -270,36 +223,18 @@ router.post("/create-checkout-session", async (req, res) => {
 });
 
 // ====== Stripe チャージの成功ページ ======
-router.get("/funds/success", async (req, res) => {
-  if (!req.session.userId) return res.redirect("/login");
+router.get("/funds/success", (req, res) => {
   const db = req.app.locals.db;
   const chargeAmount = req.query.amount ? parseInt(req.query.amount, 10) : null;
 
-  try {
-    // DBから最新のユーザー情報を取得
-    const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
-    const row = result.rows[0];
-
-    if (row) {
-      // ✅ セッションのユーザー情報を最新化
-      req.session.user = row;
-    }
-
-    return res.render("funds-success", {
+  db.get("SELECT balance FROM users WHERE id = ?", [req.session.userId], (err, row) => {
+    res.render("funds-success", {
       title: "チャージ成功",
       user: req.session.user,
-      chargeAmount,
-      balance: row ? Math.floor(row.balance) : 0
+      chargeAmount: chargeAmount,
+      balance: row ? row.balance : 0
     });
-  } catch (err) {
-    console.error("funds/success エラー:", err);
-    return res.render("funds-success", {
-      title: "チャージ成功",
-      user: req.session.user,
-      chargeAmount,
-      balance: 0
-    });
-  }
+  });
 });
 
 // ====== Stripe チャージのキャンセルページ ======
@@ -310,151 +245,108 @@ router.get("/funds/cancel", (req, res) => {
   });
 });
 
-// ================== 共通ユーティリティ関数 ==================
-function normalizeAppName(name) {
-  if (!name) return "";
-  let app = name.toLowerCase();
-
-  if (app.includes("tiktok")) return "TikTok";
-  if (app.includes("instagram")) return "Instagram";
-  if (app.includes("youtube")) return "YouTube";
-  if (app.includes("twitter") || app.includes("x ")) return "Twitter";
-  if (app.includes("spotify")) return "Spotify";
-  if (app.includes("telegram")) return "Telegram";
-  if (app.includes("twitch")) return "Twitch";
-  if (app.includes("facebook")) return "Facebook";
-  if (app.includes("reddit")) return "Reddit";
-
-  return name.trim();
-}
-
-function detectType(name) {
-  if (!name) return "その他";
-  const lower = name.toLowerCase();
-  if (lower.includes("view") || lower.includes("play")) return "再生数";
-  if (lower.includes("like") || lower.includes("heart")) return "いいね";
-  if (lower.includes("follower") || lower.includes("subs")) return "フォロワー";
-  if (lower.includes("comment")) return "コメント";
-  if (lower.includes("share")) return "シェア";
-  return "その他";
-}
-
-function applyPriceMultiplier(base) {
-  const multiplier = parseFloat(process.env.PRICE_MULTIPLIER || "1.1");
-  return Math.round(base * multiplier * 100) / 100;
-}
-
-function applyMultiplier(rate) {
-  let result;
-  if (rate <= 100) {
-    result = rate * parseFloat(process.env.MULTIPLIER_LOW);
-  } else if (rate <= 1000) {
-    result = rate * parseFloat(process.env.MULTIPLIER_MID);
-  } else if (rate <= 1600) {
-    result = rate * parseFloat(process.env.MULTIPLIER_HIGH);
-  } else {
-    result = rate * parseFloat(process.env.MULTIPLIER_TOP);
-  }
-  return Math.round(result * 100) / 100; // ✅ 小数第2位まで
-}
-
 // ================== 注文ページ ==================
 router.get("/order", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
+  const raw = await smm.getServices();
 
-  try {
-    // ✅ SMMFlareのサービス一覧を取得
-    const raw = await smm.getServices();
+  // --- アプリ名を正規化する関数 ---
+  function normalizeAppName(name) {
+    const app = (name.split(" ")[0] || "その他").trim().toLowerCase();
+    if (["tiktok","tik tok"].includes(app)) return "TikTok";
+    if (["instagram","insta"].includes(app)) return "Instagram";
+    if (["twitter","x"].includes(app)) return "Twitter";
+    if (["youtube","yt"].includes(app)) return "YouTube";
+    if (["spotify"].includes(app)) return "Spotify";
+    if (["telegram"].includes(app)) return "Telegram";
+    if (["twitch"].includes(app)) return "Twitch";
+    if (["facebook","fb"].includes(app)) return "Facebook";
+    if (["reddit"].includes(app)) return "Reddit";
+    return app.charAt(0).toUpperCase() + app.slice(1);
+  }
 
-    // ✅ ユーザー残高をDBから取得
-    const result = await req.app.locals.db.query(
-      "SELECT balance FROM users WHERE id = $1",
-      [req.session.userId]
-    );
-    const balance = result.rows[0] ? parseFloat(result.rows[0].balance) : 0;
-    
-    // --- サービスをグループ化 ---
-    const grouped = {};
-    (raw || []).forEach(s => {
-      const app = normalizeAppName(s.name);
-      const type = detectType(s.name);
+  // --- サービス種別を判定する関数 ---
+  function detectType(name) {
+    const lower = name.toLowerCase();
+    if (lower.includes("follower")) return "フォロワー";
+    if (lower.includes("like")) return "いいね";
+    if (lower.includes("view")) return "再生数";
+    if (lower.includes("comment")) return "コメント";
+    if (lower.includes("share")) return "シェア";
+    return "その他";
+  }
 
-      // 除外条件
-      if (
-        excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
-        /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
-        /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
-      ) {
-        return;
-      }
+  // --- 環境変数ベースの倍率ロジック ---
+  function applyPriceMultiplier(price) {
+    if (price <= 100) {
+      return price * parseFloat(process.env.MULTIPLIER_LOW || 2.0);
+    } else if (price <= 1000) {
+      return price * parseFloat(process.env.MULTIPLIER_MID || 1.5);
+    } else if (price <= 1600) {
+      return price * parseFloat(process.env.MULTIPLIER_HIGH || 1.3);
+    } else {
+      return price * parseFloat(process.env.MULTIPLIER_TOP || 1.1);
+    }
+  }
 
-      if (!grouped[app]) grouped[app] = {};
-      if (!grouped[app][type]) grouped[app][type] = [];
+  // --- サービスをグループ化 ---
+  const grouped = {};
+  (raw || []).forEach(s => {
+    let app = normalizeAppName(s.name);
+    const type = detectType(s.name);
 
-      // 1ドルあたりの円換算レート
-      const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+    // 除外条件
+    if (
+      excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
+      /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
+      /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
+    ) {
+      return;
+    }
 
-      // APIレートを円換算
+    if (!grouped[app]) grouped[app] = {};
+    if (!grouped[app][type]) grouped[app][type] = [];
+
+    // ✅ 基本レートを保持 & 倍率を適用
+  // 1ドルあたりの円換算レート（envから取得、デフォルト150円）
+     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+
+   // APIのレート（ドル建て）をまず円換算
       s.baseRate = parseFloat(s.rate) * JPY_RATE;
 
-      // 倍率を適用
-      s.finalRate = applyMultiplier(s.baseRate);
+// 段階的な倍率を適用
+      s.rate = applyPriceMultiplier(s.baseRate);
 
-      // 👑おすすめ判定
-      const serviceId = parseInt(s.service, 10);
-      if (recommendedServices.includes(serviceId)) {
-        s.name = "👑おすすめ " + s.name;
-      }
+    grouped[app][type].push(s);
+  });
 
-      // まとめて格納
-      grouped[app][type].push(s);
-    });
+  // --- アプリ順序を決定 ---
+  const appOrder = Object.keys(grouped).sort((a, b) => {
+    const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
+    const bP = priorityApps.includes(b) ? priorityApps.indexOf(b) : Infinity;
+    if (aP !== bP) return aP - bP;
+    return a.localeCompare(b);
+  });
 
-    // --- 並べ替え処理 (おすすめを先頭 → その後は安い順) ---
-for (const app in grouped) {
-  for (const type in grouped[app]) {
-    let services = grouped[app][type];
-
-    services.sort((a, b) => {
-      // 👑おすすめは必ず最優先
-      const aRec = a.name.includes("👑おすすめ");
-      const bRec = b.name.includes("👑おすすめ");
-
-      if (aRec && !bRec) return -1; // a がおすすめ → 先頭
-      if (!aRec && bRec) return 1;  // b がおすすめ → 先頭
-
-      // どちらもおすすめ or どちらも通常なら料金で比較
-      return a.finalRate - b.finalRate;
-    });
-
-    grouped[app][type] = services;
-  }
-}
-
-    // --- アプリ順序を決定 ---
-    const appOrder = Object.keys(grouped).sort((a, b) => {
-      const aP = priorityApps.includes(a) ? priorityApps.indexOf(a) : Infinity;
-      const bP = priorityApps.includes(b) ? priorityApps.indexOf(b) : Infinity;
-      if (aP !== bP) return aP - bP;
-      return a.localeCompare(b);
-    });
-
-    // --- レンダリング ---
-    res.render("order", {
-  title: "新規注文",
-  grouped,
-  appOrder,
-  // クエリで ?app=xxx が来ていればそれを使う。なければ最初のアプリをデフォルトに。
-  selectedApp: req.query.app || (appOrder.length > 0 ? appOrder[0] : ""),
-  // クエリで ?type=xxx が来ていればそれを使う。なければ空文字に。
-  selectedType: req.query.type || "",
-  balance: Number(balance)  // 数値で渡す
+  // --- レンダリング ---
+  res.render("order", {
+    title: "新規注文",
+    grouped,
+    appOrder,
+    selectedApp: req.query.app || "",
+    balance: Number(req.session.user?.balance || 0).toFixed(2)
+  });
 });
-    
-  } catch (err) {
-    console.error("注文ページ取得エラー:", err);
-    res.status(500).send("ページを読み込めませんでした");
-  }
+
+// ================== ギフトコード (ページ) ==================
+router.get("/coupon", (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  res.render("coupon", {
+    title: "ギフトコード",
+    user: req.session.user,
+    success: null,
+    error: null
+  });
 });
 
 // ================== ギフトコード (ページ) ==================
@@ -469,7 +361,7 @@ router.get("/coupon", (req, res) => {
 });
 
 // ================== ギフトコード適用 (POST /redeem) ==================
-router.post("/redeem", async (req, res) => {
+router.post("/redeem", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const db = req.app.locals.db;
@@ -484,12 +376,9 @@ router.post("/redeem", async (req, res) => {
     });
   }
 
-  try {
-    // クーポン検索
-    const result = await db.query("SELECT * FROM coupons WHERE code = $1", [code]);
-    const coupon = result.rows[0];
-
-    if (!coupon) {
+  // クーポン検索
+  db.get("SELECT * FROM coupons WHERE code = ?", [code], (err, coupon) => {
+    if (err || !coupon) {
       return res.render("coupon", {
         title: "ギフトコード",
         user: req.session.user,
@@ -509,7 +398,7 @@ router.post("/redeem", async (req, res) => {
     }
 
     // 使用回数上限チェック
-    if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
+    if (coupon.max_uses != null && coupon.used_count >= coupon.max_uses) {
       return res.render("coupon", {
         title: "ギフトコード",
         user: req.session.user,
@@ -519,60 +408,91 @@ router.post("/redeem", async (req, res) => {
     }
 
     // 重複使用チェック
-    const redeemed = await db.query(
-      "SELECT id FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2",
-      [coupon.id, req.session.userId]
+    db.get(
+      "SELECT id FROM coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
+      [coupon.id, req.session.userId],
+      (e2, redeemed) => {
+        if (e2) {
+          return res.render("coupon", {
+            title: "ギフトコード",
+            user: req.session.user,
+            success: null,
+            error: "サーバーエラーが発生しました。"
+          });
+        }
+        if (redeemed) {
+          return res.render("coupon", {
+            title: "ギフトコード",
+            user: req.session.user,
+            success: null,
+            error: "このコードは既に使用済みです。"
+          });
+        }
+
+        // 残高付与処理
+        db.run(
+          "UPDATE users SET balance = balance + ? WHERE id = ?",
+          [coupon.discount_value, req.session.userId],
+          (e3) => {
+            if (e3) {
+              return res.render("coupon", {
+                title: "ギフトコード",
+                user: req.session.user,
+                success: null,
+                error: "残高更新に失敗しました。"
+              });
+            }
+
+            db.run(
+              "UPDATE coupons SET used_count = used_count + 1 WHERE id = ?",
+              [coupon.id],
+              (e4) => {
+                if (e4) {
+                  return res.render("coupon", {
+                    title: "ギフトコード",
+                    user: req.session.user,
+                    success: null,
+                    error: "コード適用処理に失敗しました。"
+                  });
+                }
+
+                db.run(
+                  "INSERT INTO coupon_redemptions (coupon_id, user_id) VALUES (?, ?)",
+                  [coupon.id, req.session.userId],
+                  (e5) => {
+                    if (e5) {
+                      return res.render("coupon", {
+                        title: "ギフトコード",
+                        user: req.session.user,
+                        success: null,
+                        error: "履歴の保存に失敗しました。"
+                      });
+                    }
+
+                    // 最新のユーザー情報を取得してセッション更新
+                    db.get(
+                      "SELECT * FROM users WHERE id = ?",
+                      [req.session.userId],
+                      (e6, freshUser) => {
+                        if (!e6 && freshUser) req.session.user = freshUser;
+
+                        res.render("coupon", {
+                          title: "ギフトコード",
+                          user: req.session.user,
+                          success: `🎁 コード「${code}」を適用しました！ ${coupon.discount_value} 円が残高に追加されました。`,
+                          error: null
+                        });
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
     );
-    if (redeemed.rows.length > 0) {
-      return res.render("coupon", {
-        title: "ギフトコード",
-        user: req.session.user,
-        success: null,
-        error: "このコードは既に使用済みです。"
-      });
-    }
-
-    // トランザクション開始
-    await db.query("BEGIN");
-
-    // 残高付与
-    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
-      coupon.discount_value,
-      req.session.userId,
-    ]);
-
-    // クーポン使用回数更新
-    await db.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = $1", [coupon.id]);
-
-    // 履歴保存
-    await db.query("INSERT INTO coupon_redemptions (coupon_id, user_id) VALUES ($1, $2)", [
-      coupon.id,
-      req.session.userId,
-    ]);
-
-    // コミット
-    await db.query("COMMIT");
-
-    // 最新のユーザー情報を取得してセッション更新
-    const freshUser = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
-    if (freshUser.rows[0]) req.session.user = freshUser.rows[0];
-
-    res.render("coupon", {
-      title: "ギフトコード",
-      user: req.session.user,
-      success: `🎁 コード「${code}」を適用しました！ ${coupon.discount_value} 円が残高に追加されました。`,
-      error: null
-    });
-  } catch (err) {
-    console.error("ギフトコード適用エラー:", err);
-    await db.query("ROLLBACK"); // エラー時はロールバック
-    res.render("coupon", {
-      title: "ギフトコード",
-      user: req.session.user,
-      success: null,
-      error: "コード適用中にエラーが発生しました。"
-    });
-  }
+  });
 });
 
 // ================== 注文処理 ==================
@@ -582,20 +502,6 @@ router.post("/order", async (req, res) => {
   const { serviceId, link, quantity } = req.body;
   const db = req.app.locals.db;
 
-  // ✅ 数量チェック
-  const qty = parseInt(quantity, 10);
-  if (!qty || qty <= 0) {
-    return res.render("order", {
-      title: "新規注文",
-      user: req.session.user,
-      balance: 0,
-      grouped: {},
-      appOrder: [],
-      selectedApp: "",
-      error: "数量が不正です。1以上の数字を入力してください。"
-    });
-  }
-
   // ✅ 利益倍率ロジック
   function applyPriceMultiplier(price) {
     const low  = parseFloat(process.env.MULTIPLIER_LOW  || "2.0");
@@ -603,155 +509,92 @@ router.post("/order", async (req, res) => {
     const high = parseFloat(process.env.MULTIPLIER_HIGH || "1.3");
     const top  = parseFloat(process.env.MULTIPLIER_TOP  || "1.1");
 
-    if (price <= 100) return price * low;
-    if (price <= 1000) return price * mid;
-    if (price <= 1600) return price * high;
-    return price * top;
+    if (price <= 100) {
+      return price * low;
+    } else if (price <= 1000) {
+      return price * mid;
+    } else if (price <= 1600) {
+      return price * high;
+    } else {
+      return price * top;
+    }
   }
 
   try {
-    // ✅ SMMFlareサービス取得
+    // ✅ サービス情報を取得
     const services = await smm.getServices();
     const svc = services.find(s => s.service == serviceId);
     if (!svc) return res.send("サービスが見つかりません");
 
-    // ✅ サービスをアプリごとにグループ化
-    const grouped = {};
-    services.forEach(s => {
-      const app = s.category || "その他";
-      if (!grouped[app]) grouped[app] = [];
-      grouped[app].push(s);
-    });
-    const appOrder = Object.keys(grouped);
-
-    // ✅ 単価計算
+    // ✅ 為替レートを反映
     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+
+    // ✅ ドル価格を円換算 → 倍率適用
     const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
 
-    // ✅ 金額計算（小数第2位で四捨五入）
-    let amount = (unitRate / 1000) * qty;
-    amount = Math.round(amount * 100) / 100;
+    // ✅ 最終金額 (円)
+    const amount = (unitRate / 1000) * Number(quantity);
 
-    // ✅ 残高取得
-    const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
-    const balance = parseFloat(result.rows[0]?.balance || "0");
+    // 残高確認
+    db.get("SELECT balance FROM users WHERE id = ?", [req.session.userId], async (err, row) => {
+      if (err) return res.send("サーバーエラー");
+      const balance = parseFloat(row?.balance || 0);
 
-    // ✅ 残高不足チェック
-   if (balance < amount) {
-  // サービス一覧を再取得
-  const services = await smm.getServices();
-  const { grouped, appOrder } = buildCatalog(services);
+      if (balance < amount) {
+        return res.send("残高不足です");
+      }
 
-  return res.status(400).render("order", {
-    title: "新規注文",
-    user: req.session.user,
-    balance: Number(balance),   // ← 数値のまま渡す
-    grouped,
-    appOrder,
-    selectedApp: normalizeAppName(svc.name),
-    error: "❌ 残高が不足しています。チャージしてください。"
-  });
-}
+      // ✅ 残高を減算
+      db.run(
+        "UPDATE users SET balance = balance - ? WHERE id = ?",
+        [amount, req.session.userId],
+        async (err2) => {
+          if (err2) return res.send("残高更新に失敗しました");
 
-    // ✅ トランザクション開始
-    await db.query("BEGIN");
+          try {
+            // ✅ SMMFlare APIに注文送信
+            const orderRes = await smm.createOrder(serviceId, link, quantity);
 
-    try {
-      // 残高を減算
-      await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [
-        amount,
-        req.session.userId,
-      ]);
+            // ✅ 注文をDB保存
+            db.run(
+              "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES (?,?,?,?,?,?)",
+              [req.session.userId, serviceId, svc.name, link, quantity, amount],
+              function (err3) {
+                if (err3) return res.send("注文保存に失敗しました");
 
-      // ✅ SMMFlare APIに注文送信
-      const orderRes = await smm.createOrder(serviceId, link, qty);
-
-      // ✅ 注文をDBに保存
-      await db.query(
-        "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES ($1, $2, $3, $4, $5, $6)",
-        [
-          req.session.userId,
-          serviceId,
-          svc.name,
-          link,
-          qty,                              // 整数
-          parseFloat(amount.toFixed(2))     // 小数第2位まで
-        ]
+                res.render("order_success", {
+                  title: "注文完了",
+                  orderId: orderRes.order,     // APIから返ってきた注文ID
+                  serviceName: svc.name,
+                  quantity,
+                  amount: amount.toFixed(2),   // 表示は小数2桁
+                  balance: (balance - amount).toFixed(2) // 更新後残高
+                });
+              }
+            );
+          } catch (apiErr) {
+            console.error("SMMFlare注文エラー:", apiErr.response?.data || apiErr.message);
+            res.send("注文送信に失敗しました");
+          }
+        }
       );
-
-      await db.query("COMMIT");
-
-      // ✅ 成功画面を表示
-      return res.render("order_success", {
-        title: "注文完了",
-        orderId: orderRes.order,
-        serviceName: svc.name,
-        quantity: qty,
-        amount: amount.toFixed(2),
-        balance: (balance - amount).toFixed(2)
-      });
-
-    } catch (apiErr) {
-      await db.query("ROLLBACK");
-      console.error("SMMFlare注文エラー:", apiErr.response?.data || apiErr.message);
-      return res.send("注文送信に失敗しました");
-    }
-
+    });
   } catch (e) {
     console.error("注文処理エラー:", e.message);
-    return res.send("サーバーエラー");
+    res.send("サーバーエラー");
   }
 });
 
-// ================== サービス一覧をアプリごとにまとめる関数 ==================
-function buildCatalog(raw) {
-  const grouped = {};
-
-  (raw || []).forEach(s => {
-    const app  = normalizeAppName(s.name);
-    const type = detectType(s.name);
-
-    if (
-      excludedApps.includes(app) ||
-      /^[0-9]+$/.test(app) ||
-      /^[-]+$/.test(app) ||
-      /\p{Emoji}/u.test(app) ||
-      /^[A-Z]{2,3}$/i.test(app) ||
-      /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
-    ) return;
-
-    if (!grouped[app]) grouped[app] = {};
-    if (!grouped[app][type]) grouped[app][type] = [];
-
-    // JPY換算
-    const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
-    s.baseRate = parseFloat(s.rate) * JPY_RATE;
-    s.rate = applyPriceMultiplier(s.baseRate);
-
-    const serviceId = parseInt(s.service, 10);
-    if (recommendedServices.includes(serviceId)) {
-      s.name = "👑おすすめ " + s.name;
-    }
-
-    grouped[app][type].push(s);
-  });
-
-  return { grouped, appOrder: Object.keys(grouped) };
-}
-
 // ================== 注文履歴 ==================
-router.get("/orders", async (req, res) => {
+router.get("/orders", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
+  const db = req.app.locals.db;
 
-  try {
-    const result = await req.app.locals.db.query(
-      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
-      [req.session.userId]
-    );
+  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [req.session.userId], (err, orders) => {
+    if (err) orders = [];
 
-    const orders = result.rows.map(order => {
+    orders = orders.map(order => {
       if (order.created_at) {
-        // created_at を JST 表示に変換
         const date = new Date(order.created_at + " UTC");
         order.created_at_local = date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
       } else {
@@ -761,10 +604,7 @@ router.get("/orders", async (req, res) => {
     });
 
     res.render("orders", { title: "注文履歴", orders });
-  } catch (err) {
-    console.error("注文履歴取得エラー:", err);
-    res.render("orders", { title: "注文履歴", orders: [] });
-  }
+  });
 });
 
 // ================== お問い合わせページ ==================
@@ -834,50 +674,49 @@ ${message}
 });
 
 // ================== マイページ ==================
-router.get("/mypage", async (req, res) => {
+router.get("/mypage", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   const db = req.app.locals.db;
 
-  try {
-    const result = await db.query(
-      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
-      [req.session.userId]
-    );
-
-    const orders = result.rows || [];
-
-    res.render("mypage", { 
-      title: "マイページ", 
-      user: req.session.user,
-      orders,
-      pwdError: null,   // ✅ カンマの位置に注意
-      pwdSuccess: null  // ✅ 最後はカンマ無し
+  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 10", [req.session.userId], (err, orders) => {
+    if (err) orders = [];
+  res.render("mypage", { 
+  title: "マイページ", 
+  user: req.session.user,
+  orders,
+  pwdError: null,    // ✅ カンマの位置に注意
+  pwdSuccess: null   // ✅ 最後の行はカンマ無し
     });
-  } catch (err) {
-    console.error("マイページ取得エラー:", err);
-    res.render("mypage", { 
-      title: "マイページ", 
-      user: req.session.user,
-      orders: [],
-      pwdError: null,
-      pwdSuccess: null
-    });
-  }
+  });
 });
+
+
+
+
+
+// ================== 審査用デモ商品ページ ==================
+router.get("/products", (req, res) => {
+  res.render("products", { title: "サービス内容 | $tar.io" });
+});
+
+
+
+
+
+
 // ================== 利用規約ページ ==================
 router.get("/terms", (req, res) => {
   res.render("terms", { title: "利用規約 & SNSリンク" });
 });
 
-// ================== パスワードリセット ==================
-
+// ================== パスワードリセット==================
 // パスワードリセット（入力ページ）
 router.get("/forgot", (req, res) => {
   res.render("forgot", { title: "パスワードリセット", error: null, success: null });
 });
 
 // パスワードリセット（リンク送信）
-router.post("/forgot", async (req, res) => {
+router.post("/forgot", (req, res) => {
   const { email } = req.body;
   const db = req.app.locals.db;
 
@@ -885,99 +724,77 @@ router.post("/forgot", async (req, res) => {
   const token = crypto.randomBytes(20).toString("hex");
   const expires = Date.now() + 3600000; // 1時間有効
 
-  try {
-    // ✅ ユーザー更新
-    const result = await db.query(
-      "UPDATE users SET reset_token=$1, reset_expires=$2 WHERE email=$3 RETURNING id",
-      [token, expires, email]
-    );
+  db.run(
+    "UPDATE users SET reset_token=?, reset_expires=? WHERE email=?",
+    [token, expires, email],
+    function (err) {
+      if (err || this.changes === 0) {
+        return res.render("forgot", { title: "パスワードリセット", error: "メールアドレスが見つかりません。", success: null });
+      }
 
-    if (result.rowCount === 0) {
-      return res.render("forgot", { title: "パスワードリセット", error: "メールアドレスが見つかりません。", success: null });
+      // リセットURL作成
+      const resetUrl = `http://localhost:3000/reset/${token}`;
+
+      // Gmail経由で送信
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.CONTACT_EMAIL,
+          pass: process.env.CONTACT_EMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.CONTACT_EMAIL,
+        to: email,  // ユーザー宛に送信
+        subject: "パスワードリセット",
+        text: `以下のリンクから新しいパスワードを設定してください。\n\n${resetUrl}\n\n有効期限は1時間です。`
+      };
+
+      transporter.sendMail(mailOptions, (err) => {
+        if (err) {
+          console.error("メール送信エラー:", err);
+          return res.render("forgot", { title: "パスワードリセット", error: "メール送信に失敗しました。", success: null });
+        }
+        res.render("forgot", { title: "パスワードリセット", error: null, success: "リセット用リンクをメールで送信しました！" });
+      });
     }
-
-    // リセットURL作成
-    const resetUrl = `https://star-io-hc9c.onrender.com/reset/${token}`;
-
-    // Gmail経由で送信
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.CONTACT_EMAIL,
-        pass: process.env.CONTACT_EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.CONTACT_EMAIL,
-      to: email,
-      subject: "パスワードリセット",
-      text: `以下のリンクから新しいパスワードを設定してください。\n\n${resetUrl}\n\n有効期限は1時間です。`
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.render("forgot", { title: "パスワードリセット", error: null, success: "リセット用リンクをメールで送信しました！" });
-
-  } catch (err) {
-    console.error("パスワードリセットエラー:", err);
-    res.render("forgot", { title: "パスワードリセット", error: "処理中にエラーが発生しました。", success: null });
-  }
+  );
 });
 
 // リセットページ表示
-router.get("/reset/:token", async (req, res) => {
+router.get("/reset/:token", (req, res) => {
   const db = req.app.locals.db;
-  try {
-    const result = await db.query(
-      "SELECT * FROM users WHERE reset_token=$1 AND reset_expires > $2",
-      [req.params.token, Date.now()]
-    );
-
-    if (result.rowCount === 0) {
-      return res.send("リンクが無効または期限切れです。");
+  db.get(
+    "SELECT * FROM users WHERE reset_token=? AND reset_expires > ?",
+    [req.params.token, Date.now()],
+    (err, user) => {
+      if (!user) return res.send("リンクが無効または期限切れです。");
+      res.render("reset", { title: "新しいパスワード設定", token: req.params.token, error: null });
     }
-
-    res.render("reset", { title: "新しいパスワード設定", token: req.params.token, error: null });
-
-  } catch (err) {
-    console.error("リセットページエラー:", err);
-    res.send("サーバーエラーが発生しました。");
-  }
+  );
 });
 
 // 新しいパスワード保存
-router.post("/reset/:token", async (req, res) => {
+router.post("/reset/:token", (req, res) => {
   const { password } = req.body;
   const hash = bcrypt.hashSync(password, 10);
   const db = req.app.locals.db;
 
-  try {
-    const result = await db.query(
-      "UPDATE users SET password_hash=$1, reset_token=NULL, reset_expires=NULL WHERE reset_token=$2 AND reset_expires > $3 RETURNING id",
-      [hash, req.params.token, Date.now()]
-    );
-
-    if (result.rowCount === 0) {
-      return res.send("リセットに失敗しました。リンクが無効かもしれません。");
+  db.run(
+    "UPDATE users SET password_hash=?, reset_token=NULL, reset_expires=NULL WHERE reset_token=? AND reset_expires > ?",
+    [hash, req.params.token, Date.now()],
+    function (err) {
+      if (err || this.changes === 0) {
+        return res.send("リセットに失敗しました。リンクが無効かもしれません。");
+      }
+      res.redirect("/login");
     }
-
-    res.redirect("/login");
-  } catch (err) {
-    console.error("パスワード保存エラー:", err);
-    res.send("サーバーエラーが発生しました。");
-  }
+  );
 });
 
-// ================== 特商法ページ ==================
-router.get("/tokushoho", (req, res) => {
-  res.render("tokushoho", {
-    title: "特定商取引法に基づく表記"
-  });
-});
-  
 // ================== パスワード変更（マイページ） ==================
-router.post("/change-password", async (req, res) => {
+router.post("/change-password", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const { currentPassword, newPassword, confirmPassword } = req.body;
@@ -994,12 +811,8 @@ router.post("/change-password", async (req, res) => {
     });
   }
 
-  try {
-    // ✅ ユーザー取得
-    const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
-    const user = result.rows[0];
-
-    if (!user) {
+  db.get("SELECT * FROM users WHERE id = ?", [req.session.userId], async (err, user) => {
+    if (err || !user) {
       return res.render("mypage", {
         title: "マイページ",
         user: req.session.user,
@@ -1009,7 +822,7 @@ router.post("/change-password", async (req, res) => {
       });
     }
 
-    // ✅ 現在のパスワード確認
+    // 現在のパスワード確認
     const match = await bcrypt.compare(currentPassword, user.password_hash);
     if (!match) {
       return res.render("mypage", {
@@ -1021,43 +834,30 @@ router.post("/change-password", async (req, res) => {
       });
     }
 
-    // ✅ 新しいパスワードを保存
+    // 新しいパスワードを保存
     const hash = bcrypt.hashSync(newPassword, 10);
-    const updateResult = await db.query(
-      "UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id",
-      [hash, req.session.userId]
-    );
+    db.run("UPDATE users SET password_hash=? WHERE id=?", [hash, req.session.userId], (e2) => {
+      if (e2) {
+        return res.render("mypage", {
+          title: "マイページ",
+          user: req.session.user,
+          orders: [],
+          pwdError: "パスワード更新に失敗しました。",
+          pwdSuccess: null
+        });
+      }
 
-    if (updateResult.rowCount === 0) {
-      return res.render("mypage", {
+      res.render("mypage", {
         title: "マイページ",
         user: req.session.user,
         orders: [],
-        pwdError: "パスワード更新に失敗しました。",
-        pwdSuccess: null
+        pwdError: null,
+        pwdSuccess: "✅ パスワードを変更しました！"
       });
-    }
-
-    // ✅ 成功レスポンス
-    res.render("mypage", {
-      title: "マイページ",
-      user: req.session.user,
-      orders: [],
-      pwdError: null,
-      pwdSuccess: "✅ パスワードを変更しました！"
     });
-
-  } catch (err) {
-    console.error("パスワード変更エラー:", err);
-    res.render("mypage", {
-      title: "マイページ",
-      user: req.session.user,
-      orders: [],
-      pwdError: "サーバーエラーが発生しました。",
-      pwdSuccess: null
-    });
-  }
+  });
 });
+
 
 
 module.exports = router;
