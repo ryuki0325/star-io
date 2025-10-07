@@ -11,12 +11,11 @@ const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "T
 
 // 除外アプリ
 const excludedApps = [
-  "------------","Article","Blog","CNTOKEN","Cancel","Refill","Category",
+  "------------","Article",
   "CoinsGods","DA30＋","DA50＋","DA70＋","EDU","EMERGENCY","Exploit",
-  "Forum","FreshCoins","Keyword","Kick","Kick.com","LOCO.GG","Likee",
-  "Mentimeter.com","MixCloud","Mixed","PinterestPremium","Quora","Rnal",
-  "Reverbenation","Reverbnation","S1","S2","Shazam","Shopee","Social",
-  "The","Tidal","Trovo","Wiki"
+  "Forum","FreshCoins","Keyword","Kick","Kick.com","LOCO.GG",
+  "Mentimeter.com","MixCloud","PinterestPremium","Quora",
+  "Reverbenation","Reverbnation","S1","S2","Shazam","Shopee","Social","Tidal","Trovo","Wiki"
 ];
 
 // 絵文字マップ
