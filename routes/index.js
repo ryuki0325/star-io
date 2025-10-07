@@ -7,16 +7,7 @@ const router = express.Router();
 const smm = require("../lib/smmClient");
 
 // 優先アプリ
-const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch"];
-
-// 除外アプリ
-const excludedApps = [
-  "------------","Article",
-  "CoinsGods","DA30＋","DA50＋","DA70＋","EDU","EMERGENCY","Exploit",
-  "Forum","FreshCoins","Keyword","Kick","Kick.com","LOCO.GG",
-  "Mentimeter.com","MixCloud","PinterestPremium","Quora",
-  "Reverbenation","Reverbnation","S1","S2","Shazam","Shopee","Social","Tidal","Trovo","Wiki"
-];
+const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch", "Facebook"];
 
 // 絵文字マップ
 const emojiMap = {
