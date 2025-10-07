@@ -361,6 +361,7 @@ router.get("/order", async (req, res) => {
     grouped,
     appOrder,
     selectedApp: req.query.app || "",
+    selectedType: req.query.type || "",
     balance: Number(req.session.user?.balance || 0) // 数値で渡す
   });
 })
