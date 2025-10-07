@@ -361,9 +361,9 @@ router.get("/order", async (req, res) => {
     grouped,
     appOrder,
     selectedApp: req.query.app || "",
-    balance: Number(req.session.user?.balance || 0).toFixed(2)
+    balance: Number(req.session.user?.balance || 0) // 数値で渡す
   });
-});
+})
 
 // ================== ギフトコード (ページ) ==================
 router.get("/coupon", (req, res) => {
