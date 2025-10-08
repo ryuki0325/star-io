@@ -85,20 +85,49 @@ router.get("/signup", (req, res) => {
   res.render("signup", { title: "新規登録", error: null });
 });
 
-router.post("/signup", (req, res) => {
+router.post("/signup", async (req, res) => {   // ← ✅ async を追加！
   const { email, password } = req.body;
   const db = req.app.locals.db;
-  const hash = bcrypt.hashSync(password, 10);
 
   try {
-  await db.query("INSERT INTO users (email, password_hash) VALUES ($1, $2)", [email, hash]);
-  const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-  const user = result.rows[0];
-  req.session.userId = user.id;
-  req.session.user = { id: user.id, email: user.email, balance: user.balance || 0 };
-  res.redirect("/mypage");
-} catch (err) {
-  return res.render("signup", { title: "新規登録", error: "登録に失敗しました: " + err.message });
+    // ✅ パスワードをハッシュ化
+    const hash = await bcrypt.hash(password, 10);
+
+    // ✅ 同じメールが既に登録されていないかチェック
+    const existing = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (existing.rows.length > 0) {
+      return res.render("signup", { 
+        title: "新規登録", 
+        error: "このメールアドレスは既に登録されています。" 
+      });
+    }
+
+    // ✅ 新規登録
+    await db.query("INSERT INTO users (email, password_hash, balance) VALUES ($1, $2, $3)", [
+      email,
+      hash,
+      0  // 初期残高0円
+    ]);
+
+    // ✅ 登録直後のユーザー情報を取得
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = result.rows[0];
+
+    // ✅ セッションに保存
+    req.session.userId = user.id;
+    req.session.user = { id: user.id, email: user.email, balance: user.balance || 0 };
+
+    console.log("✅ 新規登録成功:", user.email);
+
+    // ✅ マイページへ
+    res.redirect("/mypage");
+
+  } catch (err) {
+    console.error("❌ サインアップエラー:", err);
+    return res.render("signup", { 
+      title: "新規登録", 
+      error: "登録に失敗しました: " + err.message 
+    });
   }
 });
 
