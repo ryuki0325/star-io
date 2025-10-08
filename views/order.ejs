@@ -38,6 +38,19 @@
     </div>
   </div>
 
+<!-- 絞り込みオプション -->
+<div class="filter-sort">
+  <label for="sortSelect">並び替え:</label>
+  <select id="sortSelect" onchange="applySort()">
+    <option value="default">おすすめ順</option>
+    <option value="low">💰 安い順</option>
+    <option value="high">💸 高い順</option>
+    <option value="instant">⚡ 即時開始順</option>
+    <option value="refill">🔁 リフィル保証付き</option>
+    <option value="popular">💎 人気順</option>
+  </select>
+</div>
+
     <!-- ==== アプリ選択 ==== -->
     <div class="mb-3">
       <label for="appSelect" class="form-label">アプリを選択</label>
