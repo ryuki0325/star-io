@@ -2,6 +2,9 @@ require("dotenv").config();
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const smm = require("../lib/smmClient");
+const express = require("express");
+const router = express.Router();
+const bcrypt = require("bcrypt");
 
 // 優先アプリ
 const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch", "Facebook"];
@@ -99,8 +102,6 @@ router.post("/signup", (req, res) => {
 
 // ================== ログイン / ログアウト ==================
 const bcrypt = require("bcrypt");
-const express = require("express");
-const router = express.Router();
 
 // ================== ログインページ ==================
 router.get("/login", (req, res) => {
