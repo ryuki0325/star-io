@@ -697,12 +697,14 @@ router.post("/contact", (req, res) => {
 
   // Nodemailer設定
   const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.CONTACT_EMAIL,       // Gmail アドレス
-      pass: process.env.CONTACT_EMAIL_PASS,  // アプリパスワード
-    },
-  });
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.CONTACT_EMAIL,
+    pass: process.env.CONTACT_EMAIL_PASS,
+  },
+});
 
   // 送信内容
   const mailOptions = {
