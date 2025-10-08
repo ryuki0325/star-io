@@ -201,7 +201,7 @@ router.get("/logout", (req, res) => {
 module.exports = router;
 
 // ================== 通常の（ダミー）チャージ処理 ==================
-router.post("/funds", (req, res) => {
+router.post("/funds", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const db = req.app.locals.db;
@@ -209,32 +209,36 @@ router.post("/funds", (req, res) => {
   const addAmount = parseInt(amount, 10);
 
   if (isNaN(addAmount) || addAmount <= 0) {
-    return res.render("funds", { 
-      title: "残高チャージ", 
-      user: req.session.user, 
+    return res.render("funds", {
+      title: "残高チャージ",
+      user: req.session.user,
       balance: req.session.user?.balance || 0,
-      error: "正しい金額を入力してください。" 
+      error: "正しい金額を入力してください。"
     });
   }
 
-  db.run(
-    "UPDATE users SET balance = balance + ? WHERE id = ?",
-    [addAmount, req.session.userId],
-    (err) => {
-      if (err) {
-        return res.render("funds", { 
-          title: "残高チャージ", 
-          user: req.session.user, 
-          balance: req.session.user?.balance || 0,
-          error: "残高更新に失敗しました。" 
-        });
-      }
-      db.get("SELECT * FROM users WHERE id = ?", [req.session.userId], (err2, user) => {
-        if (!err2 && user) req.session.user = user;
-        res.redirect("/mypage");
-      });
-    }
-  );
+  try {
+    // 残高を加算
+    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      addAmount,
+      req.session.userId
+    ]);
+
+    // 最新のユーザー情報を取得してセッションを更新
+    const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    const user = result.rows[0];
+    if (user) req.session.user = user;
+
+    res.redirect("/mypage");
+  } catch (err) {
+    console.error("残高更新エラー:", err);
+    res.render("funds", {
+      title: "残高チャージ",
+      user: req.session.user,
+      balance: req.session.user?.balance || 0,
+      error: "残高更新に失敗しました。"
+    });
+  }
 });
 
 // ================== Stripe決済 ==================
@@ -422,7 +426,7 @@ router.get("/coupon", (req, res) => {
 });
 
 // ================== ギフトコード適用 (POST /redeem) ==================
-router.post("/redeem", (req, res) => {
+router.post("/redeem", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const db = req.app.locals.db;
@@ -437,9 +441,12 @@ router.post("/redeem", (req, res) => {
     });
   }
 
-  // クーポン検索
-  db.get("SELECT * FROM coupons WHERE code = ?", [code], (err, coupon) => {
-    if (err || !coupon) {
+  try {
+    // ✅ クーポン検索
+    const couponResult = await db.query("SELECT * FROM coupons WHERE code = $1", [code]);
+    const coupon = couponResult.rows[0];
+
+    if (!coupon) {
       return res.render("coupon", {
         title: "ギフトコード",
         user: req.session.user,
@@ -448,7 +455,7 @@ router.post("/redeem", (req, res) => {
       });
     }
 
-    // 有効期限チェック
+    // ✅ 有効期限チェック
     if (coupon.valid_until && new Date(coupon.valid_until) < new Date()) {
       return res.render("coupon", {
         title: "ギフトコード",
@@ -458,103 +465,68 @@ router.post("/redeem", (req, res) => {
       });
     }
 
-    // 使用回数上限チェック
+    // ✅ 使用回数上限チェック
     if (coupon.max_uses != null && coupon.used_count >= coupon.max_uses) {
       return res.render("coupon", {
         title: "ギフトコード",
         user: req.session.user,
         success: null,
-        error: "このコードは既に使用上限に達しています。"
+        error: "このコードは使用上限に達しています。"
       });
     }
 
-    // 重複使用チェック
-    db.get(
-      "SELECT id FROM coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
-      [coupon.id, req.session.userId],
-      (e2, redeemed) => {
-        if (e2) {
-          return res.render("coupon", {
-            title: "ギフトコード",
-            user: req.session.user,
-            success: null,
-            error: "サーバーエラーが発生しました。"
-          });
-        }
-        if (redeemed) {
-          return res.render("coupon", {
-            title: "ギフトコード",
-            user: req.session.user,
-            success: null,
-            error: "このコードは既に使用済みです。"
-          });
-        }
-
-        // 残高付与処理
-        db.run(
-          "UPDATE users SET balance = balance + ? WHERE id = ?",
-          [coupon.discount_value, req.session.userId],
-          (e3) => {
-            if (e3) {
-              return res.render("coupon", {
-                title: "ギフトコード",
-                user: req.session.user,
-                success: null,
-                error: "残高更新に失敗しました。"
-              });
-            }
-
-            db.run(
-              "UPDATE coupons SET used_count = used_count + 1 WHERE id = ?",
-              [coupon.id],
-              (e4) => {
-                if (e4) {
-                  return res.render("coupon", {
-                    title: "ギフトコード",
-                    user: req.session.user,
-                    success: null,
-                    error: "コード適用処理に失敗しました。"
-                  });
-                }
-
-                db.run(
-                  "INSERT INTO coupon_redemptions (coupon_id, user_id) VALUES (?, ?)",
-                  [coupon.id, req.session.userId],
-                  (e5) => {
-                    if (e5) {
-                      return res.render("coupon", {
-                        title: "ギフトコード",
-                        user: req.session.user,
-                        success: null,
-                        error: "履歴の保存に失敗しました。"
-                      });
-                    }
-
-                    // 最新のユーザー情報を取得してセッション更新
-                    db.get(
-                      "SELECT * FROM users WHERE id = ?",
-                      [req.session.userId],
-                      (e6, freshUser) => {
-                        if (!e6 && freshUser) req.session.user = freshUser;
-
-                        res.render("coupon", {
-                          title: "ギフトコード",
-                          user: req.session.user,
-                          success: `🎁 コード「${code}」を適用しました！ ${coupon.discount_value} 円が残高に追加されました。`,
-                          error: null
-                        });
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
-      }
+    // ✅ 重複使用チェック
+    const redemptionCheck = await db.query(
+      "SELECT id FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2",
+      [coupon.id, req.session.userId]
     );
-  });
+    if (redemptionCheck.rows.length > 0) {
+      return res.render("coupon", {
+        title: "ギフトコード",
+        user: req.session.user,
+        success: null,
+        error: "このコードは既に使用済みです。"
+      });
+    }
+
+    // ✅ 残高付与処理
+    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      coupon.discount_value,
+      req.session.userId
+    ]);
+
+    // ✅ 使用回数更新
+    await db.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = $1", [coupon.id]);
+
+    // ✅ 使用履歴登録
+    await db.query("INSERT INTO coupon_redemptions (coupon_id, user_id) VALUES ($1, $2)", [
+      coupon.id,
+      req.session.userId
+    ]);
+
+    // ✅ 最新ユーザー情報を再取得してセッション更新
+    const userResult = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    if (userResult.rows[0]) req.session.user = userResult.rows[0];
+
+    // ✅ 成功メッセージ表示
+    res.render("coupon", {
+      title: "ギフトコード",
+      user: req.session.user,
+      success: `🎁 コード「${code}」を適用しました！ ${coupon.discount_value} 円が残高に追加されました。`,
+      error: null
+    });
+
+  } catch (err) {
+    console.error("❌ ギフトコード処理エラー:", err);
+    res.render("coupon", {
+      title: "ギフトコード",
+      user: req.session.user,
+      success: null,
+      error: "サーバーエラーが発生しました。"
+    });
+  }
 });
+
 
 // ================== 注文処理 ==================
 router.post("/order", async (req, res) => {
@@ -570,19 +542,14 @@ router.post("/order", async (req, res) => {
     const high = parseFloat(process.env.MULTIPLIER_HIGH || "1.3");
     const top  = parseFloat(process.env.MULTIPLIER_TOP  || "1.1");
 
-    if (price <= 100) {
-      return price * low;
-    } else if (price <= 1000) {
-      return price * mid;
-    } else if (price <= 1600) {
-      return price * high;
-    } else {
-      return price * top;
-    }
+    if (price <= 100) return price * low;
+    else if (price <= 1000) return price * mid;
+    else if (price <= 1600) return price * high;
+    else return price * top;
   }
 
   try {
-    // ✅ サービス情報を取得
+    // ✅ SMMFlareサービスリストを取得
     const services = await smm.getServices();
     const svc = services.find(s => s.service == serviceId);
     if (!svc) return res.send("サービスが見つかりません");
@@ -596,67 +563,64 @@ router.post("/order", async (req, res) => {
     // ✅ 最終金額 (円)
     const amount = (unitRate / 1000) * Number(quantity);
 
-    // 残高確認
-    db.get("SELECT balance FROM users WHERE id = ?", [req.session.userId], async (err, row) => {
-      if (err) return res.send("サーバーエラー");
-      const balance = parseFloat(row?.balance || 0);
+    // ✅ 残高を確認
+    const balanceResult = await db.query(
+      "SELECT balance FROM users WHERE id = $1",
+      [req.session.userId]
+    );
 
-      if (balance < amount) {
-        return res.send("残高不足です");
-      }
+    const balance = parseFloat(balanceResult.rows[0]?.balance || 0);
 
-      // ✅ 残高を減算
-      db.run(
-        "UPDATE users SET balance = balance - ? WHERE id = ?",
-        [amount, req.session.userId],
-        async (err2) => {
-          if (err2) return res.send("残高更新に失敗しました");
+    if (balance < amount) {
+      return res.send("残高不足です");
+    }
 
-          try {
-            // ✅ SMMFlare APIに注文送信
-            const orderRes = await smm.createOrder(serviceId, link, quantity);
+    // ✅ 残高を減算
+    await db.query(
+      "UPDATE users SET balance = balance - $1 WHERE id = $2",
+      [amount, req.session.userId]
+    );
 
-            // ✅ 注文をDB保存
-            db.run(
-              "INSERT INTO orders (user_id, service_id, service_name, link, quantity, price_jpy) VALUES (?,?,?,?,?,?)",
-              [req.session.userId, serviceId, svc.name, link, quantity, amount],
-              function (err3) {
-                if (err3) return res.send("注文保存に失敗しました");
+    // ✅ SMMFlare APIに注文送信
+    const orderRes = await smm.createOrder(serviceId, link, quantity);
 
-                res.render("order_success", {
-                  title: "注文完了",
-                  orderId: orderRes.order,     // APIから返ってきた注文ID
-                  serviceName: svc.name,
-                  quantity,
-                  amount: amount.toFixed(2),   // 表示は小数2桁
-                  balance: (balance - amount).toFixed(2) // 更新後残高
-                });
-              }
-            );
-          } catch (apiErr) {
-            console.error("SMMFlare注文エラー:", apiErr.response?.data || apiErr.message);
-            res.send("注文送信に失敗しました");
-          }
-        }
-      );
+    // ✅ 注文をDBに保存
+    await db.query(
+      `INSERT INTO orders 
+       (user_id, service_id, service_name, link, quantity, price_jpy, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+      [req.session.userId, serviceId, svc.name, link, quantity, amount]
+    );
+
+    // ✅ 成功画面を表示
+    res.render("order_success", {
+      title: "注文完了",
+      orderId: orderRes.order,             // SMMFlareの注文ID
+      serviceName: svc.name,
+      quantity,
+      amount: amount.toFixed(2),           // 表示：小数点2桁
+      balance: (balance - amount).toFixed(2) // 残高更新後
     });
-  } catch (e) {
-    console.error("注文処理エラー:", e.message);
-    res.send("サーバーエラー");
+
+  } catch (err) {
+    console.error("❌ 注文処理エラー:", err.message || err);
+    res.status(500).send("サーバーエラーが発生しました。");
   }
 });
 
 // ================== 注文履歴 ==================
-router.get("/orders", (req, res) => {
+router.get("/orders", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   const db = req.app.locals.db;
 
-  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [req.session.userId], (err, orders) => {
-    if (err) orders = [];
-
-    orders = orders.map(order => {
+  try {
+    const result = await db.query(
+      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
+      [req.session.userId]
+    );
+    const orders = result.rows.map(order => {
       if (order.created_at) {
-        const date = new Date(order.created_at + " UTC");
+        const date = new Date(order.created_at);
         order.created_at_local = date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
       } else {
         order.created_at_local = "不明";
@@ -665,7 +629,10 @@ router.get("/orders", (req, res) => {
     });
 
     res.render("orders", { title: "注文履歴", orders });
-  });
+  } catch (err) {
+    console.error("注文履歴エラー:", err);
+    res.render("orders", { title: "注文履歴", orders: [] });
+  }
 });
 
 // ================== お問い合わせページ ==================
@@ -796,57 +763,81 @@ router.get("/terms", (req, res) => {
   res.render("terms", { title: "利用規約 & SNSリンク" });
 });
 
-// ================== パスワードリセット==================
+// ================== パスワードリセット ==================
+
 // パスワードリセット（入力ページ）
 router.get("/forgot", (req, res) => {
-  res.render("forgot", { title: "パスワードリセット", error: null, success: null });
+  res.render("forgot", { 
+    title: "パスワードリセット", 
+    error: null, 
+    success: null 
+  });
 });
 
 // パスワードリセット（リンク送信）
-router.post("/forgot", (req, res) => {
+router.post("/forgot", async (req, res) => {
   const { email } = req.body;
   const db = req.app.locals.db;
 
   // ランダムトークン生成
   const token = crypto.randomBytes(20).toString("hex");
-  const expires = Date.now() + 3600000; // 1時間有効
+  const expires = Date.now() + 3600000; // 1時間後に期限切れ
 
-  db.run(
-    "UPDATE users SET reset_token=?, reset_expires=? WHERE email=?",
-    [token, expires, email],
-    function (err) {
-      if (err || this.changes === 0) {
-        return res.render("forgot", { title: "パスワードリセット", error: "メールアドレスが見つかりません。", success: null });
-      }
+  try {
+    // ✅ トークンと有効期限を登録（該当メールが存在しなければ rowCount=0）
+    const result = await db.query(
+      "UPDATE users SET reset_token=$1, reset_expires=$2 WHERE email=$3 RETURNING *",
+      [token, expires, email]
+    );
 
-      // リセットURL作成
-      const resetUrl = `http://localhost:3000/reset/${token}`;
-
-      // Gmail経由で送信
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.CONTACT_EMAIL,
-          pass: process.env.CONTACT_EMAIL_PASS,
-        },
-      });
-
-      const mailOptions = {
-        from: process.env.CONTACT_EMAIL,
-        to: email,  // ユーザー宛に送信
-        subject: "パスワードリセット",
-        text: `以下のリンクから新しいパスワードを設定してください。\n\n${resetUrl}\n\n有効期限は1時間です。`
-      };
-
-      transporter.sendMail(mailOptions, (err) => {
-        if (err) {
-          console.error("メール送信エラー:", err);
-          return res.render("forgot", { title: "パスワードリセット", error: "メール送信に失敗しました。", success: null });
-        }
-        res.render("forgot", { title: "パスワードリセット", error: null, success: "リセット用リンクをメールで送信しました！" });
+    // 該当ユーザーが存在しない場合
+    if (result.rowCount === 0) {
+      return res.render("forgot", { 
+        title: "パスワードリセット", 
+        error: "このメールアドレスは登録されていません。", 
+        success: null 
       });
     }
-  );
+
+    // ✅ リセットURL作成
+    const resetUrl = `http://localhost:3000/reset/${token}`;
+
+    // ✅ Gmail経由で送信
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.CONTACT_EMAIL,
+        pass: process.env.CONTACT_EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.CONTACT_EMAIL,
+      to: email, // ユーザー宛に送信
+      subject: "パスワードリセット",
+      text: `以下のリンクから新しいパスワードを設定してください。\n\n${resetUrl}\n\nこのリンクは1時間で期限切れになります。`,
+    };
+
+    // ✅ メール送信
+    await transporter.sendMail(mailOptions);
+
+    console.log(`📩 パスワードリセットリンク送信: ${email}`);
+
+    // ✅ 成功表示
+    res.render("forgot", { 
+      title: "パスワードリセット", 
+      error: null, 
+      success: "リセット用リンクをメールで送信しました！" 
+    });
+
+  } catch (err) {
+    console.error("❌ パスワードリセット送信エラー:", err);
+    res.render("forgot", { 
+      title: "パスワードリセット", 
+      error: "エラーが発生しました。もう一度お試しください。", 
+      success: null 
+    });
+  }
 });
 
 // リセットページ表示
@@ -881,13 +872,13 @@ router.post("/reset/:token", (req, res) => {
 });
 
 // ================== パスワード変更（マイページ） ==================
-router.post("/change-password", (req, res) => {
+router.post("/change-password", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const { currentPassword, newPassword, confirmPassword } = req.body;
   const db = req.app.locals.db;
 
-  // 新しいパスワードと確認用が一致するか
+  // ✅ 新しいパスワードと確認用が一致するかチェック
   if (newPassword !== confirmPassword) {
     return res.render("mypage", {
       title: "マイページ",
@@ -898,8 +889,12 @@ router.post("/change-password", (req, res) => {
     });
   }
 
-  db.get("SELECT * FROM users WHERE id = ?", [req.session.userId], async (err, user) => {
-    if (err || !user) {
+  try {
+    // ✅ 現在のユーザー情報を取得
+    const result = await db.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    const user = result.rows[0];
+
+    if (!user) {
       return res.render("mypage", {
         title: "マイページ",
         user: req.session.user,
@@ -909,7 +904,7 @@ router.post("/change-password", (req, res) => {
       });
     }
 
-    // 現在のパスワード確認
+    // ✅ 現在のパスワードが一致するか確認
     const match = await bcrypt.compare(currentPassword, user.password_hash);
     if (!match) {
       return res.render("mypage", {
@@ -921,28 +916,31 @@ router.post("/change-password", (req, res) => {
       });
     }
 
-    // 新しいパスワードを保存
-    const hash = bcrypt.hashSync(newPassword, 10);
-    db.run("UPDATE users SET password_hash=? WHERE id=?", [hash, req.session.userId], (e2) => {
-      if (e2) {
-        return res.render("mypage", {
-          title: "マイページ",
-          user: req.session.user,
-          orders: [],
-          pwdError: "パスワード更新に失敗しました。",
-          pwdSuccess: null
-        });
-      }
+    // ✅ 新しいパスワードをハッシュ化して更新
+    const hash = await bcrypt.hash(newPassword, 10);
+    await db.query("UPDATE users SET password_hash = $1 WHERE id = $2", [hash, req.session.userId]);
 
-      res.render("mypage", {
-        title: "マイページ",
-        user: req.session.user,
-        orders: [],
-        pwdError: null,
-        pwdSuccess: "✅ パスワードを変更しました！"
-      });
+    console.log(`🔑 パスワード変更成功: ${req.session.user.email}`);
+
+    // ✅ 成功メッセージを表示
+    res.render("mypage", {
+      title: "マイページ",
+      user: req.session.user,
+      orders: [],
+      pwdError: null,
+      pwdSuccess: "✅ パスワードを変更しました！"
     });
-  });
+
+  } catch (err) {
+    console.error("❌ パスワード変更エラー:", err);
+    res.render("mypage", {
+      title: "マイページ",
+      user: req.session.user,
+      orders: [],
+      pwdError: "サーバーエラーが発生しました。",
+      pwdSuccess: null
+    });
+  }
 });
 
 
