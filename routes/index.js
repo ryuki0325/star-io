@@ -200,6 +200,35 @@ router.get("/logout", (req, res) => {
 
 module.exports = router;
 
+// ====== チャージページ（GET /funds） ======
+router.get("/funds", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+
+  const db = req.app.locals.db;
+
+  try {
+    // ✅ 現在の残高を取得
+    const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
+    const balance = result.rows[0] ? Number(result.rows[0].balance) : 0;
+
+    // ✅ 表示
+    res.render("funds", {
+      title: "残高チャージ",
+      user: req.session.user,
+      balance,
+      error: null
+    });
+  } catch (err) {
+    console.error("❌ チャージページエラー:", err);
+    res.render("funds", {
+      title: "残高チャージ",
+      user: req.session.user,
+      balance: 0,
+      error: "残高の取得に失敗しました。"
+    });
+  }
+});
+
 // ================== 通常の（ダミー）チャージ処理 ==================
 router.post("/funds", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
