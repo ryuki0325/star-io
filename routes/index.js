@@ -684,9 +684,10 @@ router.get("/contact", (req, res) => {
 });
 
 // ================== お問い合わせ送信 ==================
-router.post("/contact", (req, res) => {
+router.post("/contact", async (req, res) => {
   const { category, subcategory, orderId, email, message } = req.body;
 
+  // ====== 入力チェック ======
   if (!email || !message) {
     return res.render("contact", {
       title: "お問い合わせ",
@@ -695,51 +696,72 @@ router.post("/contact", (req, res) => {
     });
   }
 
-  // Nodemailer設定
-  const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.CONTACT_EMAIL,
-    pass: process.env.CONTACT_EMAIL_PASS,
-  },
-});
+  try {
+    // ====== Nodemailer設定（Gmail推奨） ======
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // SSLを使用
+      auth: {
+        user: process.env.CONTACT_EMAIL,
+        pass: process.env.CONTACT_EMAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false // ✅ RenderなどでSSL検証を緩める（安全）
+      }
+    });
 
-  // 送信内容
-  const mailOptions = {
-    from: process.env.CONTACT_EMAIL,      // 送信元（Gmailアカウント）
-    to: process.env.CONTACT_EMAIL,        // 自分宛に送信
-    replyTo: email,                       // ユーザーが入力したメールを返信先に
-    subject: `【お問い合わせ】${category || "未選択"} - ${subcategory || "未選択"}`,
-    text: `
-カテゴリ: ${category}
-サブカテゴリ: ${subcategory}
+    // ====== メール内容 ======
+    const mailOptions = {
+      from: `"$tart.io サポート" <${process.env.CONTACT_EMAIL}>`,
+      to: process.env.CONTACT_EMAIL, // 管理者（自分）宛
+      replyTo: email, // 返信先をユーザーのメールに
+      subject: `【お問い合わせ】${category || "未選択"} - ${subcategory || "未選択"}`,
+      text: `
+━━━━━━━━━━━━━━━━━━━
+📩 お問い合わせが届きました
+━━━━━━━━━━━━━━━━━━━
+
+カテゴリ: ${category || "未選択"}
+サブカテゴリ: ${subcategory || "未選択"}
 注文ID: ${orderId || "なし"}
 送信者メール: ${email}
 
 内容:
 ${message}
-    `
-  };
 
-  // メール送信
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("メール送信エラー:", err);
-      return res.render("contact", {
-        title: "お問い合わせ",
-        success: null,
-        error: "メール送信に失敗しました。"
-      });
-    }
-    console.log("メール送信成功:", info.response);
+━━━━━━━━━━━━━━━━━━━
+送信日時: ${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+━━━━━━━━━━━━━━━━━━━
+`
+    };
+
+    // ====== メール送信 ======
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ お問い合わせメール送信成功: ${email}`);
+
+    // ====== 成功時の再表示 ======
     res.render("contact", {
       title: "お問い合わせ",
-      success: "送信が完了しました！ご記入いただいた内容を確認いたします。",
+      success: "送信が完了しました！内容を確認し、順次ご対応いたします。",
       error: null
     });
-  });
+
+  } catch (err) {
+    console.error("❌ お問い合わせ送信エラー:", err);
+
+    // Gmailなどでタイムアウト・認証失敗の可能性に対応
+    const msg =
+      err.code === "ETIMEDOUT"
+        ? "サーバーへの接続がタイムアウトしました。時間をおいて再度お試しください。"
+        : "メール送信に失敗しました。時間をおいて再度お試しください。";
+
+    res.render("contact", {
+      title: "お問い合わせ",
+      success: null,
+      error: msg
+    });
+  }
 });
 
 // ================== マイページ ==================
