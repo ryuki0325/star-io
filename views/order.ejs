@@ -273,20 +273,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (resetBtn) {
   resetBtn.addEventListener("click", () => {
-    // 並び替え・検索・フィルターをリセット
+    console.log("🔁 フィルターのみリセット");
+
+    // ====== フィルター関連を初期化 ======
     sortSelect.value = "default";
     filterSelect.value = "none";
     searchInput.value = "";
 
-    // ✅ サービス選択をリセット（元に戻す）
-    const event = new Event("change");
-    serviceSelect.dispatchEvent(event);
+    // ====== 現在選択中のアプリ・種類を維持したままサービスリストを再描画 ======
+    if (typeof updateServices === "function") {
+      updateServices(); // ← 種類・アプリを再読み込み
+    }
 
-    // ✅ フィルターを再適用
+    // ====== フィルターを再適用（全件表示） ======
     applyFilters();
 
-    // ✅ 見た目上もわかるようにログ
-    console.log("🔁 フィルターをリセットしました");
+    // ====== 金額表示はリセット ======
+    priceDisplay.textContent = "金額: 0 円";
+
+    console.log("✅ 検索・絞り込み・並び替えをリセットしました（アプリ・種類は保持）");
   });
 }
 
