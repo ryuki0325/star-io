@@ -1,6 +1,5 @@
 require("dotenv").config();
 const express = require("express");
-const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const router = express.Router();
