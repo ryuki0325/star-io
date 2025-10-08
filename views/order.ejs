@@ -272,13 +272,23 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      sortSelect.value = "default";
-      filterSelect.value = "none";
-      searchInput.value = "";
-      applyFilters();
-    });
-  }
+  resetBtn.addEventListener("click", () => {
+    // 並び替え・検索・フィルターをリセット
+    sortSelect.value = "default";
+    filterSelect.value = "none";
+    searchInput.value = "";
+
+    // ✅ サービス選択をリセット（元に戻す）
+    const event = new Event("change");
+    serviceSelect.dispatchEvent(event);
+
+    // ✅ フィルターを再適用
+    applyFilters();
+
+    // ✅ 見た目上もわかるようにログ
+    console.log("🔁 フィルターをリセットしました");
+  });
+}
 
   // ===================== 初期化 =====================
   if (appSelect.value) updateTypes();
