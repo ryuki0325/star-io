@@ -170,121 +170,120 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const waitForServiceSelect = setInterval(() => {
-    const appSelect     = document.getElementById("appSelect");
-    const serviceSelect = document.getElementById("serviceSelect");
-    const sortSelect    = document.getElementById("sortSelect");
-    const filterSelect  = document.getElementById("filterSelect");
-    const searchInput   = document.getElementById("searchInput");
-    const resetBtn      = document.getElementById("resetFilters");
+  console.log("✅ order.js 初期化開始");
 
-    if (!serviceSelect) return; // まだ生成されてなければ待機
-    clearInterval(waitForServiceSelect);
+  const appSelect     = document.getElementById("appSelect");
+  const typeSelect    = document.getElementById("typeSelect");
+  const serviceSelect = document.getElementById("serviceSelect");
+  const sortSelect    = document.getElementById("sortSelect");
+  const filterSelect  = document.getElementById("filterSelect");
+  const searchInput   = document.getElementById("searchInput");
+  const resetBtn      = document.getElementById("resetFilters");
+  const qtyInput      = document.getElementById("quantity");
+  const priceDisplay  = document.getElementById("priceDisplay");
 
-    console.log("✅ order.js フィルター機能 初期化完了");
+  // ✅ app-chipクリックでアプリ切替
+  document.querySelectorAll(".app-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const app = btn.dataset.app;
+      appSelect.value = app;
+      appSelect.dispatchEvent(new Event("change"));
 
-    // ==================== クイック選択（アプリ） ====================
-    document.querySelectorAll(".app-chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const app = btn.getAttribute("data-app");
-        if (appSelect) {
-          appSelect.value = app;
-          appSelect.dispatchEvent(new Event("change"));
-        }
-        document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-      });
+      document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+
+  // ===================== 種類・サービス更新 =====================
+  window.updateTypes = function () {
+    const app = appSelect.value;
+    typeSelect.innerHTML = "<option value=''>種類を選んでください</option>";
+
+    if (!app || !grouped[app]) return;
+
+    const emoji = { "再生数": "▶️", "いいね": "❤️", "フォロワー": "👥", "コメント": "💬", "シェア": "🔄", "その他": "✨" };
+    Object.keys(grouped[app]).forEach(type => {
+      const op = document.createElement("option");
+      op.value = type;
+      op.textContent = (emoji[type] || "🧩") + " " + type;
+      typeSelect.appendChild(op);
+    });
+  };
+
+  window.updateServices = function () {
+    const app = appSelect.value;
+    const type = typeSelect.value;
+    serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
+
+    if (!app || !type || !grouped[app][type]) return;
+
+    grouped[app][type].forEach(s => {
+      const op = document.createElement("option");
+      op.value = s.service;
+      op.dataset.finalRate = s.finalRate;
+      op.dataset.price = s.finalRate; // 並び替え用
+      op.textContent = `[${s.service}] ${s.name} （最終価格: ${s.finalRate.toFixed(2)}円/1000）`;
+      serviceSelect.appendChild(op);
     });
 
-    // 初期ハイライト
-    if (appSelect && appSelect.value) {
-      const activeBtn = document.querySelector(`.app-chip[data-app="${appSelect.value}"]`);
-      if (activeBtn) {
-        document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
-        activeBtn.classList.add("active");
-      }
-      if (typeof updateTypes === "function") updateTypes();
+    applyFilters(); // ← サービス更新時も即フィルタ適用
+  };
+
+  window.updatePrice = function () {
+    const op = serviceSelect.options[serviceSelect.selectedIndex];
+    const qty = parseInt(qtyInput.value, 10) || 0;
+    const rate = parseFloat(op?.dataset.finalRate || 0);
+    const price = Math.round((rate / 1000) * qty * 100) / 100;
+    priceDisplay.textContent = `金額: ${price} 円`;
+  };
+
+  // ===================== 並び替え & 絞り込み =====================
+  function applyFilters() {
+    const keyword = searchInput?.value?.toLowerCase() || "";
+    const sort = sortSelect?.value || "default";
+    const filter = filterSelect?.value || "none";
+
+    const original = Array.from(serviceSelect.querySelectorAll("option")).slice(1);
+    let options = [...original];
+
+    if (keyword) options = options.filter(o => o.text.toLowerCase().includes(keyword));
+
+    const regex = {
+      instant: /instant|fast|0-1/i,
+      refill: /refill|guarantee/i,
+      "non-drop": /non.?drop/i,
+      popular: /exclusive|premium|best/i
+    };
+    if (filter !== "none" && regex[filter]) {
+      options = options.filter(o => regex[filter].test(o.text));
     }
 
-    // ==================== 並び替え / フィルター機能 ====================
-    let originalOptions = [];
+    if (sort === "low") options.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
+    if (sort === "high") options.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
 
-    function ensurePrice(opt) {
-      if (!opt) return;
-      if (!opt.dataset.price || isNaN(parseFloat(opt.dataset.price))) {
-        const m = opt.text.match(/([0-9]+(?:\.[0-9]+)?)円/);
-        opt.dataset.price = m ? m[1] : "999999";
-      }
-    }
+    const ph = serviceSelect.options[0].cloneNode(true);
+    serviceSelect.innerHTML = "";
+    serviceSelect.appendChild(ph);
+    options.forEach(o => serviceSelect.appendChild(o));
+  }
 
-    function updateOriginalOptions() {
-      if (!serviceSelect) return;
-      originalOptions = Array.from(serviceSelect.querySelectorAll("option")).slice(1);
-      originalOptions.forEach(ensurePrice);
-    }
+  [sortSelect, filterSelect, searchInput].forEach(el => {
+    if (el) el.addEventListener("input", applyFilters);
+  });
 
-    function applyFilters() {
-      if (!originalOptions.length) updateOriginalOptions();
-      let options = [...originalOptions];
-      const keyword = (searchInput?.value || "").toLowerCase();
-      const sort    = sortSelect?.value || "default";
-      const filter  = filterSelect?.value || "none";
-
-      // 検索
-      if (keyword) options = options.filter(o => o.text.toLowerCase().includes(keyword));
-
-      // フィルター
-      if (filter !== "none") {
-        const regexMap = {
-          instant: /instant|0-1|fast/i,
-          refill: /refill|guarantee/i,
-          "non-drop": /non.?drop/i,
-          exclusive: /exclusive|premium|best/i
-        };
-        options = options.filter(o => regexMap[filter]?.test(o.text));
-      }
-
-      // 並び替え
-      if (sort === "low") options.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
-      if (sort === "high") options.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
-      if (sort === "az") options.sort((a, b) => a.text.localeCompare(b.text, "ja"));
-
-      // 再描画
-      const placeholder = serviceSelect.options[0]?.cloneNode(true) || new Option("サービスを選んでください", "");
-      serviceSelect.innerHTML = "";
-      serviceSelect.appendChild(placeholder);
-      options.forEach(o => serviceSelect.appendChild(o));
-    }
-
-    // リセット
-    if (resetBtn) {
-      resetBtn.addEventListener("click", () => {
-        if (sortSelect) sortSelect.value = "default";
-        if (filterSelect) filterSelect.value = "none";
-        if (searchInput) searchInput.value = "";
-        updateOriginalOptions();
-        applyFilters();
-      });
-    }
-
-    // イベント監視
-    [sortSelect, filterSelect, searchInput].forEach(el => {
-      if (el) {
-        el.addEventListener("input", applyFilters);
-        el.addEventListener("change", applyFilters);
-      }
-    });
-
-    // ✅ サービスリストが更新されたら自動再取得
-    const mo = new MutationObserver(() => {
-      updateOriginalOptions();
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      sortSelect.value = "default";
+      filterSelect.value = "none";
+      searchInput.value = "";
       applyFilters();
     });
-    mo.observe(serviceSelect, { childList: true });
+  }
 
-    updateOriginalOptions();
-    applyFilters();
-  }, 300);
+  // ===================== 初期化 =====================
+  if (appSelect.value) updateTypes();
+
+  console.log("✅ order.js 初期化完了");
 });
 </script>
 
