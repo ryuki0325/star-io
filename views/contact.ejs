@@ -3,14 +3,12 @@
 <div class="container py-4 text-light">
   <h2 class="mb-4">📩 お問い合わせ</h2>
 
-  <!-- ✅ 成功 / エラー メッセージ -->
+  <!-- ✅ 成功 / エラーメッセージ -->
   <% if (success) { %>
     <div class="alert alert-success text-center fw-bold">
       ✅ <%= success %>
     </div>
-  <% } %>
-
-  <% if (error) { %>
+  <% } else if (error) { %>
     <div class="alert alert-danger text-center fw-bold">
       ❌ <%= error %>
     </div>
@@ -27,7 +25,7 @@
         <button type="button" class="btn btn-outline-info category-btn" data-value="支払い">支払い</button>
         <button type="button" class="btn btn-outline-info category-btn" data-value="その他">その他</button>
       </div>
-      <input type="hidden" name="category" id="categoryInput">
+      <input type="hidden" name="category" id="categoryInput" required>
     </div>
 
     <!-- サブカテゴリ -->
@@ -39,25 +37,25 @@
         <button type="button" class="btn btn-outline-secondary subcategory-btn" data-value="スピードアップ">スピードアップ</button>
         <button type="button" class="btn btn-outline-secondary subcategory-btn" data-value="その他">その他</button>
       </div>
-      <input type="hidden" name="subcategory" id="subcategoryInput">
+      <input type="hidden" name="subcategory" id="subcategoryInput" required>
     </div>
 
     <!-- 注文ID -->
     <div class="mb-3">
       <label for="orderId" class="form-label fw-bold">注文ID</label>
-      <input type="text" id="orderId" name="orderId" class="form-control bg-dark text-light border-info">
+      <input type="text" id="orderId" name="orderId" class="form-control bg-dark text-light border-info" placeholder="例: 123456">
     </div>
 
     <!-- メールアドレス -->
     <div class="mb-3">
       <label for="email" class="form-label fw-bold">メールアドレス</label>
-      <input type="email" id="email" name="email" class="form-control bg-dark text-light border-info" required>
+      <input type="email" id="email" name="email" class="form-control bg-dark text-light border-info" required placeholder="example@gmail.com">
     </div>
 
     <!-- 内容 -->
     <div class="mb-3">
       <label for="message" class="form-label fw-bold">内容</label>
-      <textarea id="message" name="message" rows="5" class="form-control bg-dark text-light border-info" required></textarea>
+      <textarea id="message" name="message" rows="5" class="form-control bg-dark text-light border-info" required placeholder="お問い合わせ内容を入力してください..."></textarea>
     </div>
 
     <button type="submit" class="btn btn-info w-100 fw-bold py-2">送信する</button>
@@ -65,7 +63,8 @@
 </div>
 
 <style>
-  .category-btn.active, .subcategory-btn.active {
+  .category-btn.active,
+  .subcategory-btn.active {
     background-color: #0dcaf0 !important;
     color: #000 !important;
     font-weight: bold;
@@ -73,7 +72,8 @@
 </style>
 
 <script>
-  // カテゴリ選択
+document.addEventListener("DOMContentLoaded", () => {
+  // ✅ カテゴリ選択
   document.querySelectorAll(".category-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
@@ -82,7 +82,7 @@
     });
   });
 
-  // サブカテゴリ選択
+  // ✅ サブカテゴリ選択
   document.querySelectorAll(".subcategory-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".subcategory-btn").forEach(b => b.classList.remove("active"));
@@ -91,11 +91,27 @@
     });
   });
 
-  // 送信前に確認
-  document.getElementById("contactForm").addEventListener("submit", function(e) {
-    const email = document.getElementById("email").value;
-    if (!confirm("入力したメールアドレスはこれで正しいですか？\n\n" + email)) {
-      e.preventDefault(); // 送信をキャンセル
+  // ✅ フォーム送信前のチェック
+  document.getElementById("contactForm").addEventListener("submit", (e) => {
+    const category = document.getElementById("categoryInput").value;
+    const subcategory = document.getElementById("subcategoryInput").value;
+    const email = document.getElementById("email").value.trim();
+
+    if (!category) {
+      e.preventDefault();
+      alert("カテゴリを選択してください。");
+      return;
+    }
+
+    if (!subcategory) {
+      e.preventDefault();
+      alert("サブカテゴリを選択してください。");
+      return;
+    }
+
+    if (!confirm(`入力したメールアドレスでよろしいですか？\n\n📧 ${email}`)) {
+      e.preventDefault();
     }
   });
+});
 </script>
