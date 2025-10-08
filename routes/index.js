@@ -735,22 +735,48 @@ ${message}
 });
 
 // ================== マイページ ==================
-router.get("/mypage", (req, res) => {
+router.get("/mypage", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   const db = req.app.locals.db;
 
-  db.all("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 10", [req.session.userId], (err, orders) => {
-    if (err) orders = [];
-  res.render("mypage", { 
-  title: "マイページ", 
-  user: req.session.user,
-  orders,
-  pwdError: null,    // ✅ カンマの位置に注意
-  pwdSuccess: null   // ✅ 最後の行はカンマ無し
-    });
-  });
-});
+  try {
+    // ✅ 注文履歴（最新10件）を取得
+    const result = await db.query(
+      "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
+      [req.session.userId]
+    );
 
+    const orders = result.rows.map(order => {
+      // ✅ 日付の整形（日本時間に変換）
+      if (order.created_at) {
+        const date = new Date(order.created_at + " UTC");
+        order.created_at_local = date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+      } else {
+        order.created_at_local = "不明";
+      }
+      return order;
+    });
+
+    // ✅ マイページを表示
+    res.render("mypage", { 
+      title: "マイページ", 
+      user: req.session.user,
+      orders,
+      pwdError: null,   // パスワード変更エラー（初期値）
+      pwdSuccess: null  // パスワード変更成功（初期値）
+    });
+
+  } catch (err) {
+    console.error("❌ マイページ注文取得エラー:", err);
+    res.render("mypage", { 
+      title: "マイページ", 
+      user: req.session.user,
+      orders: [],
+      pwdError: "注文履歴の取得に失敗しました。",
+      pwdSuccess: null
+    });
+  }
+});
 
 
 
