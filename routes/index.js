@@ -282,19 +282,38 @@ router.post("/create-checkout-session", async (req, res) => {
   }
 });
 
-// ====== Stripe チャージの成功ページ ======
-router.get("/funds/success", (req, res) => {
+// ====== チャージ成功ページ（PostgreSQL対応版） ======
+router.get("/funds/success", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+
   const db = req.app.locals.db;
   const chargeAmount = req.query.amount ? parseInt(req.query.amount, 10) : null;
 
-  db.get("SELECT balance FROM users WHERE id = ?", [req.session.userId], (err, row) => {
+  try {
+    // ✅ 最新の残高を取得
+    const result = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
+    const balance = result.rows[0] ? Number(result.rows[0].balance) : 0;
+
+    // ✅ セッションを最新化（オプション）
+    req.session.user.balance = balance;
+
+    // ✅ チャージ成功ページを表示
     res.render("funds-success", {
       title: "チャージ成功",
       user: req.session.user,
-      chargeAmount: chargeAmount,
-      balance: row ? row.balance : 0
+      chargeAmount: chargeAmount || 0,
+      balance
     });
-  });
+  } catch (err) {
+    console.error("❌ チャージ成功ページエラー:", err);
+    res.render("funds-success", {
+      title: "チャージ成功",
+      user: req.session.user,
+      chargeAmount: chargeAmount || 0,
+      balance: 0,
+      error: "残高の取得に失敗しました。"
+    });
+  }
 });
 
 // ====== Stripe チャージのキャンセルページ ======
