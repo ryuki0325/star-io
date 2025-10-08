@@ -101,69 +101,76 @@ router.post("/signup", (req, res) => {
 });
 
 // ================== ログイン / ログアウト ==================
+const bcrypt = require("bcrypt");
+const express = require("express");
+const router = express.Router();
 
-// ログインページ表示
+// ================== ログインページ ==================
 router.get("/login", (req, res) => {
   res.render("login", { title: "ログイン", error: null });
 });
 
-// ログイン処理
-router.post("/login", async (req, res) => {   // ← async 必須
+// ================== ログイン処理 ==================
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const db = req.app.locals.db;
 
   try {
-    // ユーザーを検索
-    const result = await db.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
-    );
+    // --- ユーザーを検索 ---
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
 
-    // ユーザーが存在しない
+    // --- 存在チェック ---
     if (!user) {
-      return res.render("login", { 
-        title: "ログイン", 
-        error: "ユーザーが存在しません。" 
+      return res.render("login", {
+        title: "ログイン",
+        error: "ユーザーが存在しません。"
       });
     }
 
-    // パスワードチェック
+    // --- パスワード確認 ---
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.render("login", { 
-        title: "ログイン", 
-        error: "メールアドレスまたはパスワードが間違っています。" 
+      return res.render("login", {
+        title: "ログイン",
+        error: "メールアドレスまたはパスワードが間違っています。"
       });
     }
 
-    // ✅ セッション保存
+    // --- セッション保存 ---
     req.session.userId = user.id;
     req.session.user = user;
 
-    // 管理者ログインの場合
-    if (user.email === process.env.ADMIN_LOGIN_EMAIL) {
+    // --- 管理者チェック ---
+    const adminEmail = process.env.ADMIN_LOGIN_EMAIL?.trim() || null;
+    if (adminEmail && user.email === adminEmail) {
       req.session.isStaff = true;
+      console.log("✅ 管理者ログイン:", user.email);
       return res.redirect("/staff/dashboard");
     }
 
-    // 一般ユーザーはマイページへ
-    res.redirect("/mypage");
+    // --- 一般ユーザー ---
+    req.session.isStaff = false;
+    console.log("✅ 一般ユーザーログイン:", user.email);
+    return res.redirect("/mypage");
+
   } catch (err) {
-    console.error("DBエラー:", err);
-    return res.render("login", { 
-      title: "ログイン", 
-      error: "サーバーエラーが発生しました。" 
+    console.error("ログイン中にエラー:", err);
+    return res.render("login", {
+      title: "ログイン",
+      error: "サーバーエラーが発生しました。"
     });
   }
 });
 
-// ログアウト処理
+// ================== ログアウト処理 ==================
 router.get("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/login");
   });
 });
+
+module.exports = router;
 
 // ================== 通常の（ダミー）チャージ処理 ==================
 router.post("/funds", (req, res) => {
