@@ -15,17 +15,20 @@
   <% } %>
 
   <form id="contactForm" action="/contact" method="POST"
-        class="bg-dark p-4 rounded border border-info shadow">
+        class="bg-dark p-4 rounded border border-info shadow" novalidate>
 
     <!-- カテゴリ -->
     <div class="mb-3">
-      <label class="form-label fw-bold" aria-label="カテゴリを選択">カテゴリ</label>
+      <label class="form-label fw-bold" for="categoryInput">カテゴリ</label>
       <div class="d-flex gap-2 flex-wrap">
         <% const categories = ["注文","サービス","支払い","その他"]; %>
         <% categories.forEach(cat => { %>
           <button type="button"
                   class="btn btn-outline-info category-btn"
-                  data-value="<%= cat %>"><%= cat %></button>
+                  data-value="<%= cat %>"
+                  aria-label="<%= cat %>カテゴリを選択">
+            <%= cat %>
+          </button>
         <% }) %>
       </div>
       <input type="hidden" name="category" id="categoryInput" required>
@@ -33,13 +36,16 @@
 
     <!-- サブカテゴリ -->
     <div class="mb-3">
-      <label class="form-label fw-bold" aria-label="サブカテゴリを選択">サブカテゴリ</label>
+      <label class="form-label fw-bold" for="subcategoryInput">サブカテゴリ</label>
       <div class="d-flex gap-2 flex-wrap">
         <% const subcats = ["保証依頼","キャンセル","スピードアップ","その他"]; %>
         <% subcats.forEach(sub => { %>
           <button type="button"
                   class="btn btn-outline-secondary subcategory-btn"
-                  data-value="<%= sub %>"><%= sub %></button>
+                  data-value="<%= sub %>"
+                  aria-label="<%= sub %>サブカテゴリを選択">
+            <%= sub %>
+          </button>
         <% }) %>
       </div>
       <input type="hidden" name="subcategory" id="subcategoryInput" required>
@@ -48,7 +54,9 @@
     <!-- 注文ID -->
     <div class="mb-3">
       <label for="orderId" class="form-label fw-bold">注文ID（任意）</label>
-      <input type="text" id="orderId" name="orderId"
+      <input type="text"
+             id="orderId"
+             name="orderId"
              class="form-control bg-dark text-light border-info"
              placeholder="例: 123456">
     </div>
@@ -56,20 +64,29 @@
     <!-- メールアドレス -->
     <div class="mb-3">
       <label for="email" class="form-label fw-bold">メールアドレス</label>
-      <input type="email" id="email" name="email"
+      <input type="email"
+             id="email"
+             name="email"
              class="form-control bg-dark text-light border-info"
-             required placeholder="example@gmail.com">
+             required
+             placeholder="example@gmail.com"
+             autocomplete="email">
     </div>
 
     <!-- 内容 -->
     <div class="mb-3">
       <label for="message" class="form-label fw-bold">お問い合わせ内容</label>
-      <textarea id="message" name="message" rows="5"
+      <textarea id="message"
+                name="message"
+                rows="5"
                 class="form-control bg-dark text-light border-info"
-                required placeholder="お問い合わせ内容を入力してください..."></textarea>
+                required
+                placeholder="お問い合わせ内容を入力してください..."></textarea>
     </div>
 
-    <button type="submit" class="btn btn-info w-100 fw-bold py-2">送信する</button>
+    <button type="submit" class="btn btn-info w-100 fw-bold py-2">
+      ✉️ 送信する
+    </button>
   </form>
 </div>
 
@@ -82,7 +99,7 @@
     font-weight: bold;
   }
   #msgBox {
-    scroll-margin-top: 80px;
+    scroll-margin-top: 100px;
   }
 </style>
 
@@ -99,8 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById("email");
   const msgBox = document.getElementById("msgBox");
 
-  // 成功・エラー時は自動スクロール
-  if (msgBox) msgBox.scrollIntoView({ behavior: "smooth", block: "center" });
+  // ✅ 成功 / エラー表示がある場合は自動スクロール
+  if (msgBox) {
+    setTimeout(() => {
+      msgBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+  }
 
   // ✅ カテゴリ選択
   categoryBtns.forEach(btn => {
@@ -120,11 +141,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ✅ フォーム送信前チェック
+  // ✅ 送信前チェック
   form.addEventListener("submit", (e) => {
     const category = categoryInput.value.trim();
     const subcategory = subcategoryInput.value.trim();
     const email = emailInput.value.trim();
+    const message = document.getElementById("message").value.trim();
 
     if (!category) {
       e.preventDefault();
@@ -140,7 +162,16 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!confirm(`以下の内容で送信します。\n\n📧 メールアドレス: ${email}\n🗂 カテゴリ: ${category} / ${subcategory}\n\nよろしいですか？`)) {
+    if (message.length < 5) {
+      e.preventDefault();
+      alert("お問い合わせ内容を5文字以上入力してください。");
+      document.getElementById("message").focus();
+      return;
+    }
+
+    if (!confirm(
+      `以下の内容で送信します。\n\n📧 メール: ${email}\n📁 カテゴリ: ${category}\n🗂 サブカテゴリ: ${subcategory}\n📝 内容: ${message.slice(0,50)}...`
+    )) {
       e.preventDefault();
     }
   });
