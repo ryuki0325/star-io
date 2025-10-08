@@ -38,17 +38,30 @@
     </div>
   </div>
 
-<!-- 絞り込みオプション -->
-<div class="filter-sort">
-  <label for="sortSelect">並び替え:</label>
-  <select id="sortSelect" onchange="applySort()">
+<!-- ================== 絞り込みUI ================== -->
+<div class="filter-bar" style="margin-bottom: 10px;">
+  <label>🔍 検索:</label>
+  <input type="text" id="searchInput" placeholder="サービス名を検索" style="width: 180px; margin-right: 10px;">
+
+  <label>並び替え:</label>
+  <select id="sortSelect" style="margin-right: 10px;">
     <option value="default">おすすめ順</option>
     <option value="low">💰 安い順</option>
     <option value="high">💸 高い順</option>
-    <option value="instant">⚡ 即時開始順</option>
-    <option value="refill">🔁 リフィル保証付き</option>
-    <option value="popular">💎 人気順</option>
   </select>
+
+  <label>フィルター:</label>
+  <select id="filterSelect" style="margin-right: 10px;">
+    <option value="none">全て表示</option>
+    <option value="instant">⚡ 即時開始</option>
+    <option value="refill">🔁 Refill保証付き</option>
+    <option value="non-drop">🕊️ Non Drop</option>
+    <option value="popular">💎 人気・Premium</option>
+  </select>
+
+  <button id="resetFilters" style="background:#333;color:#fff;border:none;padding:4px 8px;cursor:pointer;">
+    リセット
+  </button>
 </div>
 
     <!-- ==== アプリ選択 ==== -->
@@ -156,40 +169,103 @@
 </style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const appSelect = document.getElementById("appSelect");
+document.addEventListener("DOMContentLoaded", () => {
+  const appSelect = document.getElementById("appSelect");
+  const serviceSelect = document.getElementById("serviceSelect");
+  const sortSelect = document.getElementById("sortSelect");
+  const filterSelect = document.getElementById("filterSelect");
+  const searchInput = document.getElementById("searchInput");
+  const resetBtn = document.getElementById("resetFilters");
 
-    // ==== クイック選択ボタンのクリック処理 ====
-    document.querySelectorAll(".app-chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const app = btn.getAttribute("data-app");
+  // ==== クイック選択ボタンのクリック処理 ====
+  document.querySelectorAll(".app-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const app = btn.getAttribute("data-app");
 
-        if (appSelect) {
-          appSelect.value = app;
-          appSelect.dispatchEvent(new Event("change")); // 種類リストを更新
-        }
+      if (appSelect) {
+        appSelect.value = app;
+        appSelect.dispatchEvent(new Event("change")); // 種類リストを更新
+      }
 
-        // ハイライト更新
-        document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-      });
+      // ハイライト更新
+      document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
     });
-
-    // ==== 初期表示時 ====
-    if (appSelect && appSelect.value) {
-      // 1. ボタンをハイライト
-      const activeBtn = document.querySelector(`.app-chip[data-app="${appSelect.value}"]`);
-      if (activeBtn) {
-        document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
-        activeBtn.classList.add("active");
-      }
-
-      // 2. 種類リストを更新（←これが抜けていた）
-      if (typeof updateTypes === "function") {
-        updateTypes();
-      }
-    }
   });
+
+  // ==== 初期表示時 ====
+  if (appSelect && appSelect.value) {
+    // 1. ボタンをハイライト
+    const activeBtn = document.querySelector(`.app-chip[data-app="${appSelect.value}"]`);
+    if (activeBtn) {
+      document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
+      activeBtn.classList.add("active");
+    }
+
+    // 2. 種類リストを更新（←これが抜けていた）
+    if (typeof updateTypes === "function") {
+      updateTypes();
+    }
+  }
+
+  // ==== ▼ 以下、フィルター・ソート・検索機能追加 ====
+
+  if (serviceSelect) {
+    let originalOptions = Array.from(serviceSelect.options).slice(1); // 最初の"サービスを選んでください"を除外
+
+    function applyFilters() {
+      let options = [...originalOptions];
+      const sort = sortSelect ? sortSelect.value : "default";
+      const filter = filterSelect ? filterSelect.value : "none";
+      const keyword = searchInput ? searchInput.value.toLowerCase() : "";
+
+      // --- 検索 ---
+      if (keyword) {
+        options = options.filter(o => o.text.toLowerCase().includes(keyword));
+      }
+
+      // --- フィルター ---
+      if (filter === "instant") {
+        options = options.filter(o => /instant|0-1|fast/i.test(o.text));
+      } else if (filter === "refill") {
+        options = options.filter(o => /refill|guaranteed/i.test(o.text));
+      } else if (filter === "non-drop") {
+        options = options.filter(o => /non.?drop/i.test(o.text));
+      } else if (filter === "popular") {
+        options = options.filter(o => /\[best|\[top|\[premium/i.test(o.text));
+      }
+
+      // --- ソート ---
+      if (sort === "low") {
+        options.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
+      } else if (sort === "high") {
+        options.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
+      }
+
+      // --- 再描画 ---
+      serviceSelect.innerHTML = '<option value="">サービスを選んでください</option>';
+      options.forEach(o => serviceSelect.appendChild(o));
+    }
+
+    // ===== リセットボタン =====
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        if (sortSelect) sortSelect.value = "default";
+        if (filterSelect) filterSelect.value = "none";
+        if (searchInput) searchInput.value = "";
+        applyFilters();
+      });
+    }
+
+    // ===== イベント監視 =====
+    [sortSelect, filterSelect, searchInput].forEach(el => {
+      if (el) {
+        el.addEventListener("input", applyFilters);
+        el.addEventListener("change", applyFilters);
+      }
+    });
+  }
+});
 </script>
 
 <!-- ✅ 種類・サービス選択スクリプト -->
