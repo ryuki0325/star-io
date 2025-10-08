@@ -403,15 +403,6 @@ const grouped = {};
   let app = normalizeAppName(s.name);
   const type = detectType(s.name);
 
-  // 除外条件
-  if (
-    excludedApps.includes(app) || /^[0-9]+$/.test(app) || /^[-]+$/.test(app) ||
-    /\p{Emoji}/u.test(app) || /^[A-Z]{2,3}$/i.test(app) ||
-    /(flag|country|refill|cancel|cheap|test|trial|bonus|package|mix)/i.test(s.name)
-  ) {
-    return;
-  }
-
   if (!grouped[app]) grouped[app] = {};
   if (!grouped[app][type]) grouped[app][type] = [];
 
