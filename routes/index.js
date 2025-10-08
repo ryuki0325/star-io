@@ -1,8 +1,6 @@
 require("dotenv").config();
-const express = require("express");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const router = express.Router();
 const smm = require("../lib/smmClient");
 
 // 優先アプリ
