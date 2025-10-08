@@ -177,94 +177,102 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("searchInput");
   const resetBtn = document.getElementById("resetFilters");
 
-  // ==== クイック選択ボタンのクリック処理 ====
+  // ==== クイック選択ボタン ====
   document.querySelectorAll(".app-chip").forEach(btn => {
     btn.addEventListener("click", () => {
       const app = btn.getAttribute("data-app");
 
       if (appSelect) {
         appSelect.value = app;
-        appSelect.dispatchEvent(new Event("change")); // 種類リストを更新
+        appSelect.dispatchEvent(new Event("change"));
       }
 
-      // ハイライト更新
       document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
+
+      // ✅ アプリ切り替え時に originalOptions を更新！
+      updateOriginalOptions();
     });
   });
 
   // ==== 初期表示時 ====
   if (appSelect && appSelect.value) {
-    // 1. ボタンをハイライト
     const activeBtn = document.querySelector(`.app-chip[data-app="${appSelect.value}"]`);
     if (activeBtn) {
       document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
       activeBtn.classList.add("active");
     }
 
-    // 2. 種類リストを更新（←これが抜けていた）
     if (typeof updateTypes === "function") {
       updateTypes();
     }
   }
 
-  // ==== ▼ 以下、フィルター・ソート・検索機能追加 ====
+  // ==== ▼ 並び替え・フィルター機能 ====
+  let originalOptions = [];
 
-  if (serviceSelect) {
-    let originalOptions = Array.from(serviceSelect.options).slice(1); // 最初の"サービスを選んでください"を除外
+  function updateOriginalOptions() {
+    if (!serviceSelect) return;
+    // 「サービスを選んでください」を除く全てのoptionを再取得
+    originalOptions = Array.from(serviceSelect.options).slice(1);
+  }
 
-    function applyFilters() {
-      let options = [...originalOptions];
-      const sort = sortSelect ? sortSelect.value : "default";
-      const filter = filterSelect ? filterSelect.value : "none";
-      const keyword = searchInput ? searchInput.value.toLowerCase() : "";
+  function applyFilters() {
+    if (!serviceSelect || originalOptions.length === 0) return;
+    let options = [...originalOptions];
+    const sort = sortSelect ? sortSelect.value : "default";
+    const filter = filterSelect ? filterSelect.value : "none";
+    const keyword = searchInput ? searchInput.value.toLowerCase() : "";
 
-      // --- 検索 ---
-      if (keyword) {
-        options = options.filter(o => o.text.toLowerCase().includes(keyword));
-      }
-
-      // --- フィルター ---
-      if (filter === "instant") {
-        options = options.filter(o => /instant|0-1|fast/i.test(o.text));
-      } else if (filter === "refill") {
-        options = options.filter(o => /refill|guaranteed/i.test(o.text));
-      } else if (filter === "non-drop") {
-        options = options.filter(o => /non.?drop/i.test(o.text));
-      } else if (filter === "popular") {
-        options = options.filter(o => /\[best|\[top|\[premium/i.test(o.text));
-      }
-
-      // --- ソート ---
-      if (sort === "low") {
-        options.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
-      } else if (sort === "high") {
-        options.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
-      }
-
-      // --- 再描画 ---
-      serviceSelect.innerHTML = '<option value="">サービスを選んでください</option>';
-      options.forEach(o => serviceSelect.appendChild(o));
+    // --- 検索 ---
+    if (keyword) {
+      options = options.filter(o => o.text.toLowerCase().includes(keyword));
     }
 
-    // ===== リセットボタン =====
-    if (resetBtn) {
-      resetBtn.addEventListener("click", () => {
-        if (sortSelect) sortSelect.value = "default";
-        if (filterSelect) filterSelect.value = "none";
-        if (searchInput) searchInput.value = "";
-        applyFilters();
-      });
+    // --- フィルター ---
+    if (filter === "instant") {
+      options = options.filter(o => /instant|0-1|fast/i.test(o.text));
+    } else if (filter === "refill") {
+      options = options.filter(o => /refill|guaranteed/i.test(o.text));
+    } else if (filter === "non-drop") {
+      options = options.filter(o => /non.?drop/i.test(o.text));
+    } else if (filter === "popular") {
+      options = options.filter(o => /\[best|\[top|\[premium/i.test(o.text));
     }
 
-    // ===== イベント監視 =====
-    [sortSelect, filterSelect, searchInput].forEach(el => {
-      if (el) {
-        el.addEventListener("input", applyFilters);
-        el.addEventListener("change", applyFilters);
-      }
+    // --- ソート ---
+    if (sort === "low") {
+      options.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
+    } else if (sort === "high") {
+      options.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
+    }
+
+    // --- セレクトを再描画 ---
+    serviceSelect.innerHTML = '<option value="">サービスを選んでください</option>';
+    options.forEach(o => serviceSelect.appendChild(o));
+  }
+
+  // ==== リセット ====
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (sortSelect) sortSelect.value = "default";
+      if (filterSelect) filterSelect.value = "none";
+      if (searchInput) searchInput.value = "";
+      updateOriginalOptions();
+      applyFilters();
     });
   }
+
+  // ==== イベント監視 ====
+  [sortSelect, filterSelect, searchInput].forEach(el => {
+    if (el) {
+      el.addEventListener("input", applyFilters);
+      el.addEventListener("change", applyFilters);
+    }
+  });
+
+  // ✅ 初回ロード時にもoriginalOptionsを設定
+  updateOriginalOptions();
 });
 </script>
 
