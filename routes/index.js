@@ -90,14 +90,16 @@ router.post("/signup", (req, res) => {
   const db = req.app.locals.db;
   const hash = bcrypt.hashSync(password, 10);
 
-  db.run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [email, hash], function(err) {
-    if (err) {
-      return res.render("signup", { title: "新規登録", error: "登録に失敗しました: " + err.message });
-    }
-    req.session.userId = this.lastID;
-    req.session.user = { id: this.lastID, email, balance: 0 };
-    res.redirect("/mypage");
-  });
+  try {
+  await db.query("INSERT INTO users (email, password_hash) VALUES ($1, $2)", [email, hash]);
+  const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+  const user = result.rows[0];
+  req.session.userId = user.id;
+  req.session.user = { id: user.id, email: user.email, balance: user.balance || 0 };
+  res.redirect("/mypage");
+} catch (err) {
+  return res.render("signup", { title: "新規登録", error: "登録に失敗しました: " + err.message });
+  }
 });
 
 // ================== ログイン / ログアウト =================
@@ -138,17 +140,18 @@ router.post("/login", async (req, res) => {
     req.session.user = user;
 
     // --- 管理者チェック ---
-    const adminEmail = process.env.ADMIN_LOGIN_EMAIL?.trim() || null;
-    if (adminEmail && user.email === adminEmail) {
-      req.session.isStaff = true;
-      console.log("✅ 管理者ログイン:", user.email);
-      return res.redirect("/staff/dashboard");
-    }
+const adminEmail = process.env.ADMIN_LOGIN_EMAIL?.trim() || null;
 
-    // --- 一般ユーザー ---
-    req.session.isStaff = false;
-    console.log("✅ 一般ユーザーログイン:", user.email);
-    return res.redirect("/mypage");
+if (adminEmail && user.email === adminEmail) {
+  req.session.isStaff = true;
+  console.log("✅ 管理者ログイン:", user.email);
+  res.redirect("/staff/dashboard");
+} else {
+  // ✅ それ以外は全員マイページへ
+  req.session.isStaff = false;
+  console.log("✅ 一般ユーザーログイン:", user.email);
+  res.redirect("/mypage");
+}
 
   } catch (err) {
     console.error("ログイン中にエラー:", err);
