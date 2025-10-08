@@ -100,9 +100,7 @@ router.post("/signup", (req, res) => {
   });
 });
 
-// ================== ログイン / ログアウト ==================
-const bcrypt = require("bcrypt");
-
+// ================== ログイン / ログアウト =================
 // ================== ログインページ ==================
 router.get("/login", (req, res) => {
   res.render("login", { title: "ログイン", error: null });
