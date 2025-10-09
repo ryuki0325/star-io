@@ -18,25 +18,34 @@
     </div>
   <% } %>
 
-  <!-- ==== クイック選択 ==== -->
-  <div class="mb-3">
-    <label class="form-label mb-2">クイック選択</label>
-    <div class="d-flex flex-wrap gap-2">
-      <% const emojiMap = {
-           TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️",
-           Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽"
-         };
-         const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
-      %>
-      <% quickApps.forEach(q => { if (grouped[q]) { %>
-        <button type="button"
-                class="app-chip btn btn-outline-info"
-                data-app="<%= q %>">
-          <span class="me-1"><%= emojiMap[q] || "🧩" %></span><%= q %>
-        </button>
-      <% } }) %>
-    </div>
-  </div>
+ <!-- 💎 クイック選択エリア -->
+<h5 class="text-info fw-bold mb-3">クイック選択</h5>
+
+<div class="quick-grid mb-4">
+  <% const emojiMap = {
+       TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️",
+       Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽"
+     };
+     const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
+  %>
+  <% quickApps.forEach(q => { if (grouped[q]) { %>
+    <button type="button"
+            class="btn btn-outline-info quick-btn"
+            data-app="<%= q %>">
+      <%= emojiMap[q] || "🧩" %> <%= q %>
+    </button>
+  <% } }) %>
+</div>
+
+<!-- 🔍 検索フォーム -->
+<div class="search-bar mb-4">
+  <input type="text" class="form-control" id="searchInput" placeholder="🔍 サービス名を検索">
+  <select id="sortSelect" class="form-select">
+    <option value="default">おすすめ順</option>
+    <option value="low">💰 安い順</option>
+    <option value="high">💸 高い順</option>
+  </select>
+</div>
 
 <!-- ================== 絞り込みUI ================== -->
 <div class="filter-bar" style="margin-bottom: 10px;">
@@ -166,6 +175,42 @@
     background:#0dcaf0;
     color:#000;
   }
+
+/* --- クイック選択をグリッド化 --- */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* スマホは2列 */
+  gap: 10px;
+}
+
+/* SNSボタン */
+.quick-btn {
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 12px 0;
+  transition: all 0.2s;
+}
+.quick-btn:hover {
+  background: #0dcaf0;
+  color: #000;
+}
+
+/* 検索バー */
+.search-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 💻 PC版では4列レイアウト */
+@media (min-width: 768px) {
+  .quick-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .search-bar {
+    flex-direction: row;
+  }
+}
 </style>
 
 <script>
