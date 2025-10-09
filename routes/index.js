@@ -441,6 +441,7 @@ const grouped = {};
     title: "新規注文",
     grouped,
     appOrder,
+    recommended, // 👑 ← ★これを追加！
     selectedApp: req.query.app || "",
     selectedType: req.query.type || "",
     balance: Number(req.session.user?.balance || 0) // 数値で渡す
