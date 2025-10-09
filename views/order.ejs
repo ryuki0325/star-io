@@ -227,17 +227,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const qtyInput      = document.getElementById("quantity");
   const priceDisplay  = document.getElementById("priceDisplay");
 
-  // ✅ app-chipクリックでアプリ切替
-  document.querySelectorAll(".app-chip").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const app = btn.dataset.app;
-      appSelect.value = app;
-      appSelect.dispatchEvent(new Event("change"));
+  // ✅ クイックボタン押下でアプリ切り替え
+document.querySelectorAll(".quick-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const app = btn.dataset.app;
+    const appSelect = document.getElementById("appSelect");
 
-      document.querySelectorAll(".app-chip").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-    });
+    // 対応するアプリを選択状態にしてイベント発火
+    appSelect.value = app;
+    appSelect.dispatchEvent(new Event("change"));
+
+    // ボタンの見た目を切り替え
+    document.querySelectorAll(".quick-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
   });
+});
 
   // ===================== 種類・サービス更新 =====================
   window.updateTypes = function () {
