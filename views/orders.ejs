@@ -55,6 +55,20 @@
             </span>
           </p>
 
+          <!-- ✅ ステータス表示 -->
+          <p class="mt-2 mb-0">
+            🚦 ステータス: 
+            <% if (order.status === 'pending') { %>
+              <span class="badge bg-warning text-dark">認証中</span>
+            <% } else if (order.status === 'inprogress') { %>
+              <span class="badge bg-info text-dark">進行中</span>
+            <% } else if (order.status === 'completed') { %>
+              <span class="badge bg-success">完了</span>
+            <% } else { %>
+              <span class="badge bg-secondary">不明</span>
+            <% } %>
+          </p>
+
         </div>
       <% }) %>
     </div>
