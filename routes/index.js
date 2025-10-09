@@ -627,15 +627,15 @@ router.post("/order", async (req, res) => {
     );
 
     // ✅ SMMFlare APIに注文送信
-    const orderRes = await smm.createOrder(serviceId, link, quantity);
+const orderRes = await smm.createOrder(serviceId, link, quantity);
 
-    // ✅ 注文をDBに保存
-    await db.query(
-      `INSERT INTO orders 
-       (user_id, service_id, service_name, link, quantity, price_jpy, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-      [req.session.userId, serviceId, svc.name, link, quantity, amount]
-    );
+// ✅ 注文をDBに保存（SMMFlareの注文IDも保存！）
+await db.query(
+  `INSERT INTO orders 
+   (user_id, service_id, service_name, link, quantity, price_jpy, smm_order_id, created_at, status)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), 'pending')`,
+  [req.session.userId, serviceId, svc.name, link, quantity, amount, orderRes.order]
+);
 
     // ✅ 成功画面を表示
     res.render("order_success", {
