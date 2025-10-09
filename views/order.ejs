@@ -37,30 +37,17 @@
   <% } }) %>
 </div>
 
-<!-- 🔍 検索フォーム -->
-<div class="search-bar mb-4">
-  <input type="text" class="form-control" id="searchInput" placeholder="🔍 サービス名を検索">
+<!-- 🔍 検索＋フィルターUI -->
+<div class="filter-bar mb-4">
+  <input type="text" id="searchInput" class="form-control" placeholder="🔍 サービス名を検索">
+
   <select id="sortSelect" class="form-select">
     <option value="default">おすすめ順</option>
     <option value="low">💰 安い順</option>
     <option value="high">💸 高い順</option>
   </select>
-</div>
 
-<!-- ================== 絞り込みUI ================== -->
-<div class="filter-bar" style="margin-bottom: 10px;">
-  <label>🔍 検索:</label>
-  <input type="text" id="searchInput" placeholder="サービス名を検索" style="width: 180px; margin-right: 10px;">
-
-  <label>並び替え:</label>
-  <select id="sortSelect" style="margin-right: 10px;">
-    <option value="default">おすすめ順</option>
-    <option value="low">💰 安い順</option>
-    <option value="high">💸 高い順</option>
-  </select>
-
-  <label>フィルター:</label>
-  <select id="filterSelect" style="margin-right: 10px;">
+  <select id="filterSelect" class="form-select">
     <option value="none">全て表示</option>
     <option value="instant">⚡ 即時開始</option>
     <option value="refill">🔁 Refill保証付き</option>
@@ -68,9 +55,7 @@
     <option value="popular">💎 人気・Premium</option>
   </select>
 
-  <button id="resetFilters" style="background:#333;color:#fff;border:none;padding:4px 8px;cursor:pointer;">
-    リセット
-  </button>
+  <button id="resetFilters" class="btn btn-outline-light">リセット</button>
 </div>
 
     <!-- ==== アプリ選択 ==== -->
