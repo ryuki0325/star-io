@@ -161,6 +161,54 @@
     color:#000;
   }
 
+/* ===== 絞り込みUI (スマホ対応) ===== */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-bar select,
+.filter-bar input {
+  border: 2px solid #0dcaf0;
+  background: #000;
+  color: #0dcaf0;
+  font-weight: 500;
+}
+
+.filter-bar button {
+  border: 2px solid #0dcaf0;
+  color: #0dcaf0;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.filter-bar button:hover {
+  background: #0dcaf0;
+  color: #000;
+  font-weight: bold;
+}
+
+/* 💻 PC版では横並びに */
+@media (min-width: 768px) {
+  .filter-bar {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .filter-bar input {
+    flex: 1;
+  }
+
+  .filter-bar select {
+    width: 180px;
+  }
+
+  .filter-bar button {
+    width: 120px;
+  }
+}
+
 /* --- クイック選択をグリッド化 --- */
 .quick-grid {
   display: grid;
