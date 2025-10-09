@@ -848,38 +848,44 @@ router.post("/staff/update-status", async (req, res) => {
 });
 
 // ================== SMMFlare ステータス自動更新 ==================
+const smm = require("../lib/smmClient");
+
 router.get("/staff/update-order-statuses", async (req, res) => {
   const db = req.app.locals.db;
-  const smm = require("../lib/smmClient");
 
   try {
-    // まだ完了していない注文を取得
+    // ✅ smm_order_id（SMMFlare注文ID）があるものを取得
     const result = await db.query(
-      "SELECT id, service_id, status FROM orders WHERE status != 'completed'"
+      "SELECT id, smm_order_id, status FROM orders WHERE smm_order_id IS NOT NULL AND status != 'completed'"
     );
     const orders = result.rows;
 
     for (const order of orders) {
-      const apiRes = await smm.getOrderStatus(order.id); // ← SMMFlare APIに問い合わせ
-      const apiStatus = (apiRes.status || "").toLowerCase();
+      // ✅ 正しい注文番号（SMMFlare側）で問い合わせ
+      const apiRes = await smm.getOrderStatus(order.smm_order_id);
+      if (apiRes.error) {
+        console.log(`⚠️ 注文 ${order.smm_order_id} ステータス取得失敗: ${apiRes.error}`);
+        continue;
+      }
 
+      const apiStatus = (apiRes.status || "").toLowerCase();
       let newStatus = order.status;
 
       if (apiStatus.includes("completed")) newStatus = "completed";
       else if (apiStatus.includes("progress")) newStatus = "inprogress";
-      else if (apiStatus.includes("processing")) newStatus = "pending";
+      else if (apiStatus.includes("processing") || apiStatus.includes("pending")) newStatus = "pending";
 
-      // ステータスが変わったときだけ更新
+      // ✅ ステータス変更がある場合のみDB更新
       if (newStatus !== order.status) {
         await db.query("UPDATE orders SET status = $1 WHERE id = $2", [
           newStatus,
           order.id
         ]);
-        console.log(`✅ 注文 ${order.id} を ${newStatus} に更新`);
+        console.log(`✅ 注文 ${order.smm_order_id} を ${newStatus} に更新`);
       }
     }
 
-    res.send("✅ ステータスを最新に更新しました");
+    res.send("✅ SMMFlareの最新ステータスに同期しました");
   } catch (err) {
     console.error("❌ ステータス更新エラー:", err);
     res.status(500).send("更新に失敗しました");
