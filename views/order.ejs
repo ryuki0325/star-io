@@ -211,23 +211,27 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.updateServices = function () {
-    const app = appSelect.value;
-    const type = typeSelect.value;
-    serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
+  const app = appSelect.value;
+  const type = typeSelect.value;
+  serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
 
-    if (!app || !type || !grouped[app][type]) return;
+  if (!app || !type || !grouped[app][type]) return;
 
-    grouped[app][type].forEach(s => {
-      const op = document.createElement("option");
-      op.value = s.service;
-      op.dataset.finalRate = s.finalRate;
-      op.dataset.price = s.finalRate; // 並び替え用
-      op.textContent = `[${s.service}] ${s.name} （最終価格: ${s.finalRate.toFixed(2)}円/1000）`;
-      serviceSelect.appendChild(op);
-    });
+  grouped[app][type].forEach(service => {
+    const op = document.createElement("option");
+    op.value = service.service;
+    op.dataset.finalRate = service.finalRate;
+    op.dataset.price = service.finalRate;
 
-    applyFilters(); // ← サービス更新時も即フィルタ適用
-  };
+    const isRecommended = recommended.includes(String(service.service));
+    const prefix = isRecommended ? "👑おすすめ " : "";
+
+    op.textContent = `${prefix}[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
+    serviceSelect.appendChild(op);
+  });
+
+  applyFilters();
+};
 
   window.updatePrice = function () {
     const op = serviceSelect.options[serviceSelect.selectedIndex];
