@@ -44,12 +44,20 @@ html, body {
 /* 📱 スマホ対応 */
 @media (max-width: 768px) {
   #sidebar {
-    position: absolute;
-    height: calc(var(--vh, 1vh) * 100); /* iPhoneでも全画面高さを確保 */
+    position: fixed;          /* ← absolute → fixed に変更！ */
+    top: 0;
+    left: 0;
+    height: 100vh;            /* 画面全体の高さに固定 */
+    width: 220px;
+    background: #000;
+    overflow-y: auto;         /* メニューが長い場合、内部だけスクロール */
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: 1000;
   }
 
   #sidebar.closed {
     transform: translateX(-220px);
+    opacity: 0;
   }
 
   .flex-grow-1 {
