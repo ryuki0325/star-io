@@ -848,8 +848,6 @@ router.post("/staff/update-status", async (req, res) => {
 });
 
 // ================== SMMFlare ステータス自動更新 ==================
-const smm = require("../lib/smmClient");
-
 router.get("/staff/update-order-statuses", async (req, res) => {
   const db = req.app.locals.db;
 
