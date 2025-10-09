@@ -92,25 +92,24 @@ h1, h2, h3, h4, h5 {
 
 /* === スマホ対応 === */
 @media screen and (max-width: 768px) {
-  /* サイドバーを固定オーバーレイ化 */
+  /* サイドバーを画面に固定 */
   #sidebar {
-    position: fixed;            /* ← absolute → fixed に変更！ */
+    position: fixed;          /* ←ここをfixedに変更 */
     top: 0;
     left: 0;
     z-index: 1000;
-    height: 100vh;              /* 画面全体の高さに固定 */
+    height: 100vh;            /* 画面いっぱい */
     width: 200px;
     background: #000;
-    overflow-y: auto;           /* メニューが長い時だけ中をスクロール */
+    overflow-y: auto;         /* メニュー内が長い場合は中だけスクロール */
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
   #sidebar.hidden {
-    transform: translateX(-220px); /* 左に隠す */
+    transform: translateX(-220px);
     opacity: 0;
   }
 
-  /* メインコンテンツをフル幅に */
   .flex-grow-1 {
     margin-left: 0 !important;
   }
