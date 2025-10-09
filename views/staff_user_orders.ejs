@@ -20,6 +20,19 @@
           <p class="mb-1">🔗 <a href="<%= order.link %>" target="_blank" class="text-info">リンク</a></p>
           <p class="mb-1">📦 数量: <%= order.quantity %></p>
           <p class="mb-1">💰 金額: <span class="text-success"><%= Number(order.price_jpy).toFixed(2) %> 円</span></p>
+
+          <!-- ✅ ステータス変更フォーム -->
+<p class="mb-0 mt-2">
+  🚦 ステータス変更:
+  <form action="/staff/update-status" method="POST" class="d-inline">
+    <input type="hidden" name="orderId" value="<%= order.id %>">
+    <select name="status" class="form-select form-select-sm bg-dark text-light d-inline w-auto" onchange="this.form.submit()">
+      <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>🟡 認証中</option>
+      <option value="inprogress" <%= order.status === 'inprogress' ? 'selected' : '' %>>🔵 進行中</option>
+      <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>🟢 完了</option>
+    </select>
+  </form>
+</p>
         </div>
       <% }) %>
     </div>
