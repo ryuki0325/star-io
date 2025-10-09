@@ -307,6 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <script>
   // grouped はサーバーから渡されるデータ
   const grouped = <%- JSON.stringify(grouped) %>;
+  const recommended = <%- JSON.stringify(recommended) %>; // 👑追加！
 
   // ==== アプリを選んだら種類を更新 ====
 function updateTypes() {
@@ -356,11 +357,11 @@ function updateServices() {
     // サーバーから渡された recommended 配列を使って判定
     const isRecommended = recommended.includes(String(service.service));
 
-    // ⭐おすすめマークを追加
-    const prefix = isRecommended ? "👑おすすめ " : "";
+    // 👑おすすめマークを追加
+const prefix = isRecommended ? "👑おすすめ " : "";
 
-    // ✅ 表示は「ID + 名前 + 最終価格」
-    option.textContent = `[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
+// ✅ 表示は「おすすめ + ID + 名前 + 最終価格」
+option.textContent = `${prefix}[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
 
     serviceSelect.appendChild(option);
   });
