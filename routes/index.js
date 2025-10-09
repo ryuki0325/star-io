@@ -833,7 +833,7 @@ router.get("/terms", (req, res) => {
 });
 
 // ================== 管理者: 注文ステータス更新 ==================
-router.post("/staff/update-status", async (req, res) => {
+router.get("/update-order-statuses", async (req, res) => {
   const { orderId, status } = req.body;
   const db = req.app.locals.db;
 
