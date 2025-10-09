@@ -847,6 +847,45 @@ router.post("/staff/update-status", async (req, res) => {
   }
 });
 
+// ================== SMMFlare ステータス自動更新 ==================
+router.get("/staff/update-order-statuses", async (req, res) => {
+  const db = req.app.locals.db;
+  const smm = require("../lib/smmClient");
+
+  try {
+    // まだ完了していない注文を取得
+    const result = await db.query(
+      "SELECT id, service_id, status FROM orders WHERE status != 'completed'"
+    );
+    const orders = result.rows;
+
+    for (const order of orders) {
+      const apiRes = await smm.getOrderStatus(order.id); // ← SMMFlare APIに問い合わせ
+      const apiStatus = (apiRes.status || "").toLowerCase();
+
+      let newStatus = order.status;
+
+      if (apiStatus.includes("completed")) newStatus = "completed";
+      else if (apiStatus.includes("progress")) newStatus = "inprogress";
+      else if (apiStatus.includes("processing")) newStatus = "pending";
+
+      // ステータスが変わったときだけ更新
+      if (newStatus !== order.status) {
+        await db.query("UPDATE orders SET status = $1 WHERE id = $2", [
+          newStatus,
+          order.id
+        ]);
+        console.log(`✅ 注文 ${order.id} を ${newStatus} に更新`);
+      }
+    }
+
+    res.send("✅ ステータスを最新に更新しました");
+  } catch (err) {
+    console.error("❌ ステータス更新エラー:", err);
+    res.status(500).send("更新に失敗しました");
+  }
+});
+
 // ================== パスワードリセット ==================
 
 // パスワードリセット（入力ページ）
