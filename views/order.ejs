@@ -353,6 +353,12 @@ function updateServices() {
     // ✅ dataset に finalRate をセット（updatePrice で使う）
     option.dataset.finalRate = service.finalRate;
 
+    // サーバーから渡された recommended 配列を使って判定
+    const isRecommended = recommended.includes(String(service.service));
+
+    // ⭐おすすめマークを追加
+    const prefix = isRecommended ? "👑おすすめ " : "";
+
     // ✅ 表示は「ID + 名前 + 最終価格」
     option.textContent = `[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
 
