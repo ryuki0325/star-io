@@ -358,6 +358,11 @@ router.get("/order", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   const raw = await smm.getServices();
 
+  // --- 👑おすすめサービスを.envから取得 ---
+const recommended = process.env.RECOMMENDED_SERVICES
+  ? process.env.RECOMMENDED_SERVICES.split(",").map(id => id.trim())
+  : [];
+
   // --- アプリ名を正規化する関数 ---
   function normalizeAppName(name) {
     const app = (name.split(" ")[0] || "その他").trim().toLowerCase();
