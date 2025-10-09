@@ -832,6 +832,21 @@ router.get("/terms", (req, res) => {
   res.render("terms", { title: "利用規約 & SNSリンク" });
 });
 
+// ================== 管理者: 注文ステータス更新 ==================
+router.post("/staff/update-status", async (req, res) => {
+  const { orderId, status } = req.body;
+  const db = req.app.locals.db;
+
+  try {
+    await db.query("UPDATE orders SET status = $1 WHERE id = $2", [status, orderId]);
+    console.log(`✅ 管理者が注文ID ${orderId} のステータスを「${status}」に更新しました。`);
+    res.redirect("back"); // 🔁 更新後に同じページへ戻る
+  } catch (err) {
+    console.error("❌ ステータス更新エラー:", err);
+    res.status(500).send("ステータス更新に失敗しました。");
+  }
+});
+
 // ================== パスワードリセット ==================
 
 // パスワードリセット（入力ページ）
