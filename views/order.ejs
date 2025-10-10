@@ -5,7 +5,8 @@
 
  <!-- 💳 残高表示部分 -->
 <div class="balance-display">
-  💳 残高: <span class="balance-amount"><%= balance.toFixed(2) %> 円</span>
+  <div class="balance-label">💳 残高</div>
+  <div class="balance-amount"><%= balance.toFixed(2) %> 円</div>
 </div>
 
 <!-- ✅ 注文フォーム -->
@@ -119,31 +120,37 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
- .balance-display {
+ /* 💳 残高デザイン改良版 */
+.balance-display {
   font-family: 'Orbitron', sans-serif;
-  font-size: 1.4rem;
-  text-align: center;
   color: #00eaff;
-  background: #000814;  /* ✅ 黒系で統一 */
+  background: #000814;
   padding: 15px;
   border: 2px solid #0dcaf0;
   border-radius: 10px;
-  margin-bottom: 20px;
-  width: 100%;          /* ✅ フォームやカードと同じ幅 */
-  box-shadow: 0 0 10px rgba(13, 202, 240, 0.6);
+  text-align: center;
+  box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
   animation: glow 1.5s infinite alternate;
+  margin-bottom: 20px;
 }
 
-@keyframes glow {
-  from { box-shadow: 0 0 10px rgba(13, 202, 240, 0.4); }
-  to   { box-shadow: 0 0 20px rgba(13, 202, 240, 0.9); }
+.balance-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #00eaff;
+  margin-bottom: 5px;
 }
 
 .balance-amount {
   font-weight: bold;
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: #39ff14;
-  text-shadow: 0 0 8px #39ff14, 0 0 15px #39ff14;
+  text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 10px rgba(13, 202, 240, 0.4); }
+  to   { box-shadow: 0 0 25px rgba(13, 202, 240, 0.9); }
 }
 
   .select-wrap { overflow: hidden; }
