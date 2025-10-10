@@ -292,14 +292,27 @@ document.querySelectorAll(".quick-btn").forEach(btn => {
     });
   };
 
-  window.updateServices = function () {
+ window.updateServices = function () {
   const app = appSelect.value;
   const type = typeSelect.value;
   serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
 
   if (!app || !type || !grouped[app][type]) return;
 
+  // 👑おすすめ と 通常サービスを分ける
+  const recommendedServices = [];
+  const normalServices = [];
+
   grouped[app][type].forEach(service => {
+    const isRecommended = recommended.includes(String(service.service));
+    (isRecommended ? recommendedServices : normalServices).push(service);
+  });
+
+  // おすすめを上、通常を下に結合
+  const allServices = [...recommendedServices, ...normalServices];
+
+  // DOMに追加
+  allServices.forEach(service => {
     const op = document.createElement("option");
     op.value = service.service;
     op.dataset.finalRate = service.finalRate;
