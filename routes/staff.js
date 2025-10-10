@@ -90,23 +90,20 @@ router.post("/coupons", async (req, res) => {
   }
 });
 
-// ===== ユーザー一括購入履歴 =====
+// ===== 全ユーザー購入履歴 =====
 router.get("/orders", async (req, res) => {
   try {
-    // 管理者認証（必要なら）
-    if (!req.session.isStaff) {
-      return res.redirect("/staff/login");
-    }
+    if (!req.session.isStaff) return res.redirect("/staff/login");
 
-    const db = req.app.locals.db; // ← poolではなく、他と同じdbを使う
+    const db = req.app.locals.db;
     const result = await db.query(`
       SELECT 
         orders.id,
         orders.service_id,
+        orders.service_name,
         orders.link,
         orders.quantity,
-        orders.price,
-        orders.status,
+        orders.price_jpy AS price,     -- ✅ 修正ポイント！
         orders.created_at,
         users.email AS user_email
       FROM orders
@@ -114,7 +111,10 @@ router.get("/orders", async (req, res) => {
       ORDER BY orders.created_at DESC
     `);
 
-    res.render("staff_orders", { title: "全ユーザー購入履歴", orders: result.rows });
+    res.render("staff_orders", { 
+      title: "全ユーザー購入履歴", 
+      orders: result.rows 
+    });
   } catch (err) {
     console.error("❌ staff/orders エラー:", err);
     res.status(500).send("サーバーエラーが発生しました");
