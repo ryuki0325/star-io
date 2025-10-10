@@ -90,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const endDate = document.getElementById("endDate");
   const exportCSV = document.getElementById("exportCSV");
 
+  // 🔍 フィルター処理
   function filterOrders() {
     const keyword = searchInput.value.toLowerCase();
     const status = statusFilter.value;
@@ -129,33 +130,15 @@ document.addEventListener("DOMContentLoaded", () => {
     visibleCards.forEach(c => orderList.appendChild(c));
   }
 
-  // 🔄 入力イベントで即反映
+  // ✅ 入力・変更時にフィルター反映
   [searchInput, statusFilter, sortSelect, startDate, endDate].forEach(el => {
     el.addEventListener("input", filterOrders);
     el.addEventListener("change", filterOrders);
   });
 
-  // 🧹 リセットボタン修正版
+  // 🧹 リセットボタン修正版（ページ自動初期化）
   resetBtn.addEventListener("click", () => {
-    searchInput.value = "";
-    statusFilter.value = "";
-    sortSelect.value = "desc";
-    startDate.value = "";
-    endDate.value = "";
-
-    // すべてのカードを再表示
-    const cards = Array.from(orderList.getElementsByClassName("order-card"));
-    cards.forEach(card => (card.style.display = "block"));
-
-    // 並び順をリセット
-    const sorted = cards.sort((a, b) => {
-      const dateA = new Date(a.querySelector(".date").textContent.replace("📅 日時:", "").trim());
-      const dateB = new Date(b.querySelector(".date").textContent.replace("📅 日時:", "").trim());
-      return dateB - dateA;
-    });
-
-    orderList.innerHTML = "";
-    sorted.forEach(c => orderList.appendChild(c));
+    window.location.reload(); // ✅ ページをリロードして完全初期化
   });
 
   // 📤 CSV出力機能
