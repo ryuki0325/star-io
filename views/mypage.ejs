@@ -56,7 +56,7 @@
               サービスID: <%= order.service_id %>
             </span>
             <span class="badge bg-dark text-white">
-              📅 <%= order.created_at || "不明" %>
+              📅 <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
             </span>
           </div>
 
@@ -79,8 +79,22 @@
           <!-- ステータス -->
           <p class="mb-0 text-white">
             📌 ステータス: 
-            <span class="badge <%= order.status === 'completed' ? 'bg-success' : order.status === 'pending' ? 'bg-warning text-dark' : 'bg-secondary' %>">
-              <%= order.status || "不明" %>
+            <% 
+              let jpStatus = "不明";
+              if (order.status === "completed") jpStatus = "完了";
+              else if (order.status === "pending") jpStatus = "保留中";
+              else if (order.status === "inprogress") jpStatus = "進行中";
+             else if (order.status === "processing") jpStatus = "処理中";
+            %>
+            <span class="badge 
+              <%= order.status === 'completed' 
+                  ? 'bg-success' 
+                  : order.status === 'pending' 
+                    ? 'bg-warning text-dark' 
+                    : order.status === 'inprogress' 
+                      ? 'bg-info text-dark' 
+                      : 'bg-secondary' %>">
+              <%= jpStatus %>
             </span>
           </p>
         </div>
@@ -99,4 +113,93 @@
     transform: translateY(-3px);
     box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
   }
+
+/* ===== スマホ向けマイページ最適化 ===== */
+.mypage-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+/* 💳 残高・メールカード */
+.user-info-card {
+  background: #000814;
+  border: 2px solid #0dcaf0;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(13, 202, 240, 0.5);
+}
+
+.user-info-card p {
+  margin: 5px 0;
+  font-size: 1rem;
+}
+
+/* パスワード変更フォーム */
+.password-form {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 25px;
+}
+
+.password-form label {
+  color: #c9d1d9;
+  font-weight: 600;
+}
+
+.password-form input {
+  width: 100%;
+  margin-bottom: 10px;
+  background: #000814;
+  color: #0dcaf0;
+  border: 1px solid #0dcaf0;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.password-form button {
+  width: 100%;
+  background: #0dcaf0;
+  color: #000;
+  border: none;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 5px;
+  transition: 0.3s;
+}
+.password-form button:hover {
+  background: #00b5e0;
+}
+
+/* 注文履歴カード */
+.order-card {
+  background: #0d1117;
+  border: 1px solid #0dcaf0;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.order-card .text-info {
+  color: #0dcaf0 !important;
+}
+
+.order-card .text-warning {
+  color: #ffc107 !important;
+}
+
+@media (max-width: 768px) {
+  h2 {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+  .order-card {
+    font-size: 0.85rem;
+  }
+}
 </style>
