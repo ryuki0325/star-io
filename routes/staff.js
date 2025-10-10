@@ -94,11 +94,12 @@ router.post("/coupons", async (req, res) => {
 router.get("/orders", async (req, res) => {
   try {
     // 管理者認証（必要なら）
-    if (!req.session.user || !req.session.user.isAdmin) {
-      return res.redirect("/login");
+    if (!req.session.isStaff) {
+      return res.redirect("/staff/login");
     }
 
-    const [orders] = await pool.query(`
+    const db = req.app.locals.db; // ← poolではなく、他と同じdbを使う
+    const result = await db.query(`
       SELECT 
         orders.id,
         orders.service_id,
@@ -113,9 +114,9 @@ router.get("/orders", async (req, res) => {
       ORDER BY orders.created_at DESC
     `);
 
-    res.render("staff_orders", { orders });
+    res.render("staff_orders", { title: "全ユーザー購入履歴", orders: result.rows });
   } catch (err) {
-    console.error(err);
+    console.error("❌ staff/orders エラー:", err);
     res.status(500).send("サーバーエラーが発生しました");
   }
 });
