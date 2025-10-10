@@ -90,6 +90,36 @@ router.post("/coupons", async (req, res) => {
   }
 });
 
+// ===== ユーザー一括購入履歴 =====
+router.get("/orders", async (req, res) => {
+  try {
+    // 管理者認証（必要なら）
+    if (!req.session.user || !req.session.user.isAdmin) {
+      return res.redirect("/login");
+    }
+
+    const [orders] = await pool.query(`
+      SELECT 
+        orders.id,
+        orders.service_id,
+        orders.link,
+        orders.quantity,
+        orders.price,
+        orders.status,
+        orders.created_at,
+        users.email AS user_email
+      FROM orders
+      JOIN users ON orders.user_id = users.id
+      ORDER BY orders.created_at DESC
+    `);
+
+    res.render("staff_orders", { orders });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("サーバーエラーが発生しました");
+  }
+});
+
 // ===== ユーザー購入履歴 =====
 router.get("/user/:id/orders", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
