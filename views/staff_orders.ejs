@@ -46,23 +46,32 @@
           </p>
           <p class="mb-0 status">
             📌 ステータス: 
-            <% 
-              let jpStatus = "不明";
-              if (order.status === "completed") jpStatus = "完了";
-              else if (order.status === "pending") jpStatus = "保留中";
-              else if (order.status === "inprogress") jpStatus = "進行中";
-              else if (order.status === "processing") jpStatus = "処理中";
-            %>
+           <%
+            let jpStatus = "不明";
+            const s = (order.status || "").toLowerCase();
+
+            if (s === "completed") jpStatus = "完了";
+            else if (s === "inprogress") jpStatus = "進行中";
+            else if (s === "pending") jpStatus = "保留中";
+            else if (s === "processing") jpStatus = "処理中";
+            else if (s === "partial") jpStatus = "一部完了";
+            else if (s === "canceled" || s === "cancel") jpStatus = "キャンセル";
+            else if (s === "error" || s === "failed") jpStatus = "エラー";
+          %>
             <span class="badge 
-              <%= order.status === 'completed' 
-                  ? 'bg-success' 
-                  : order.status === 'pending' 
-                    ? 'bg-warning text-dark' 
-                    : order.status === 'inprogress' 
-                      ? 'bg-info text-dark' 
-                      : 'bg-secondary' %>">
-              <%= jpStatus %>
-            </span>
+            <%= s === 'completed'
+                ? 'bg-success'
+                : s === 'inprogress'
+                  ? 'bg-info text-dark'
+                  : s === 'pending' || s === 'processing'
+                    ? 'bg-warning text-dark'
+                    : s === 'partial'
+                      ? 'bg-primary'
+                      : s === 'canceled' || s === 'error' || s === 'failed'
+                        ? 'bg-danger'
+                        : 'bg-secondary' %>">
+            <%= jpStatus %>
+          </span>
           </p>
         </div>
       <% }) %>
@@ -93,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cards.forEach(card => {
       const text = card.textContent.toLowerCase();
-      const dateText = card.querySelector("p:nth-child(6)").textContent.replace("📅 日時: ", "");
+      const dateText = card.querySelector(".date").textContent.replace("📅 日時:", "").trim();
       const orderDate = new Date(dateText);
 
       const matchKeyword = keyword === "" || text.includes(keyword);
@@ -103,12 +112,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (matchKeyword && matchStatus && matchStart && matchEnd) {
         visibleCards.push(card);
+        card.style.display = "block";
+      } else {
+        card.style.display = "none";
       }
     });
 
+    // 並び替え
     visibleCards.sort((a, b) => {
-      const dateA = new Date(a.querySelector("p:nth-child(6)").textContent.replace("📅 日時: ", ""));
-      const dateB = new Date(b.querySelector("p:nth-child(6)").textContent.replace("📅 日時: ", ""));
+      const dateA = new Date(a.querySelector(".date").textContent.replace("📅 日時:", "").trim());
+      const dateB = new Date(b.querySelector(".date").textContent.replace("📅 日時:", "").trim());
       return sort === "desc" ? dateB - dateA : dateA - dateB;
     });
 
@@ -116,29 +129,54 @@ document.addEventListener("DOMContentLoaded", () => {
     visibleCards.forEach(c => orderList.appendChild(c));
   }
 
+  // 🔄 入力イベントで即反映
   [searchInput, statusFilter, sortSelect, startDate, endDate].forEach(el => {
     el.addEventListener("input", filterOrders);
+    el.addEventListener("change", filterOrders);
   });
 
+  // 🧹 リセットボタン修正版
   resetBtn.addEventListener("click", () => {
     searchInput.value = "";
     statusFilter.value = "";
     sortSelect.value = "desc";
     startDate.value = "";
     endDate.value = "";
-    filterOrders();
-  });
 
-  // 📤 CSV出力
-  exportCSV.addEventListener("click", () => {
-    const rows = [["ユーザー", "サービスID", "リンク", "数量", "金額(円)", "日時", "ステータス"]];
+    // すべてのカードを再表示
     const cards = Array.from(orderList.getElementsByClassName("order-card"));
-    cards.forEach(card => {
-      const cells = Array.from(card.querySelectorAll("p")).map(p => p.textContent.replace(/^[📅📌👤🆔🔗📦💰 ]+/g, "").trim());
-      rows.push(cells);
+    cards.forEach(card => (card.style.display = "block"));
+
+    // 並び順をリセット
+    const sorted = cards.sort((a, b) => {
+      const dateA = new Date(a.querySelector(".date").textContent.replace("📅 日時:", "").trim());
+      const dateB = new Date(b.querySelector(".date").textContent.replace("📅 日時:", "").trim());
+      return dateB - dateA;
     });
 
-    let csvContent = rows.map(e => e.join(",")).join("\n");
+    orderList.innerHTML = "";
+    sorted.forEach(c => orderList.appendChild(c));
+  });
+
+  // 📤 CSV出力機能
+  exportCSV.addEventListener("click", () => {
+    const rows = [["ユーザー", "サービス名", "リンク", "数量", "金額(円)", "日時", "ステータス"]];
+    const cards = Array.from(orderList.getElementsByClassName("order-card")).filter(c => c.style.display !== "none");
+
+    cards.forEach(card => {
+      const data = [
+        card.querySelector(".user-email")?.textContent.trim() || "",
+        card.querySelector(".service-name")?.textContent.trim() || "",
+        card.querySelector(".link-url a")?.href || "",
+        card.querySelector(".quantity")?.textContent.replace("📦 数量:", "").trim() || "",
+        card.querySelector(".price")?.textContent.replace("💰 金額:", "").trim() || "",
+        card.querySelector(".date")?.textContent.replace("📅 日時:", "").trim() || "",
+        card.querySelector(".status span")?.textContent.trim() || ""
+      ];
+      rows.push(data);
+    });
+
+    const csvContent = rows.map(e => e.join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
