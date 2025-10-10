@@ -1,0 +1,162 @@
+<% title = "全ユーザー購入履歴" %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">🧾 全ユーザー購入履歴</h2>
+
+  <!-- 🔍 検索・フィルター -->
+  <div class="filter-bar mb-4 d-flex flex-wrap gap-2 align-items-center">
+    <input type="text" id="searchInput" class="form-control bg-dark text-light border-info" placeholder="🔍 メール・ID・リンクを検索" style="max-width: 250px;">
+
+    <select id="statusFilter" class="form-select bg-dark text-light border-info" style="max-width: 160px;">
+      <option value="">全てのステータス</option>
+      <option value="completed">完了</option>
+      <option value="inprogress">進行中</option>
+      <option value="pending">保留中</option>
+      <option value="processing">処理中</option>
+    </select>
+
+    <select id="sortSelect" class="form-select bg-dark text-light border-info" style="max-width: 150px;">
+      <option value="desc">📅 新しい順</option>
+      <option value="asc">📅 古い順</option>
+    </select>
+
+    <!-- 📅 日付範囲 -->
+    <input type="date" id="startDate" class="form-control bg-dark text-light border-info" style="max-width: 180px;">
+    <input type="date" id="endDate" class="form-control bg-dark text-light border-info" style="max-width: 180px;">
+
+    <button id="exportCSV" class="btn btn-outline-success">📤 CSV出力</button>
+    <button id="resetFilters" class="btn btn-outline-info">リセット</button>
+  </div>
+
+  <% if (orders.length === 0) { %>
+    <div class="alert alert-secondary">注文履歴はありません。</div>
+  <% } else { %>
+    <div id="orderList">
+      <% orders.forEach(order => { %>
+        <div class="order-card card bg-dark border border-info mb-3 p-3">
+          <p class="mb-1">👤 ユーザー: <b><%= order.user_email %></b></p>
+          <p class="mb-1">🆔 サービスID: <%= order.service_id %></p>
+          <p class="mb-1">🔗 リンク: <%= order.link %></p>
+          <p class="mb-1">📦 数量: <%= order.quantity %></p>
+          <p class="mb-1">💰 金額: <%= order.price %> 円</p>
+          <p class="mb-1">📅 日時: <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %></p>
+          <p class="mb-0">
+            📌 ステータス: 
+            <% 
+              let jpStatus = "不明";
+              if (order.status === "completed") jpStatus = "完了";
+              else if (order.status === "pending") jpStatus = "保留中";
+              else if (order.status === "inprogress") jpStatus = "進行中";
+              else if (order.status === "processing") jpStatus = "処理中";
+            %>
+            <span class="badge 
+              <%= order.status === 'completed' 
+                  ? 'bg-success' 
+                  : order.status === 'pending' 
+                    ? 'bg-warning text-dark' 
+                    : order.status === 'inprogress' 
+                      ? 'bg-info text-dark' 
+                      : 'bg-secondary' %>">
+              <%= jpStatus %>
+            </span>
+          </p>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("searchInput");
+  const statusFilter = document.getElementById("statusFilter");
+  const sortSelect = document.getElementById("sortSelect");
+  const resetBtn = document.getElementById("resetFilters");
+  const orderList = document.getElementById("orderList");
+  const startDate = document.getElementById("startDate");
+  const endDate = document.getElementById("endDate");
+  const exportCSV = document.getElementById("exportCSV");
+
+  function filterOrders() {
+    const keyword = searchInput.value.toLowerCase();
+    const status = statusFilter.value;
+    const sort = sortSelect.value;
+    const start = startDate.value ? new Date(startDate.value) : null;
+    const end = endDate.value ? new Date(endDate.value) : null;
+
+    const cards = Array.from(orderList.getElementsByClassName("order-card"));
+    let visibleCards = [];
+
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      const dateText = card.querySelector("p:nth-child(6)").textContent.replace("📅 日時: ", "");
+      const orderDate = new Date(dateText);
+
+      const matchKeyword = keyword === "" || text.includes(keyword);
+      const matchStatus = status === "" || text.includes(status);
+      const matchStart = !start || orderDate >= start;
+      const matchEnd = !end || orderDate <= end;
+
+      if (matchKeyword && matchStatus && matchStart && matchEnd) {
+        visibleCards.push(card);
+      }
+    });
+
+    visibleCards.sort((a, b) => {
+      const dateA = new Date(a.querySelector("p:nth-child(6)").textContent.replace("📅 日時: ", ""));
+      const dateB = new Date(b.querySelector("p:nth-child(6)").textContent.replace("📅 日時: ", ""));
+      return sort === "desc" ? dateB - dateA : dateA - dateB;
+    });
+
+    orderList.innerHTML = "";
+    visibleCards.forEach(c => orderList.appendChild(c));
+  }
+
+  [searchInput, statusFilter, sortSelect, startDate, endDate].forEach(el => {
+    el.addEventListener("input", filterOrders);
+  });
+
+  resetBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    statusFilter.value = "";
+    sortSelect.value = "desc";
+    startDate.value = "";
+    endDate.value = "";
+    filterOrders();
+  });
+
+  // 📤 CSV出力機能
+  exportCSV.addEventListener("click", () => {
+    const rows = [["ユーザー", "サービスID", "リンク", "数量", "金額(円)", "日時", "ステータス"]];
+    const cards = Array.from(orderList.getElementsByClassName("order-card"));
+    cards.forEach(card => {
+      const cells = Array.from(card.querySelectorAll("p")).map(p => p.textContent.replace(/^[📅📌👤🆔🔗📦💰 ]+/g, "").trim());
+      rows.push(cells);
+    });
+
+    let csvContent = rows.map(e => e.join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `orders_${new Date().toLocaleDateString("ja-JP")}.csv`;
+    link.click();
+  });
+});
+</script>
+
+<style>
+.filter-bar input, .filter-bar select {
+  border: 2px solid #0dcaf0;
+  color: #0dcaf0;
+  background: #000814;
+  font-weight: 500;
+}
+.filter-bar button {
+  border: 2px solid #0dcaf0;
+  color: #0dcaf0;
+}
+.filter-bar button:hover {
+  background: #0dcaf0;
+  color: #000;
+}
+</style>
