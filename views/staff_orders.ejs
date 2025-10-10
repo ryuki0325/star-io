@@ -29,41 +29,45 @@
   </div>
 
   <% if (orders.length === 0) { %>
-    <div class="alert alert-secondary">注文履歴はありません。</div>
-  <% } else { %>
-    <div id="orderList">
-      <% orders.forEach(order => { %>
-        <div class="order-card card bg-dark border border-info mb-3 p-3">
-          <p class="mb-1">👤 ユーザー: <b><%= order.user_email %></b></p>
-          <p class="mb-1">🆔 サービスID: <%= order.service_id %></p>
-          <p class="mb-1">🔗 リンク: <%= order.link %></p>
-          <p class="mb-1">📦 数量: <%= order.quantity %></p>
-          <p class="mb-1">💰 金額: <%= order.price %> 円</p>
-          <p class="mb-1">📅 日時: <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %></p>
-          <p class="mb-0">
-            📌 ステータス: 
-            <% 
-              let jpStatus = "不明";
-              if (order.status === "completed") jpStatus = "完了";
-              else if (order.status === "pending") jpStatus = "保留中";
-              else if (order.status === "inprogress") jpStatus = "進行中";
-              else if (order.status === "processing") jpStatus = "処理中";
-            %>
-            <span class="badge 
-              <%= order.status === 'completed' 
-                  ? 'bg-success' 
-                  : order.status === 'pending' 
-                    ? 'bg-warning text-dark' 
-                    : order.status === 'inprogress' 
-                      ? 'bg-info text-dark' 
-                      : 'bg-secondary' %>">
-              <%= jpStatus %>
-            </span>
-          </p>
-        </div>
-      <% }) %>
-    </div>
-  <% } %>
+  <div class="alert alert-secondary">注文履歴はありません。</div>
+<% } else { %>
+  <div id="orderList">
+    <% orders.forEach(order => { %>
+      <div class="order-card card bg-dark border border-info mb-3 p-3">
+        <p class="mb-1">👤 ユーザー: <span class="user-email"><%= order.user_email %></span></p>
+        <p class="mb-1">💎 サービス名: <span class="service-name"><%= order.service_name || "不明" %></span></p>
+        <p class="mb-1 link-url">🔗 リンク: 
+          <a href="<%= order.link %>" target="_blank"><%= order.link %></a>
+        </p>
+        <p class="mb-1 quantity">📦 数量: <%= order.quantity %></p>
+        <p class="mb-1 price">💰 金額: <%= order.price %> 円</p>
+        <p class="mb-1 date">📅 日時: 
+          <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+        </p>
+        <p class="mb-0 status">
+          📌 ステータス: 
+          <% 
+            let jpStatus = "不明";
+            if (order.status === "completed") jpStatus = "完了";
+            else if (order.status === "pending") jpStatus = "保留中";
+            else if (order.status === "inprogress") jpStatus = "進行中";
+            else if (order.status === "processing") jpStatus = "処理中";
+          %>
+          <span class="badge 
+            <%= order.status === 'completed' 
+                ? 'bg-success' 
+                : order.status === 'pending' 
+                  ? 'bg-warning text-dark' 
+                  : order.status === 'inprogress' 
+                    ? 'bg-info text-dark' 
+                    : 'bg-secondary' %>">
+            <%= jpStatus %>
+          </span>
+        </p>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
 </div>
 
 <script>
