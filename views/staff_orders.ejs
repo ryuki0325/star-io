@@ -29,45 +29,45 @@
   </div>
 
   <% if (orders.length === 0) { %>
-  <div class="alert alert-secondary">注文履歴はありません。</div>
-<% } else { %>
-  <div id="orderList">
-    <% orders.forEach(order => { %>
-      <div class="order-card card bg-dark border border-info mb-3 p-3">
-        <p class="mb-1">👤 ユーザー: <span class="user-email"><%= order.user_email %></span></p>
-        <p class="mb-1">💎 サービス名: <span class="service-name"><%= order.service_name || "不明" %></span></p>
-        <p class="mb-1 link-url">🔗 リンク: 
-          <a href="<%= order.link %>" target="_blank"><%= order.link %></a>
-        </p>
-        <p class="mb-1 quantity">📦 数量: <%= order.quantity %></p>
-        <p class="mb-1 price">💰 金額: <%= order.price %> 円</p>
-        <p class="mb-1 date">📅 日時: 
-          <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
-        </p>
-        <p class="mb-0 status">
-          📌 ステータス: 
-          <% 
-            let jpStatus = "不明";
-            if (order.status === "completed") jpStatus = "完了";
-            else if (order.status === "pending") jpStatus = "保留中";
-            else if (order.status === "inprogress") jpStatus = "進行中";
-            else if (order.status === "processing") jpStatus = "処理中";
-          %>
-          <span class="badge 
-            <%= order.status === 'completed' 
-                ? 'bg-success' 
-                : order.status === 'pending' 
-                  ? 'bg-warning text-dark' 
-                  : order.status === 'inprogress' 
-                    ? 'bg-info text-dark' 
-                    : 'bg-secondary' %>">
-            <%= jpStatus %>
-          </span>
-        </p>
-      </div>
-    <% }) %>
-  </div>
-<% } %>
+    <div class="alert alert-secondary">注文履歴はありません。</div>
+  <% } else { %>
+    <div id="orderList">
+      <% orders.forEach(order => { %>
+        <div class="order-card card bg-dark border border-info mb-3 p-3">
+          <p class="mb-1">👤 ユーザー: <span class="user-email"><%= order.user_email %></span></p>
+          <p class="mb-1">💎 サービス名: <span class="service-name"><%= order.service_name || "不明" %></span></p>
+          <p class="mb-1 link-url">🔗 リンク: 
+            <a href="<%= order.link %>" target="_blank"><%= order.link %></a>
+          </p>
+          <p class="mb-1 quantity">📦 数量: <%= order.quantity %></p>
+          <p class="mb-1 price">💰 金額: <%= order.price %> 円</p>
+          <p class="mb-1 date">📅 日時: 
+            <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+          </p>
+          <p class="mb-0 status">
+            📌 ステータス: 
+            <% 
+              let jpStatus = "不明";
+              if (order.status === "completed") jpStatus = "完了";
+              else if (order.status === "pending") jpStatus = "保留中";
+              else if (order.status === "inprogress") jpStatus = "進行中";
+              else if (order.status === "processing") jpStatus = "処理中";
+            %>
+            <span class="badge 
+              <%= order.status === 'completed' 
+                  ? 'bg-success' 
+                  : order.status === 'pending' 
+                    ? 'bg-warning text-dark' 
+                    : order.status === 'inprogress' 
+                      ? 'bg-info text-dark' 
+                      : 'bg-secondary' %>">
+              <%= jpStatus %>
+            </span>
+          </p>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
 </div>
 
 <script>
@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filterOrders();
   });
 
-  // 📤 CSV出力機能
+  // 📤 CSV出力
   exportCSV.addEventListener("click", () => {
     const rows = [["ユーザー", "サービスID", "リンク", "数量", "金額(円)", "日時", "ステータス"]];
     const cards = Array.from(orderList.getElementsByClassName("order-card"));
@@ -179,10 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
   box-shadow: 0 0 12px rgba(13, 202, 240, 0.8);
 }
 
-/* ======== プレースホルダー ======== */
 .filter-bar input::placeholder {
   color: #0dcaf0b3;
-  font-weight: 400;
 }
 
 /* ======== ボタン共通 ======== */
@@ -203,19 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
   box-shadow: 0 0 12px rgba(13, 202, 240, 0.8);
 }
 
-/* ======== CSVボタン特別カラー ======== */
-.filter-bar .csv-btn {
-  border-color: #00ff99;
-  color: #00ff99;
-  box-shadow: 0 0 6px rgba(0, 255, 153, 0.4);
-}
-
-.filter-bar .csv-btn:hover {
-  background: #00ff99;
-  color: #000;
-  box-shadow: 0 0 12px rgba(0, 255, 153, 0.8);
-}
-
 /* ======== モバイル対応 ======== */
 @media (max-width: 768px) {
   .filter-bar {
@@ -229,4 +214,25 @@ document.addEventListener("DOMContentLoaded", () => {
     width: 100%;
   }
 }
+
+/* ======== 注文カード ======== */
+.order-card {
+  border: 1.5px solid #0dcaf0;
+  border-radius: 10px;
+  background: #000814;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(13, 202, 240, 0.3);
+}
+
+/* ======== 色指定 ======== */
+.user-email { color: #0dcaf0 !important; font-weight: bold; }  /* 青 */
+.service-name { color: #FFD700 !important; font-weight: bold; } /* 黄 */
+.link-url a { color: #ff4c4c !important; text-decoration: none; word-break: break-all; } /* 赤 */
+.link-url a:hover { color: #ff7777 !important; text-decoration: underline; }
+
+/* ======== その他白 ======== */
+.quantity, .price, .date, .status { color: #ffffff !important; }
+
+/* ======== ステータス強調 ======== */
+.status span { font-weight: bold; box-shadow: 0 0 6px rgba(13, 202, 240, 0.4); }
 </style>
