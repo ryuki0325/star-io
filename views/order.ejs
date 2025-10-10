@@ -209,6 +209,28 @@
   }
 }
 
+/* 🔍 検索ボックスを青系に統一 */
+#searchInput {
+  border: 2px solid #0dcaf0 !important;
+  background: #000814 !important;
+  color: #0dcaf0 !important;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(13, 202, 240, 0.3);
+  transition: all 0.3s ease;
+}
+
+#searchInput::placeholder {
+  color: #0dcaf0b3; /* 少し薄めの青 */
+  font-weight: normal;
+}
+
+#searchInput:focus {
+  background: #001427 !important;
+  box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
+  outline: none;
+}
+
 /* --- クイック選択をグリッド化 --- */
 .quick-grid {
   display: grid;
