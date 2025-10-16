@@ -1,69 +1,135 @@
-<% title = '利益一覧' %>
 <div class="container py-4 text-light">
+  <h2 class="mb-4">📊 利益一覧</h2>
 
-  <h2 class="mb-4">💹 利益一覧</h2>
+  <!-- ✅ 日付フィルター -->
+  <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+    <div>
+      <label>開始日：</label>
+      <input type="date" id="startDate" class="form-control d-inline-block w-auto">
+    </div>
+    <div>
+      <label>終了日：</label>
+      <input type="date" id="endDate" class="form-control d-inline-block w-auto">
+    </div>
+    <button id="filterButton" class="btn btn-info fw-bold">絞り込み</button>
+  </div>
 
-  <form method="get" class="mb-4 row g-2">
-    <div class="col-md-2">
-      <label>開始日</label>
-      <input type="date" name="start" class="form-control" value="<%= start || '' %>">
-    </div>
-    <div class="col-md-2">
-      <label>終了日</label>
-      <input type="date" name="end" class="form-control" value="<%= end || '' %>">
-    </div>
-    <div class="col-md-2">
-      <label>商品</label>
-      <select name="platform" class="form-select">
-        <option value="all">全て</option>
-        <option value="TikTok" <%= platform==='TikTok'?'selected':'' %>>TikTok</option>
-        <option value="Instagram" <%= platform==='Instagram'?'selected':'' %>>Instagram</option>
-        <option value="Twitter" <%= platform==='Twitter'?'selected':'' %>>Twitter</option>
-        <option value="YouTube" <%= platform==='YouTube'?'selected':'' %>>YouTube</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label>ユーザー検索</label>
-      <input type="text" name="user_search" class="form-control" placeholder="ID or Email" value="<%= user_search || '' %>">
-    </div>
-    <div class="col-md-2 align-self-end">
-      <button class="btn btn-primary w-100">絞り込み</button>
-    </div>
-  </form>
+  <!-- ✅ ショートカットボタン -->
+  <div class="date-shortcuts d-flex flex-wrap gap-2 mb-4">
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(1)">過去1日</button>
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(7)">過去1週間</button>
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(10)">過去10日</button>
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(30)">過去1ヶ月</button>
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(90)">過去3ヶ月</button>
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(180)">過去6ヶ月</button>
+    <button class="btn btn-outline-info btn-sm" onclick="setDays(365)">過去1年</button>
+  </div>
 
-  <table class="table table-dark table-striped table-bordered text-center">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>ユーザーID</th>
-        <th>サービス名</th>
-        <th>数量</th>
-        <th>販売価格(円)</th>
-        <th>仕入れ価格($)</th>
-        <th>仕入れ価格(円)</th>
-        <th>利益(円)</th>
-        <th>日付</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% orders.forEach(o => { %>
+  <!-- ✅ 検索バー -->
+  <input 
+    type="text" 
+    id="searchInput" 
+    class="form-control mb-3" 
+    placeholder="🔍 ユーザーID または サービス名で検索..."
+  >
+
+  <!-- ✅ 利益テーブル -->
+  <div id="profitTableContainer" style="display:none;">
+    <table class="table table-dark table-striped table-hover align-middle text-center">
+      <thead class="table-info text-dark">
         <tr>
-          <td><%= o.id %></td>
-          <td><%= o.user_id %></td>
-          <td><%= o.service_name %></td>
-          <td><%= o.quantity %></td>
-          <td><%= o.price_jpy %></td>
-          <td><%= o.smm_cost_usd %>$</td>
-          <td><%= o.smm_cost_jpy %></td>
-          <td class="fw-bold text-success"><%= o.profit %></td>
-          <td><%= new Date(o.created_at).toLocaleString('ja-JP') %></td>
+          <th>ユーザーID</th>
+          <th>サービス名</th>
+          <th>数量</th>
+          <th>販売価格(円)</th>
+          <th>仕入れ価格(円)</th>
+          <th>利益(円)</th>
+          <th>日付</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
-
-  <h4 class="text-end mt-3">
-    💰 合計利益：<span class="text-warning fw-bold"><%= totalProfit %> 円</span>
-  </h4>
-
+      </thead>
+      <tbody id="profitBody"></tbody>
+    </table>
+    <div id="totalProfit" class="text-end text-success fw-bold fs-5 mt-2"></div>
+  </div>
 </div>
+
+<!-- ✅ スクリプト -->
+<script>
+  // 📆 ショートカットで期間設定
+  function setDays(days) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - days);
+    document.getElementById("startDate").value = start.toISOString().slice(0,10);
+    document.getElementById("endDate").value = end.toISOString().slice(0,10);
+  }
+
+  // 🧮 絞り込みボタン押下でテーブル表示（仮データ例）
+  document.getElementById("filterButton").addEventListener("click", () => {
+    const container = document.getElementById("profitTableContainer");
+    container.style.display = "block";
+
+    // 🔹 ここでバックエンドからデータ取得する想定（今はサンプル）
+    const data = [
+      {user:2, service:"TikTok Likes", qty:10000, price:180, cost:90, profit:90, date:"2025/10/16"},
+      {user:2, service:"YouTube Views", qty:1000, price:7.8, cost:2, profit:5.8, date:"2025/10/15"},
+      {user:3, service:"Instagram Followers", qty:500, price:60, cost:40, profit:20, date:"2025/10/10"}
+    ];
+
+    renderTable(data);
+  });
+
+  // 🔍 検索イベント
+  document.getElementById("searchInput").addEventListener("input", () => {
+    const keyword = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#profitBody tr");
+
+    let visibleProfit = 0;
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      const show = text.includes(keyword);
+      row.style.display = show ? "" : "none";
+      if (show) visibleProfit += parseFloat(row.dataset.profit);
+    });
+
+    // 合計利益を更新
+    document.getElementById("totalProfit").textContent = 
+      `💰 合計利益: ${visibleProfit.toFixed(2)} 円`;
+  });
+
+  // 💰 テーブル描画関数
+  function renderTable(data) {
+    const tbody = document.getElementById("profitBody");
+    tbody.innerHTML = "";
+
+    let total = 0;
+    data.forEach(d => {
+      const tr = document.createElement("tr");
+      tr.dataset.profit = d.profit;
+      tr.innerHTML = `
+        <td>${d.user}</td>
+        <td>${d.service}</td>
+        <td>${d.qty.toLocaleString()}</td>
+        <td>${d.price.toFixed(2)}</td>
+        <td>${d.cost.toFixed(2)}</td>
+        <td class="text-success fw-bold">${d.profit.toFixed(2)}</td>
+        <td>${d.date}</td>
+      `;
+      tbody.appendChild(tr);
+      total += d.profit;
+    });
+
+    document.getElementById("totalProfit").textContent =
+      `💰 合計利益: ${total.toFixed(2)} 円`;
+  }
+</script>
+
+<!-- ✅ CSS -->
+<style>
+  .table-dark th, .table-dark td { font-size: 0.95rem; }
+  .table-dark tbody tr:hover { background-color: rgba(13,202,240,0.1); }
+  .table-dark th { background: #0dcaf0 !important; color: #000 !important; }
+  .date-shortcuts button { border-width: 2px; transition: all 0.2s; }
+  .date-shortcuts button:hover { background: #0dcaf0; color: #000; font-weight: bold; }
+  #searchInput { border: 2px solid #0dcaf0; background: #000; color: #0dcaf0; text-align: center; font-weight: bold; }
+</style>
