@@ -161,64 +161,57 @@ router.get("/user/:id/orders", async (req, res) => {
 // ===== 利益率計算 =====
 router.get("/profits", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
+
   const db = req.app.locals.db;
   const { start, end, search } = req.query;
 
   try {
-    // ✅ 動的条件の生成
     let conditions = [];
-    let values = [];
-    let index = 1;
+    let params = [];
+    let paramIndex = 1;
 
     if (start && end) {
-      conditions.push(`orders.created_at BETWEEN $${index++} AND $${index++}`);
-      values.push(start, end);
+      conditions.push(`orders.created_at BETWEEN $${paramIndex++} AND $${paramIndex++}`);
+      params.push(start, end);
     }
 
     if (search) {
-      conditions.push(`(
-        users.email ILIKE $${index} OR
-        orders.service_name ILIKE $${index}
-      )`);
-      values.push(`%${search}%`);
-      index++;
+      conditions.push(`(orders.service_name ILIKE $${paramIndex} OR users.email ILIKE $${paramIndex})`);
+      params.push(`%${search}%`);
     }
 
-    const whereClause = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    // ✅ 注文データ取得 + 利益計算
-    const result = await db.query(`
+    const query = `
       SELECT 
         orders.id,
-        users.email AS customer_email,
         orders.service_name,
-        orders.price_jpy AS site_price,
-        orders.smm_price AS smm_price,  -- ← ここを修正
-        (orders.price_jpy - orders.smm_cost_jpy) AS profit,
-        orders.created_at
+        orders.price_jpy,
+        orders.smm_cost_jpy,
+        orders.created_at,
+        users.email AS user_email,
+        (orders.price_jpy - COALESCE(orders.smm_cost_jpy, 0)) AS profit
       FROM orders
       JOIN users ON orders.user_id = users.id
       ${whereClause}
       ORDER BY orders.created_at DESC
-    `, values);
+    `;
 
-    const orders = result.rows;
+    const result = await db.query(query, params);
 
-    // ✅ 合計利益を計算
-    const totalProfit = orders.reduce((sum, o) => sum + (o.profit || 0), 0);
+    const totalProfit = result.rows.reduce((sum, o) => sum + Number(o.profit || 0), 0);
 
     res.render("staff_profits", {
-      title: "利益集計",
-      orders,
+      title: "利益一覧",
+      orders: result.rows,
       totalProfit,
       start,
       end,
-      search,
+      search
     });
-
   } catch (err) {
     console.error("❌ 利益計算エラー:", err);
-    res.status(500).send("利益データの取得に失敗しました");
+    res.status(500).send("利益計算に失敗しました");
   }
 });
 
