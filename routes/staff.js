@@ -291,6 +291,33 @@ router.post("/user/:id/edit", async (req, res) => {
   }
 });
 
+// 📊 利益データを返すAPI
+router.get("/api/profit", async (req, res) => {
+  const db = req.app.locals.db;
+  const { start, end } = req.query;
+
+  try {
+    const result = await db.query(
+      `SELECT 
+         user_id AS user,
+         service_name AS service,
+         quantity AS qty,
+         price_jpy AS price,
+         COALESCE(smm_cost_jpy, 0) AS cost,
+         (price_jpy - COALESCE(smm_cost_jpy, 0)) AS profit,
+         TO_CHAR(created_at, 'YYYY/MM/DD') AS date
+       FROM orders
+       WHERE created_at BETWEEN $1 AND $2
+       ORDER BY created_at DESC`,
+      [start + " 00:00:00", end + " 23:59:59"]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ 利益APIエラー:", err);
+    res.status(500).json({ error: "サーバーエラー" });
+  }
+});
+
 // ===== ログアウト =====
 router.get("/logout", (req, res) => {
   req.session.isStaff = false;
