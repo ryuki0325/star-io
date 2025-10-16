@@ -627,24 +627,49 @@ router.post("/order", async (req, res) => {
     );
 
     // ✅ SMMFlare APIに注文送信
-const orderRes = await smm.createOrder(serviceId, link, quantity);
+    const orderRes = await smm.createOrder(serviceId, link, quantity);
 
-// ✅ 注文をDBに保存（SMMFlareの注文IDも保存！）
-await db.query(
-  `INSERT INTO orders 
-   (user_id, service_id, service_name, link, quantity, price_jpy, smm_order_id, created_at, status)
-   VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), 'pending')`,
-  [req.session.userId, serviceId, svc.name, link, quantity, amount, orderRes.order]
-);
+    // 🟡🟡🟡【ここから追加！仕入れ価格を取得＆円換算】🟡🟡🟡
+    let smm_cost_usd = 0;
+    let smm_cost_jpy = 0;
+
+    try {
+      // SMMFlareのAPIから注文詳細を取得（原価取得）
+      const statusRes = await smm.getOrderStatus(orderRes.order);
+      smm_cost_usd = parseFloat(statusRes.charge || 0);
+      smm_cost_jpy = smm_cost_usd * JPY_RATE;
+    } catch (apiErr) {
+      console.warn("⚠️ 仕入れ価格取得に失敗しました:", apiErr.message);
+    }
+    // 🟡🟡🟡【ここまで追加】🟡🟡🟡
+
+    // ✅ 注文をDBに保存（仕入れ価格も保存！）
+    await db.query(
+      `INSERT INTO orders 
+       (user_id, service_id, service_name, link, quantity, price_jpy, smm_order_id, smm_cost_jpy, created_at, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), 'pending')`,
+      [
+        req.session.userId,
+        serviceId,
+        svc.name,
+        link,
+        quantity,
+        amount,
+        orderRes.order,
+        smm_cost_jpy
+      ]
+    );
 
     // ✅ 成功画面を表示
     res.render("order_success", {
       title: "注文完了",
-      orderId: orderRes.order,             // SMMFlareの注文ID
+      orderId: orderRes.order,
       serviceName: svc.name,
       quantity,
-      amount: amount.toFixed(2),           // 表示：小数点2桁
-      balance: (balance - amount).toFixed(2) // 残高更新後
+      amount: amount.toFixed(2),
+      smm_cost_usd: smm_cost_usd.toFixed(2),
+      smm_cost_jpy: smm_cost_jpy.toFixed(2),
+      balance: (balance - amount).toFixed(2)
     });
 
   } catch (err) {
