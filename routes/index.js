@@ -604,11 +604,11 @@ router.post("/order", async (req, res) => {
     // ✅ 為替レート（例: 1ドル=150円）
     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
 
-    // ✅ 原価（仕入れ価格）計算
+    // ✅ 仕入れ価格（ドル & 円）
     const smm_cost_usd = (parseFloat(svc.rate) / 1000) * Number(quantity);
     const smm_cost_jpy = smm_cost_usd * JPY_RATE;
 
-    // ✅ 販売価格（倍率適用）
+    // ✅ 販売価格（倍率をかけた価格）
     const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
     const amount = (unitRate / 1000) * Number(quantity);
 
