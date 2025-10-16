@@ -213,11 +213,24 @@ document.addEventListener("DOMContentLoaded", () => {
         totalProfit += parseFloat(profit);
 
         // 日付フォーマット（時間込み）
-        const dateStr = new Date(row.date).toLocaleString('ja-JP', {
-          year: 'numeric', month: '2-digit', day: '2-digit',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-
+        // ✅ Invalid Date 対策付き
+      let dateStr = "N/A";
+      try {
+        const parsedDate = new Date(row.created_at.replace(" ", "T"));
+        if (!isNaN(parsedDate)) {
+          dateStr = parsedDate.toLocaleString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+          });
+        }
+      } catch (e) {
+        console.warn("⚠️ 日付変換エラー:", row.created_at);
+      }
         return `
           <tr>
             <td>${row.user}</td>
