@@ -596,7 +596,9 @@ router.post("/order", async (req, res) => {
   try {
     // ✅ SMMFlareサービスリストを取得
     const services = await smm.getServices();
-    const svc = services.find(s => s.service == serviceId);
+    const svc = services.find(s => String(s.service) === String(serviceId));
+    console.log("🟩 該当サービスID:", serviceId);
+    console.log("🟩 該当サービス:", services.find(s => String(s.service) === String(serviceId)));
     if (!svc) return res.send("サービスが見つかりません");
 
     // ✅ 為替レート（例: 1ドル=150円）
