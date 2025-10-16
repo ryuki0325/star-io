@@ -291,7 +291,7 @@ router.post("/user/:id/edit", async (req, res) => {
   }
 });
 
-// 📊 利益データを返すAPI（修正版）
+// 📊 利益データを返すAPI（SMMサービスID + 正確な日付付き）
 router.get("/api/profit", async (req, res) => {
   const db = req.app.locals.db;
   const { start, end } = req.query;
@@ -299,14 +299,14 @@ router.get("/api/profit", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT 
-         orders.id,                                -- ✅ 注文IDを追加！
+         orders.service_id,                       -- ✅ ← SMMサービスIDを取得！
          orders.user_id AS user,
          orders.service_name AS service,
          orders.quantity AS qty,
          orders.price_jpy AS price,
          COALESCE(orders.smm_cost_jpy, 0) AS cost,
          (orders.price_jpy - COALESCE(orders.smm_cost_jpy, 0)) AS profit,
-         orders.created_at                         -- ✅ 日付を生のまま取得
+         orders.created_at                        -- ✅ ← 正確な日付（時刻付き）
        FROM orders
        WHERE orders.created_at BETWEEN $1 AND $2
        ORDER BY orders.created_at DESC`,
