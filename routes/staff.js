@@ -163,21 +163,29 @@ router.get("/profits", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
 
   const db = req.app.locals.db;
-  const { start, end, search } = req.query;
+  const { start, end, platform, user_search } = req.query;
 
   try {
     let conditions = [];
     let params = [];
     let paramIndex = 1;
 
+    // 期間絞り込み
     if (start && end) {
       conditions.push(`orders.created_at BETWEEN $${paramIndex++} AND $${paramIndex++}`);
       params.push(start, end);
     }
 
-    if (search) {
-      conditions.push(`(orders.service_name ILIKE $${paramIndex} OR users.email ILIKE $${paramIndex})`);
-      params.push(`%${search}%`);
+    // 商品カテゴリ（例: TikTok, Instagram, Twitter, YouTube）
+    if (platform && platform !== "all") {
+      conditions.push(`orders.service_name ILIKE $${paramIndex++}`);
+      params.push(`%${platform}%`);
+    }
+
+    // ユーザー検索
+    if (user_search) {
+      conditions.push(`users.email ILIKE $${paramIndex++} OR CAST(users.id AS TEXT) ILIKE $${paramIndex - 1}`);
+      params.push(`%${user_search}%`);
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -185,7 +193,9 @@ router.get("/profits", async (req, res) => {
     const query = `
       SELECT 
         orders.id,
+        orders.user_id,
         orders.service_name,
+        orders.quantity,
         orders.price_jpy,
         orders.smm_cost_jpy,
         orders.created_at,
@@ -199,15 +209,25 @@ router.get("/profits", async (req, res) => {
 
     const result = await db.query(query, params);
 
-    const totalProfit = result.rows.reduce((sum, o) => sum + Number(o.profit || 0), 0);
+    // 円換算：1ドル = 150円
+    const rate = 150;
+
+    const formatted = result.rows.map(o => ({
+      ...o,
+      smm_cost_usd: o.smm_cost_jpy ? (o.smm_cost_jpy / rate).toFixed(2) : "0.00",
+      profit: (o.price_jpy - (o.smm_cost_jpy || 0)).toFixed(2),
+    }));
+
+    const totalProfit = formatted.reduce((sum, o) => sum + parseFloat(o.profit), 0).toFixed(2);
 
     res.render("staff_profits", {
       title: "利益一覧",
-      orders: result.rows,
+      orders: formatted,
       totalProfit,
       start,
       end,
-      search
+      platform,
+      user_search
     });
   } catch (err) {
     console.error("❌ 利益計算エラー:", err);
