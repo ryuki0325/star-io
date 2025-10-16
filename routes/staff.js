@@ -159,36 +159,67 @@ router.get("/user/:id/orders", async (req, res) => {
 });
 
 // ===== 利益率計算 =====
-router.get('/profits', async (req, res) => {
+router.get("/profits", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+  const db = req.app.locals.db;
   const { start, end, search } = req.query;
 
-  let query = {};
-  if (start && end) {
-    query.created_at = { $gte: start, $lte: end };
+  try {
+    // ✅ 動的条件の生成
+    let conditions = [];
+    let values = [];
+    let index = 1;
+
+    if (start && end) {
+      conditions.push(`orders.created_at BETWEEN $${index++} AND $${index++}`);
+      values.push(start, end);
+    }
+
+    if (search) {
+      conditions.push(`(
+        users.email ILIKE $${index} OR
+        orders.service_name ILIKE $${index}
+      )`);
+      values.push(`%${search}%`);
+      index++;
+    }
+
+    const whereClause = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
+
+    // ✅ 注文データ取得 + 利益計算
+    const result = await db.query(`
+      SELECT 
+        orders.id,
+        users.email AS customer_email,
+        orders.service_name,
+        orders.price_jpy AS site_price,
+        orders.smm_cost_jpy AS smm_price,  -- ← SMM側の仕入れ価格カラム名を合わせてください
+        (orders.price_jpy - orders.smm_cost_jpy) AS profit,
+        orders.created_at
+      FROM orders
+      JOIN users ON orders.user_id = users.id
+      ${whereClause}
+      ORDER BY orders.created_at DESC
+    `, values);
+
+    const orders = result.rows;
+
+    // ✅ 合計利益を計算
+    const totalProfit = orders.reduce((sum, o) => sum + (o.profit || 0), 0);
+
+    res.render("staff_profits", {
+      title: "利益集計",
+      orders,
+      totalProfit,
+      start,
+      end,
+      search,
+    });
+
+  } catch (err) {
+    console.error("❌ 利益計算エラー:", err);
+    res.status(500).send("利益データの取得に失敗しました");
   }
-  if (search) {
-    query.$or = [
-      { customer_name: new RegExp(search, 'i') },
-      { service_name: new RegExp(search, 'i') }
-    ];
-  }
-
-  const orders = await Order.find(query);
-
-  const profitList = orders.map(o => ({
-    ...o._doc,
-    profit: o.price_site - o.price_smm
-  }));
-
-  const totalProfit = profitList.reduce((sum, o) => sum + o.profit, 0);
-
-  res.render('admin/profits', {
-    orders: profitList,
-    totalProfit,
-    start,
-    end,
-    search
-  });
 });
 
 // ===== ユーザー編集 =====
