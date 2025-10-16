@@ -35,9 +35,7 @@
     <div class="mt-4 row g-2 align-items-center">
       <div class="col-md-2">
         <label class="fw-bold">📅 年度選択</label>
-        <select id="yearSelect" class="form-select">
-          <!-- JSで自動生成 -->
-        </select>
+        <select id="yearSelect" class="form-select"></select>
       </div>
       <div class="col-md-2">
         <label class="fw-bold">🗓️ 月選択</label>
@@ -61,6 +59,7 @@
           <th>数量</th>
           <th>販売価格(円)</th>
           <th>仕入れ価格(円)</th>
+          <th>仕入れ価格($)</th>
           <th>利益(円)</th>
           <th>日付</th>
         </tr>
@@ -94,7 +93,7 @@
   .table thead th {
     background-color: #0dcaf0 !important;
   }
-  .range-btn:hover, .month-btn:hover, #monthFilterBtn:hover {
+  .range-btn:hover, #monthFilterBtn:hover {
     background-color: #0dcaf0 !important;
     color: #000 !important;
   }
@@ -187,9 +186,11 @@ document.addEventListener("DOMContentLoaded", () => {
       noDataMsg.classList.add("d-none");
       tableWrapper.classList.remove("d-none");
 
+      const rate = 150; // 1ドル=150円として計算
       let totalProfit = 0;
       profitTable.innerHTML = data.map(row => {
         const profit = parseFloat(row.profit).toFixed(2);
+        const costUSD = (parseFloat(row.cost) / rate).toFixed(3); // 円からドル換算
         totalProfit += parseFloat(profit);
         return `
           <tr>
@@ -198,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td>${row.qty}</td>
             <td>${row.price}</td>
             <td>${row.cost}</td>
+            <td>${costUSD}$</td>
             <td class="fw-bold text-${profit >= 0 ? 'success' : 'danger'}">${profit}</td>
             <td>${row.date}</td>
           </tr>
