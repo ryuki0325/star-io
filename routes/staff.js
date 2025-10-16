@@ -193,7 +193,7 @@ router.get("/profits", async (req, res) => {
         users.email AS customer_email,
         orders.service_name,
         orders.price_jpy AS site_price,
-        orders.smm_cost_jpy AS smm_price,  -- ← SMM側の仕入れ価格カラム名を合わせてください
+        orders.smm_price AS smm_price,  -- ← ここを修正
         (orders.price_jpy - orders.smm_cost_jpy) AS profit,
         orders.created_at
       FROM orders
