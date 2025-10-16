@@ -599,51 +599,29 @@ router.post("/order", async (req, res) => {
     const svc = services.find(s => s.service == serviceId);
     if (!svc) return res.send("サービスが見つかりません");
 
-    // ✅ 為替レートを反映
+    // ✅ 為替レート（例: 1ドル=150円）
     const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
 
-    // ✅ ドル価格を円換算 → 倍率適用
-    const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
+    // ✅ 原価（仕入れ価格）計算
+    const smm_cost_usd = (parseFloat(svc.rate) / 1000) * Number(quantity);
+    const smm_cost_jpy = smm_cost_usd * JPY_RATE;
 
-    // ✅ 最終金額 (円)
+    // ✅ 販売価格（倍率適用）
+    const unitRate = applyPriceMultiplier(parseFloat(svc.rate) * JPY_RATE);
     const amount = (unitRate / 1000) * Number(quantity);
 
-    // ✅ 残高を確認
-    const balanceResult = await db.query(
-      "SELECT balance FROM users WHERE id = $1",
-      [req.session.userId]
-    );
-
+    // ✅ 残高チェック
+    const balanceResult = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
     const balance = parseFloat(balanceResult.rows[0]?.balance || 0);
-
-    if (balance < amount) {
-      return res.send("残高不足です");
-    }
+    if (balance < amount) return res.send("残高不足です");
 
     // ✅ 残高を減算
-    await db.query(
-      "UPDATE users SET balance = balance - $1 WHERE id = $2",
-      [amount, req.session.userId]
-    );
+    await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [amount, req.session.userId]);
 
     // ✅ SMMFlare APIに注文送信
     const orderRes = await smm.createOrder(serviceId, link, quantity);
 
-    // 🟡🟡🟡【ここから追加！仕入れ価格を取得＆円換算】🟡🟡🟡
-    let smm_cost_usd = 0;
-    let smm_cost_jpy = 0;
-
-    try {
-      // SMMFlareのAPIから注文詳細を取得（原価取得）
-      const statusRes = await smm.getOrderStatus(orderRes.order);
-      smm_cost_usd = parseFloat(statusRes.charge || 0);
-      smm_cost_jpy = smm_cost_usd * JPY_RATE;
-    } catch (apiErr) {
-      console.warn("⚠️ 仕入れ価格取得に失敗しました:", apiErr.message);
-    }
-    // 🟡🟡🟡【ここまで追加】🟡🟡🟡
-
-    // ✅ 注文をDBに保存（仕入れ価格も保存！）
+    // ✅ 注文データ保存
     await db.query(
       `INSERT INTO orders 
        (user_id, service_id, service_name, link, quantity, price_jpy, smm_order_id, smm_cost_jpy, created_at, status)
@@ -660,7 +638,7 @@ router.post("/order", async (req, res) => {
       ]
     );
 
-    // ✅ 成功画面を表示
+    // ✅ 表示
     res.render("order_success", {
       title: "注文完了",
       orderId: orderRes.order,
