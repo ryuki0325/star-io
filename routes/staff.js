@@ -158,6 +158,38 @@ router.get("/user/:id/orders", async (req, res) => {
   }
 });
 
+router.get('/profits', async (req, res) => {
+  const { start, end, search } = req.query;
+
+  let query = {};
+  if (start && end) {
+    query.created_at = { $gte: start, $lte: end };
+  }
+  if (search) {
+    query.$or = [
+      { customer_name: new RegExp(search, 'i') },
+      { service_name: new RegExp(search, 'i') }
+    ];
+  }
+
+  const orders = await Order.find(query);
+
+  const profitList = orders.map(o => ({
+    ...o._doc,
+    profit: o.price_site - o.price_smm
+  }));
+
+  const totalProfit = profitList.reduce((sum, o) => sum + o.profit, 0);
+
+  res.render('admin/profits', {
+    orders: profitList,
+    totalProfit,
+    start,
+    end,
+    search
+  });
+});
+
 // ===== ユーザー編集 =====
 router.get("/user/:id/edit", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
