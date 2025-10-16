@@ -1,69 +1,215 @@
 <% title = '利益一覧' %>
+
 <div class="container py-4 text-light">
 
-  <h2 class="mb-4">💹 利益一覧</h2>
+  <h2 class="mb-4">📊 利益一覧</h2>
 
-  <form method="get" class="mb-4 row g-2">
-    <div class="col-md-2">
-      <label>開始日</label>
-      <input type="date" name="start" class="form-control" value="<%= start || '' %>">
+  <!-- ==================== フィルターUI ==================== -->
+  <div class="bg-dark p-4 rounded border border-info mb-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label>開始日</label>
+        <input type="date" id="startDate" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label>終了日</label>
+        <input type="date" id="endDate" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <button id="filterBtn" class="btn btn-info w-100 fw-bold">絞り込み 🔍</button>
+      </div>
     </div>
-    <div class="col-md-2">
-      <label>終了日</label>
-      <input type="date" name="end" class="form-control" value="<%= end || '' %>">
-    </div>
-    <div class="col-md-2">
-      <label>商品</label>
-      <select name="platform" class="form-select">
-        <option value="all">全て</option>
-        <option value="TikTok" <%= platform==='TikTok'?'selected':'' %>>TikTok</option>
-        <option value="Instagram" <%= platform==='Instagram'?'selected':'' %>>Instagram</option>
-        <option value="Twitter" <%= platform==='Twitter'?'selected':'' %>>Twitter</option>
-        <option value="YouTube" <%= platform==='YouTube'?'selected':'' %>>YouTube</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label>ユーザー検索</label>
-      <input type="text" name="user_search" class="form-control" placeholder="ID or Email" value="<%= user_search || '' %>">
-    </div>
-    <div class="col-md-2 align-self-end">
-      <button class="btn btn-primary w-100">絞り込み</button>
-    </div>
-  </form>
 
-  <table class="table table-dark table-striped table-bordered text-center">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>ユーザーID</th>
-        <th>サービス名</th>
-        <th>数量</th>
-        <th>販売価格(円)</th>
-        <th>仕入れ価格($)</th>
-        <th>仕入れ価格(円)</th>
-        <th>利益(円)</th>
-        <th>日付</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% orders.forEach(o => { %>
+    <!-- 📅 ショートカットボタン -->
+    <div class="mt-3 d-flex flex-wrap gap-2">
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="1">過去1日</button>
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="7">過去1週間</button>
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="10">過去10日</button>
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="30">過去1ヶ月</button>
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="90">過去3ヶ月</button>
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="180">過去6ヶ月</button>
+      <button class="btn btn-outline-info btn-sm range-btn" data-days="365">過去1年</button>
+    </div>
+
+    <!-- 🗓️ 年・月ドロップダウン -->
+    <div class="mt-4 row g-2 align-items-center">
+      <div class="col-md-2">
+        <label class="fw-bold">📅 年度選択</label>
+        <select id="yearSelect" class="form-select">
+          <!-- JSで自動生成 -->
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="fw-bold">🗓️ 月選択</label>
+        <select id="monthSelect" class="form-select">
+          <option value="">-- 月を選択 --</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button id="monthFilterBtn" class="btn btn-outline-info w-100">この月の利益を見る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== テーブル ==================== -->
+  <div id="tableWrapper" class="d-none">
+    <table class="table table-dark table-striped table-bordered text-center align-middle">
+      <thead class="table-info text-dark">
         <tr>
-          <td><%= o.id %></td>
-          <td><%= o.user_id %></td>
-          <td><%= o.service_name %></td>
-          <td><%= o.quantity %></td>
-          <td><%= o.price_jpy %></td>
-          <td><%= o.smm_cost_usd %>$</td>
-          <td><%= o.smm_cost_jpy %></td>
-          <td class="fw-bold text-success"><%= o.profit %></td>
-          <td><%= new Date(o.created_at).toLocaleString('ja-JP') %></td>
+          <th>ユーザーID</th>
+          <th>サービス名</th>
+          <th>数量</th>
+          <th>販売価格(円)</th>
+          <th>仕入れ価格(円)</th>
+          <th>利益(円)</th>
+          <th>日付</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody id="profitTable"></tbody>
+    </table>
 
-  <h4 class="text-end mt-3">
-    💰 合計利益：<span class="text-warning fw-bold"><%= totalProfit %> 円</span>
-  </h4>
+    <h4 class="text-end mt-3">
+      💰 合計利益：
+      <span id="totalProfit" class="text-warning fw-bold">0 円</span>
+    </h4>
+  </div>
 
+  <div id="noDataMsg" class="alert alert-secondary text-center d-none">
+    データが見つかりませんでした。
+  </div>
 </div>
+
+<!-- ==================== スタイル ==================== -->
+<style>
+  body {
+    background: #000814;
+  }
+  .container {
+    max-width: 1000px;
+  }
+  table {
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .table thead th {
+    background-color: #0dcaf0 !important;
+  }
+  .range-btn:hover, .month-btn:hover, #monthFilterBtn:hover {
+    background-color: #0dcaf0 !important;
+    color: #000 !important;
+  }
+</style>
+
+<!-- ==================== スクリプト ==================== -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const startDate = document.getElementById("startDate");
+  const endDate = document.getElementById("endDate");
+  const filterBtn = document.getElementById("filterBtn");
+  const tableWrapper = document.getElementById("tableWrapper");
+  const profitTable = document.getElementById("profitTable");
+  const totalProfitEl = document.getElementById("totalProfit");
+  const noDataMsg = document.getElementById("noDataMsg");
+  const yearSelect = document.getElementById("yearSelect");
+  const monthSelect = document.getElementById("monthSelect");
+  const monthFilterBtn = document.getElementById("monthFilterBtn");
+
+  // ==================== 年ドロップダウン生成 ====================
+  const currentYear = new Date().getFullYear();
+  for (let y = 2023; y <= currentYear + 1; y++) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = `${y}年`;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+
+  // ==================== 月ドロップダウン生成 ====================
+  const monthNames = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+  monthNames.forEach((name, i) => {
+    const opt = document.createElement("option");
+    opt.value = i + 1;
+    opt.textContent = name;
+    monthSelect.appendChild(opt);
+  });
+
+  // ==================== 年月選択ボタン ====================
+  monthFilterBtn.addEventListener("click", () => {
+    const year = parseInt(yearSelect.value, 10);
+    const month = parseInt(monthSelect.value, 10);
+    if (!year || !month) {
+      alert("年と月を選択してください。");
+      return;
+    }
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0);
+    startDate.value = start.toISOString().split("T")[0];
+    endDate.value = end.toISOString().split("T")[0];
+  });
+
+  // ==================== 過去日ショートカット ====================
+  document.querySelectorAll(".range-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const days = parseInt(btn.dataset.days, 10);
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - days);
+      startDate.value = start.toISOString().split("T")[0];
+      endDate.value = end.toISOString().split("T")[0];
+    });
+  });
+
+  // ==================== 絞り込みボタン ====================
+  filterBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const start = startDate.value;
+    const end = endDate.value;
+    if (!start || !end) {
+      alert("開始日と終了日を入力してください。");
+      return;
+    }
+    await fetchProfitData(start, end);
+  });
+
+  // ==================== データ取得関数 ====================
+  async function fetchProfitData(start, end) {
+    try {
+      const res = await fetch(`/staff/api/profit?start=${start}&end=${end}`);
+      if (!res.ok) throw new Error("サーバーエラー");
+      const data = await res.json();
+
+      if (!data || data.length === 0) {
+        tableWrapper.classList.add("d-none");
+        noDataMsg.classList.remove("d-none");
+        return;
+      }
+
+      noDataMsg.classList.add("d-none");
+      tableWrapper.classList.remove("d-none");
+
+      let totalProfit = 0;
+      profitTable.innerHTML = data.map(row => {
+        const profit = parseFloat(row.profit).toFixed(2);
+        totalProfit += parseFloat(profit);
+        return `
+          <tr>
+            <td>${row.user}</td>
+            <td>${row.service}</td>
+            <td>${row.qty}</td>
+            <td>${row.price}</td>
+            <td>${row.cost}</td>
+            <td class="fw-bold text-${profit >= 0 ? 'success' : 'danger'}">${profit}</td>
+            <td>${row.date}</td>
+          </tr>
+        `;
+      }).join("");
+
+      totalProfitEl.textContent = `${totalProfit.toFixed(2)} 円`;
+
+    } catch (err) {
+      console.error("❌ 取得エラー:", err);
+      alert("サーバーからデータを取得できませんでした。");
+    }
+  }
+});
+</script>
