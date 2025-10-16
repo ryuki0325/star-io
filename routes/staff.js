@@ -291,7 +291,7 @@ router.post("/user/:id/edit", async (req, res) => {
   }
 });
 
-// 📊 利益データを返すAPI
+// 📊 利益データを返すAPI（修正版）
 router.get("/api/profit", async (req, res) => {
   const db = req.app.locals.db;
   const { start, end } = req.query;
@@ -299,18 +299,20 @@ router.get("/api/profit", async (req, res) => {
   try {
     const result = await db.query(
       `SELECT 
-         user_id AS user,
-         service_name AS service,
-         quantity AS qty,
-         price_jpy AS price,
-         COALESCE(smm_cost_jpy, 0) AS cost,
-         (price_jpy - COALESCE(smm_cost_jpy, 0)) AS profit,
-         TO_CHAR(created_at, 'YYYY/MM/DD') AS date
+         orders.id,                                -- ✅ 注文IDを追加！
+         orders.user_id AS user,
+         orders.service_name AS service,
+         orders.quantity AS qty,
+         orders.price_jpy AS price,
+         COALESCE(orders.smm_cost_jpy, 0) AS cost,
+         (orders.price_jpy - COALESCE(orders.smm_cost_jpy, 0)) AS profit,
+         orders.created_at                         -- ✅ 日付を生のまま取得
        FROM orders
-       WHERE created_at BETWEEN $1 AND $2
-       ORDER BY created_at DESC`,
+       WHERE orders.created_at BETWEEN $1 AND $2
+       ORDER BY orders.created_at DESC`,
       [start + " 00:00:00", end + " 23:59:59"]
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error("❌ 利益APIエラー:", err);
