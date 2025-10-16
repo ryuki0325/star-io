@@ -158,6 +158,7 @@ router.get("/user/:id/orders", async (req, res) => {
   }
 });
 
+// ===== 利益率計算 =====
 router.get('/profits', async (req, res) => {
   const { start, end, search } = req.query;
 
