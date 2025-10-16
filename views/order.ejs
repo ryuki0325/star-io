@@ -112,7 +112,21 @@
       <p id="priceDisplay" class="text-info fs-5 mb-0">金額: 0 円</p>
     </div>
 
-    <button type="submit" class="btn btn-info w-100 fw-bold py-2">注文する</button>
+    <button 
+      type="submit" 
+      class="btn btn-info w-100 fw-bold py-2" 
+      id="orderButton"
+      onclick="disableButton(this)">
+      注文する
+    </button>
+
+    <script>
+    function disableButton(btn) {
+      btn.disabled = true;
+      btn.innerText = "注文中..."; // ボタンの文字を変える
+      btn.form.submit();           // フォームを送信
+    }
+    </script>
   </form>
 </div>
 
