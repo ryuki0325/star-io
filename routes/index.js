@@ -913,16 +913,16 @@ router.post("/forgot", async (req, res) => {
 
   // ランダムトークン生成
   const token = crypto.randomBytes(20).toString("hex");
-  const expires = Date.now() + 3600000; // 1時間後に期限切れ
+  // ✅ expiresを秒単位に修正
+  const expires = Math.floor(Date.now() / 1000) + 3600; // 1時間後
 
   try {
-    // ✅ トークンと有効期限を登録（該当メールが存在しなければ rowCount=0）
+    // ✅ PostgreSQLは to_timestamp() を使う
     const result = await db.query(
-      "UPDATE users SET reset_token=$1, reset_expires=$2 WHERE email=$3 RETURNING *",
+      "UPDATE users SET reset_token=$1, reset_expires=to_timestamp($2) WHERE email=$3 RETURNING *",
       [token, expires, email]
     );
 
-    // 該当ユーザーが存在しない場合
     if (result.rowCount === 0) {
       return res.render("forgot", { 
         title: "パスワードリセット", 
@@ -945,17 +945,14 @@ router.post("/forgot", async (req, res) => {
 
     const mailOptions = {
       from: process.env.CONTACT_EMAIL,
-      to: email, // ユーザー宛に送信
+      to: email,
       subject: "パスワードリセット",
       text: `以下のリンクから新しいパスワードを設定してください。\n\n${resetUrl}\n\nこのリンクは1時間で期限切れになります。`,
     };
 
-    // ✅ メール送信
     await transporter.sendMail(mailOptions);
-
     console.log(`📩 パスワードリセットリンク送信: ${email}`);
 
-    // ✅ 成功表示
     res.render("forgot", { 
       title: "パスワードリセット", 
       error: null, 
@@ -972,35 +969,57 @@ router.post("/forgot", async (req, res) => {
   }
 });
 
-// リセットページ表示
-router.get("/reset/:token", (req, res) => {
+// ================== リセットページ表示 ==================
+router.get("/reset/:token", async (req, res) => {
   const db = req.app.locals.db;
-  db.get(
-    "SELECT * FROM users WHERE reset_token=? AND reset_expires > ?",
-    [req.params.token, Date.now()],
-    (err, user) => {
-      if (!user) return res.send("リンクが無効または期限切れです。");
-      res.render("reset", { title: "新しいパスワード設定", token: req.params.token, error: null });
+  const token = req.params.token;
+
+  try {
+    // ✅ PostgreSQL対応のSELECT
+    const result = await db.query(
+      "SELECT * FROM users WHERE reset_token=$1 AND reset_expires > NOW()",
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.send("リンクが無効または期限切れです。");
     }
-  );
+
+    res.render("reset", { 
+      title: "新しいパスワード設定", 
+      token, 
+      error: null 
+    });
+  } catch (err) {
+    console.error("❌ リセットページ取得エラー:", err);
+    res.send("サーバーエラーが発生しました。");
+  }
 });
 
-// 新しいパスワード保存
-router.post("/reset/:token", (req, res) => {
+// ================== 新しいパスワード保存 ==================
+router.post("/reset/:token", async (req, res) => {
   const { password } = req.body;
-  const hash = bcrypt.hashSync(password, 10);
+  const token = req.params.token;
   const db = req.app.locals.db;
 
-  db.run(
-    "UPDATE users SET password_hash=?, reset_token=NULL, reset_expires=NULL WHERE reset_token=? AND reset_expires > ?",
-    [hash, req.params.token, Date.now()],
-    function (err) {
-      if (err || this.changes === 0) {
-        return res.send("リセットに失敗しました。リンクが無効かもしれません。");
-      }
-      res.redirect("/login");
+  try {
+    const hash = await bcrypt.hash(password, 10);
+
+    // ✅ PostgreSQL対応
+    const result = await db.query(
+      "UPDATE users SET password_hash=$1, reset_token=NULL, reset_expires=NULL WHERE reset_token=$2 AND reset_expires > NOW() RETURNING *",
+      [hash, token]
+    );
+
+    if (result.rowCount === 0) {
+      return res.send("リセットに失敗しました。リンクが無効かもしれません。");
     }
-  );
+
+    res.redirect("/login");
+  } catch (err) {
+    console.error("❌ パスワードリセット保存エラー:", err);
+    res.send("サーバーエラーが発生しました。");
+  }
 });
 
 // ================== パスワード変更（マイページ） ==================
