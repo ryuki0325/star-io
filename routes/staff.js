@@ -235,6 +235,8 @@ router.get("/profits", async (req, res) => {
   }
 });
 
+
+
 // ===== ユーザー編集 =====
 router.get("/user/:id/edit", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
