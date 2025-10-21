@@ -16,6 +16,7 @@ router.post("/login", (req, res) => {
   res.render("staff_login", { title: "スタッフログイン", error: "パスワードが違います。" });
 });
 
+
 // ===== ダッシュボード =====
 router.get("/dashboard", (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
