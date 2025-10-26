@@ -240,7 +240,7 @@ router.get("/profits", async (req, res) => {
 router.get("/balance", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
 
-  const { getSMMFlareBalance } = require("../utils/smmflare");
+  const { getSMMFlareBalance } = require("../lib/smmClient");
   const smmBalance = await getSMMFlareBalance();
 
   res.render("staff_balance", {
