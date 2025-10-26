@@ -1,0 +1,16 @@
+<% title = 'SMM残高' %>
+<div class="container py-4 text-light">
+  <h2 class="mb-4">💰 SMM残高</h2>
+
+  <div class="card bg-dark text-center p-4 border border-info">
+    <% if (smmBalance) { %>
+      <h3 class="text-success fw-bold"><%= smmBalance %> USD</h3>
+    <% } else { %>
+      <p class="text-danger">⚠️ 残高を取得できませんでした。</p>
+    <% } %>
+  </div>
+
+  <div class="mt-4">
+    <a href="/staff/dashboard" class="btn btn-outline-info">⬅ ダッシュボードへ戻る</a>
+  </div>
+</div>
