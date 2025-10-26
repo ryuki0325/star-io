@@ -1,11 +1,16 @@
 // db.js
 const { Pool } = require("pg");
+require("dotenv").config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Render の Postgres 用
+  ssl: {
+    rejectUnauthorized: false, // ✅ NeonはSSL必須
+  },
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-};
+pool.connect()
+  .then(() => console.log("✅ Connected to Neon PostgreSQL"))
+  .catch(err => console.error("❌ Database connection error:", err));
+
+module.exports = pool;
