@@ -240,8 +240,9 @@ router.get("/profits", async (req, res) => {
 router.get("/balance", async (req, res) => {
   if (!req.session.isStaff) return res.redirect("/staff/login");
 
-  const { getSMMFlareBalance } = require("../lib/smmClient");
-  const smmBalance = await getSMMFlareBalance();
+  // ✅ 関数名を getBalance に修正
+  const { getBalance } = require("../lib/smmClient");
+  const smmBalance = await getBalance();
 
   res.render("staff_balance", {
     title: "SMM残高",
