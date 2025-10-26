@@ -236,6 +236,18 @@ router.get("/profits", async (req, res) => {
   }
 });
 
+// ===== SMM残高ページ =====
+router.get("/balance", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const { getSMMFlareBalance } = require("../utils/smmflare");
+  const smmBalance = await getSMMFlareBalance();
+
+  res.render("staff_balance", {
+    title: "SMM残高",
+    smmBalance,
+  });
+});
 
 
 // ===== ユーザー編集 =====
