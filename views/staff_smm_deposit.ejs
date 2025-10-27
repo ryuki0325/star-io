@@ -1,0 +1,5 @@
+// routes/staff.js
+router.get("/smm-deposit", (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+  res.render("staff_smm_deposit", { title: "SMM入金" });
+});
