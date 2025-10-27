@@ -250,6 +250,12 @@ router.get("/balance", async (req, res) => {
   });
 });
 
+// ===== SMM入金ページ =====
+router.get("/smm-deposit", (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+  res.render("staff_smm_deposit", { title: "SMM入金ページ" });
+});
+
 
 // ===== ユーザー編集 =====
 router.get("/user/:id/edit", async (req, res) => {
