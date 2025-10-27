@@ -1,5 +1,22 @@
-// routes/staff.js
-router.get("/smm-deposit", (req, res) => {
-  if (!req.session.isStaff) return res.redirect("/staff/login");
-  res.render("staff_smm_deposit", { title: "SMM入金" });
-});
+<% title = 'SMM入金ページ' %>
+<div class="container py-4 text-light">
+  <h2 class="mb-4 text-center">💳 SMM入金ページ</h2>
+
+  <div class="card bg-dark p-4 border border-info">
+    <p class="text-center mb-3">
+      下のフォームから直接 <span class="text-warning fw-bold">SMMFlare</span> に入金できます。
+    </p>
+
+    <!-- ✅ SMMFlareの入金フォームをiframeで埋め込み -->
+    <iframe
+      src="https://smmflare.com/addfunds"
+      width="100%"
+      height="800"
+      style="border: none; border-radius: 10px;">
+    </iframe>
+
+    <div class="text-center mt-4">
+      <a href="/staff/balance" class="btn btn-outline-info">⬅ 残高ページへ戻る</a>
+    </div>
+  </div>
+</div>
