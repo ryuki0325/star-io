@@ -614,10 +614,92 @@ router.post("/order", async (req, res) => {
     const amount = (unitRate / 1000) * Number(quantity);
 
     // ✅ 残高チェック
-    const balanceResult = await db.query("SELECT balance FROM users WHERE id = $1", [req.session.userId]);
-    const balance = parseFloat(balanceResult.rows[0]?.balance || 0);
-    if (balance < amount) return res.send("残高不足です");
+    const { rows } = await db.query(
+  "SELECT balance FROM users WHERE id = $1",
+  [req.session.userId]
+);
+const balance = parseFloat(rows[0]?.balance || 0);
+    if (balance < amount) {
+  // 👑 おすすめID（.envで RECOMMENDED_SERVICES=123,456 など）
+  const recommended = process.env.RECOMMENDED_SERVICES
+    ? process.env.RECOMMENDED_SERVICES.split(",").map(id => id.trim())
+    : [];
 
+  // --- GET /order と同じロジックで grouped を作成 ---
+  const normalizeAppName = (name) => {
+    const app = (name.split(" ")[0] || "その他").trim().toLowerCase();
+    if (["tiktok","tik tok"].includes(app)) return "TikTok";
+    if (["instagram","insta"].includes(app)) return "Instagram";
+    if (["twitter","x"].includes(app)) return "Twitter";
+    if (["youtube","yt"].includes(app)) return "YouTube";
+    if (["spotify"].includes(app)) return "Spotify";
+    if (["telegram"].includes(app)) return "Telegram";
+    if (["twitch"].includes(app)) return "Twitch";
+    if (["facebook","fb"].includes(app)) return "Facebook";
+    if (["reddit"].includes(app)) return "Reddit";
+    return app.charAt(0).toUpperCase() + app.slice(1);
+  };
+  const detectType = (name) => {
+    const lower = name.toLowerCase();
+    if (lower.includes("follower")) return "フォロワー";
+    if (lower.includes("like"))     return "いいね";
+    if (lower.includes("view"))     return "再生数";
+    if (lower.includes("comment"))  return "コメント";
+    if (lower.includes("share"))    return "シェア";
+    return "その他";
+  };
+  const applyPriceMultiplier = (price) => {
+    const low  = parseFloat(process.env.MULTIPLIER_LOW  || "2.0");
+    const mid  = parseFloat(process.env.MULTIPLIER_MID  || "1.5");
+    const high = parseFloat(process.env.MULTIPLIER_HIGH || "1.3");
+    const top  = parseFloat(process.env.MULTIPLIER_TOP  || "1.1");
+    if (price <= 100)  return price * low;
+    if (price <= 1000) return price * mid;
+    if (price <= 1600) return price * high;
+    return price * top;
+  };
+
+  // services はこの直前で取得済み（const services = await smm.getServices();）
+  const grouped = {};
+  const JPY_RATE = parseFloat(process.env.JPY_RATE || "150");
+  (services || []).forEach(s => {
+    const app  = normalizeAppName(s.name);
+    const type = detectType(s.name);
+    if (!grouped[app]) grouped[app] = {};
+    if (!grouped[app][type]) grouped[app][type] = [];
+    const baseRate  = parseFloat(s.rate) * JPY_RATE;
+    const finalRate = applyPriceMultiplier(baseRate);
+    grouped[app][type].push({ service: s.service, name: s.name, baseRate, finalRate });
+  });
+
+  const priority = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook"];
+  const appOrder = Object.keys(grouped).sort((a, b) => {
+    const ap = priority.indexOf(a), bp = priority.indexOf(b);
+    if (ap === -1 && bp === -1) return a.localeCompare(b);
+    if (ap === -1) return 1;
+    if (bp === -1) return -1;
+    return ap - bp;
+  });
+
+  const selectedApp  = normalizeAppName(svc.name);
+  const selectedType = detectType(svc.name);
+
+  // ✅ 別ページに飛ばさず、views/order.ejs を再描画
+  return res.render("order", {
+    title: "新規注文",
+    grouped,
+    appOrder,
+    recommended,
+    balance,                                 // 現在残高
+    error: "残高不足です。",                 // 🔴 ここが order.ejs に表示される
+    totalPrice: Math.round(amount * 100) / 100,
+    link,
+    quantity,
+    selectedApp,
+    selectedType,
+    selectedServiceId: String(serviceId)
+  });
+}
     // ✅ 残高を減算
     await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [amount, req.session.userId]);
 
