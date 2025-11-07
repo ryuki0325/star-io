@@ -3,61 +3,44 @@
 <div class="container py-4 text-light">
   <h2 class="mb-4">🚀 新規注文</h2>
 
- <!-- 💳 残高表示部分 -->
-<div class="balance-display">
-  <div class="balance-label">💳 残高</div>
-  <div class="balance-amount"><%= balance.toFixed(2) %> 円</div>
-</div>
+  <!-- 💳 残高表示 -->
+  <div class="balance-display">
+    <div class="balance-label">💳 残高</div>
+    <div class="balance-amount"><%= balance.toFixed(2) %> 円</div>
+  </div>
 
-<!-- ✅ 注文フォーム -->
-<form action="/order" method="POST" class="bg-dark p-4 rounded border border-info-subtle shadow">
-  
-  <!-- ✅ エラーメッセージ -->
-  <% if (typeof error !== "undefined" && error) { %>
-    <div style="color: red; font-weight: bold; margin-bottom: 15px;">
-      <%= error %>
+  <!-- ✅ 注文フォーム -->
+  <form action="/order" method="POST" class="bg-dark p-4 rounded border border-info-subtle shadow">
+
+    <!-- 💎 クイック選択エリア -->
+    <h5 class="text-info fw-bold mb-3">クイック選択</h5>
+    <div class="quick-grid mb-4">
+      <% const emojiMap = { TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️", Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽" }; %>
+      <% const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"]; %>
+      <% quickApps.forEach(q => { if (grouped[q]) { %>
+        <button type="button" class="btn btn-outline-info quick-btn" data-app="<%= q %>">
+          <%= emojiMap[q] || "🧩" %> <%= q %>
+        </button>
+      <% } }) %>
     </div>
-  <% } %>
 
- <!-- 💎 クイック選択エリア -->
-<h5 class="text-info fw-bold mb-3">クイック選択</h5>
-
-<div class="quick-grid mb-4">
-  <% const emojiMap = {
-       TikTok:"🎵", Instagram:"📸", YouTube:"▶️", Twitter:"✖️",
-       Spotify:"🎧", Telegram:"✈️", Twitch:"🎮", Facebook:"👥", Reddit:"👽"
-     };
-     const quickApps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
-  %>
-  <% quickApps.forEach(q => { if (grouped[q]) { %>
-    <button type="button"
-            class="btn btn-outline-info quick-btn"
-            data-app="<%= q %>">
-      <%= emojiMap[q] || "🧩" %> <%= q %>
-    </button>
-  <% } }) %>
-</div>
-
-<!-- 🔍 検索＋フィルターUI -->
-<div class="filter-bar mb-4">
-  <input type="text" id="searchInput" class="form-control" placeholder="🔍 サービス名を検索">
-
-  <select id="sortSelect" class="form-select">
-    <option value="default">おすすめ順</option>
-    <option value="low">💰 安い順</option>
-    <option value="high">💸 高い順</option>
-  </select>
-
-  <select id="filterSelect" class="form-select">
-    <option value="none">全て表示</option>
-    <option value="instant">⚡ 即時開始</option>
-    <option value="refill">🔁 Refill保証付き</option>
-    <option value="non-drop">🕊️ Non Drop</option>
-    <option value="popular">💎 人気・Premium</option>
-  </select>
-
-  <button type="button" id="resetFilters" class="btn btn-outline-light">リセット</button>
-</div>
+    <!-- 🔍 検索＋フィルターUI -->
+    <div class="filter-bar mb-4">
+      <input type="text" id="searchInput" class="form-control" placeholder="🔍 サービス名を検索">
+      <select id="sortSelect" class="form-select">
+        <option value="default">おすすめ順</option>
+        <option value="low">💰 安い順</option>
+        <option value="high">💸 高い順</option>
+      </select>
+      <select id="filterSelect" class="form-select">
+        <option value="none">全て表示</option>
+        <option value="instant">⚡ 即時開始</option>
+        <option value="refill">🔁 Refill保証付き</option>
+        <option value="non-drop">🕊️ Non Drop</option>
+        <option value="popular">💎 人気・Premium</option>
+      </select>
+      <button type="button" id="resetFilters" class="btn btn-outline-light">リセット</button>
+    </div>
 
     <!-- ==== アプリ選択 ==== -->
     <div class="mb-3">
@@ -66,9 +49,7 @@
         <select class="form-select bg-dark text-light border-0" id="appSelect" onchange="updateTypes()">
           <option value="">選択してください</option>
           <% (appOrder || []).forEach(app => { %>
-            <option value="<%= app %>" <%= selectedApp === app ? "selected" : "" %>>
-              <%= (emojiMap[app] || "🧩") + " " + app %>
-            </option>
+            <option value="<%= app %>" <%= (selectedApp === app) ? "selected" : "" %>><%= (emojiMap[app] || "🧩") + " " + app %></option>
           <% }) %>
         </select>
       </div>
@@ -85,466 +66,213 @@
     </div>
 
     <!-- ==== サービス選択 ==== -->
-<div class="mb-3">
-  <label for="serviceSelect" class="form-label">サービスを選択（最終価格順）</label>
-  <div class="select-wrap border border-3 border-info rounded">
-    <select class="form-select bg-dark text-light border-0" id="serviceSelect" name="serviceId" onchange="updatePrice()">
-      <option value="">先に種類を選んでください</option>
-    </select>
-  </div>
-  <div class="form-text text-secondary mt-1">「単価: xx円/1000」は最終価格です</div>
-</div>
+    <div class="mb-3">
+      <label for="serviceSelect" class="form-label">サービスを選択（最終価格順）</label>
+      <div class="select-wrap border border-3 border-info rounded">
+        <select class="form-select bg-dark text-light border-0" id="serviceSelect" name="serviceId" onchange="updatePrice()">
+          <option value="">先に種類を選んでください</option>
+        </select>
+      </div>
+      <div class="form-text text-secondary mt-1">「単価: xx円/1000」は最終価格です</div>
+    </div>
 
     <!-- ==== リンク ==== -->
-<div class="mb-3">
-  <label for="link" class="form-label">リンク</label>
-  <input 
-    type="text" 
-    class="form-control bg-dark text-light border border-2 border-info" 
-    id="link" 
-    name="link" 
-    placeholder="例：http://example.com"
-    required>
-</div>
-
-<style>
-  /* プレースホルダー（例文）の色を白グレーにする */
-  #link::placeholder {
-    color: #cccccc; /* 白寄りのグレー */
-    opacity: 1; /* 薄くなりすぎないように */
-  }
-</style>
+    <div class="mb-3">
+      <label for="link" class="form-label">リンク</label>
+      <input
+        type="text"
+        class="form-control bg-dark text-light border border-2 border-info"
+        id="link"
+        name="link"
+        placeholder="例：http://example.com"
+        value="<%= typeof link !== 'undefined' ? link : '' %>"
+        required>
+    </div>
 
     <!-- ==== 数量 ==== -->
     <div class="mb-3">
       <label for="quantity" class="form-label">数量</label>
-      <input type="number" class="form-control bg-dark text-light border border-2 border-info" id="quantity" name="quantity" min="1" required oninput="updatePrice()">
+      <input
+        type="number"
+        class="form-control bg-dark text-light border border-2 border-info"
+        id="quantity"
+        name="quantity"
+        min="1"
+        value="<%= typeof quantity !== 'undefined' ? quantity : '' %>"
+        required
+        oninput="updatePrice()">
     </div>
+
+    <!-- 🔴 エラー/🟢 成功（※金額の直前に表示） -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger fw-bold py-2 mb-2" role="alert">⚠️ <%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success fw-bold py-2 mb-2" role="alert">✅ <%= success %></div>
+    <% } %>
 
     <!-- ✅ 金額表示 -->
     <div class="card bg-black border border-3 border-info p-3 mb-3">
-      <p id="priceDisplay" class="text-info fs-5 mb-0">金額: 0 円</p>
+      <p id="priceDisplay" class="text-info fs-5 mb-0">
+        金額: <%= (typeof totalPrice !== 'undefined') ? totalPrice : 0 %> 円
+      </p>
     </div>
 
-    <button 
-      type="submit" 
-      class="btn btn-info w-100 fw-bold py-2" 
-      id="orderButton"
-      onclick="disableButton(this)">
+    <button type="submit" class="btn btn-info w-100 fw-bold py-2" id="orderButton" onclick="disableButton(this)">
       注文する
     </button>
 
     <script>
-    function disableButton(btn) {
-      btn.disabled = true;
-      btn.innerText = "注文中..."; // ボタンの文字を変える
-      btn.form.submit();           // フォームを送信
-    }
+      function disableButton(btn) {
+        btn.disabled = true;
+        btn.innerText = "注文中...";
+        btn.form.submit();
+      }
     </script>
   </form>
 </div>
 
-<!-- ✅ 残高用スタイル -->
+<!-- ✅ スタイル -->
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
- /* 💳 残高デザイン改良版 */
-.balance-display {
-  font-family: 'Orbitron', sans-serif;
-  color: #00eaff;
-  background: #000814;
-  padding: 15px;
-  border: 2px solid #0dcaf0;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
-  animation: glow 1.5s infinite alternate;
-  margin-bottom: 20px;
-}
+  /* プレースホルダー（例文）の色を白グレー */
+  #link::placeholder { color: #cccccc; opacity: 1; }
 
-.balance-label {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #00eaff;
-  margin-bottom: 5px;
-}
+  /* 💳 残高デザイン */
+  .balance-display{font-family:'Orbitron',sans-serif;color:#00eaff;background:#000814;padding:15px;border:2px solid #0dcaf0;border-radius:10px;text-align:center;box-shadow:0 0 15px rgba(13,202,240,.6);animation:glow 1.5s infinite alternate;margin-bottom:20px;}
+  .balance-label{font-size:1.2rem;font-weight:600;color:#00eaff;margin-bottom:5px;}
+  .balance-amount{font-weight:bold;font-size:2rem;color:#39ff14;text-shadow:0 0 10px #39ff14,0 0 20px #39ff14;}
+  @keyframes glow{from{box-shadow:0 0 10px rgba(13,202,240,.4);}to{box-shadow:0 0 25px rgba(13,202,240,.9);}}
 
-.balance-amount {
-  font-weight: bold;
-  font-size: 2rem;
-  color: #39ff14;
-  text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
-}
+  .select-wrap{overflow:hidden;}
+  .select-wrap:focus-within{box-shadow:0 0 .6rem rgba(13,202,240,.5);}
+  .quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .quick-btn{font-weight:bold;border-radius:10px;padding:12px 0;transition:.2s;}
+  .quick-btn:hover{background:#0dcaf0;color:#000;}
 
-@keyframes glow {
-  from { box-shadow: 0 0 10px rgba(13, 202, 240, 0.4); }
-  to   { box-shadow: 0 0 25px rgba(13, 202, 240, 0.9); }
-}
+  .filter-bar{display:flex;flex-direction:column;gap:10px;}
+  .filter-bar select,.filter-bar input{border:2px solid #0dcaf0;background:#000;color:#0dcaf0;font-weight:500;}
+  .filter-bar button{border:2px solid #0dcaf0;color:#0dcaf0;background:transparent;transition:.3s;}
+  .filter-bar button:hover{background:#0dcaf0;color:#000;font-weight:bold;}
+  @media(min-width:768px){.filter-bar{flex-direction:row;align-items:center}.quick-grid{grid-template-columns:repeat(4,1fr)}.filter-bar input{flex:1}.filter-bar select{width:180px}.filter-bar button{width:120px}}
 
-  .select-wrap { overflow: hidden; }
-  .select-wrap:focus-within { box-shadow: 0 0 0.6rem rgba(13, 202, 240, 0.5); }
-  .app-chip{
-    border-width: 2px !important;
-    border-radius: 999px;
-    padding: .45rem .9rem;
-    font-weight: 600;
-    backdrop-filter: blur(2px);
-  }
-  .app-chip.active,
-  .app-chip:hover{
-    background:#0dcaf0;
-    color:#000;
-  }
-
-/* ===== 絞り込みUI (スマホ対応) ===== */
-.filter-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.filter-bar select,
-.filter-bar input {
-  border: 2px solid #0dcaf0;
-  background: #000;
-  color: #0dcaf0;
-  font-weight: 500;
-}
-
-.filter-bar button {
-  border: 2px solid #0dcaf0;
-  color: #0dcaf0;
-  background: transparent;
-  transition: all 0.3s ease;
-}
-
-.filter-bar button:hover {
-  background: #0dcaf0;
-  color: #000;
-  font-weight: bold;
-}
-
-/* 💻 PC版では横並びに */
-@media (min-width: 768px) {
-  .filter-bar {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .filter-bar input {
-    flex: 1;
-  }
-
-  .filter-bar select {
-    width: 180px;
-  }
-
-  .filter-bar button {
-    width: 120px;
-  }
-}
-
-/* 🔍 検索ボックスを青系に統一 */
-#searchInput {
-  border: 2px solid #0dcaf0 !important;
-  background: #000814 !important;
-  color: #0dcaf0 !important;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 0 10px rgba(13, 202, 240, 0.3);
-  transition: all 0.3s ease;
-}
-
-#searchInput::placeholder {
-  color: #0dcaf0b3; /* 少し薄めの青 */
-  font-weight: normal;
-}
-
-#searchInput:focus {
-  background: #001427 !important;
-  box-shadow: 0 0 15px rgba(13, 202, 240, 0.6);
-  outline: none;
-}
-
-/* --- クイック選択をグリッド化 --- */
-.quick-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* スマホは2列 */
-  gap: 10px;
-}
-
-/* SNSボタン */
-.quick-btn {
-  font-weight: bold;
-  border-radius: 10px;
-  padding: 12px 0;
-  transition: all 0.2s;
-}
-.quick-btn:hover {
-  background: #0dcaf0;
-  color: #000;
-}
-
-/* 検索バー */
-.search-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* 💻 PC版では4列レイアウト */
-@media (min-width: 768px) {
-  .quick-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .search-bar {
-    flex-direction: row;
-  }
-}
+  #searchInput{border:2px solid #0dcaf0!important;background:#000814!important;color:#0dcaf0!important;font-weight:bold;text-align:center;box-shadow:0 0 10px rgba(13,202,240,.3);transition:.3s;}
+  #searchInput::placeholder{color:#0dcaf0b3;}
+  #searchInput:focus{background:#001427!important;box-shadow:0 0 15px rgba(13,202,240,.6);outline:none;}
 </style>
 
+<!-- ✅ データとロジック -->
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("✅ order.js 初期化開始");
+  const grouped = <%- JSON.stringify(grouped) %>;
+  const recommended = <%- JSON.stringify(recommended) %>;
+  const selectedApp = "<%= typeof selectedApp !== 'undefined' ? selectedApp : '' %>";
+  const selectedType = "<%= typeof selectedType !== 'undefined' ? selectedType : '' %>";
+  const selectedServiceId = "<%= typeof selectedServiceId !== 'undefined' ? selectedServiceId : '' %>";
 
-  const appSelect     = document.getElementById("appSelect");
-  const typeSelect    = document.getElementById("typeSelect");
-  const serviceSelect = document.getElementById("serviceSelect");
-  const sortSelect    = document.getElementById("sortSelect");
-  const filterSelect  = document.getElementById("filterSelect");
-  const searchInput   = document.getElementById("searchInput");
-  const resetBtn      = document.getElementById("resetFilters");
-  const qtyInput      = document.getElementById("quantity");
-  const priceDisplay  = document.getElementById("priceDisplay");
-
-  // ✅ クイックボタン押下でアプリ切り替え
-document.querySelectorAll(".quick-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const app = btn.dataset.app;
-    const appSelect = document.getElementById("appSelect");
-
-    // 対応するアプリを選択状態にしてイベント発火
-    appSelect.value = app;
-    appSelect.dispatchEvent(new Event("change"));
-
-    // ボタンの見た目を切り替え
-    document.querySelectorAll(".quick-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
+  // クイックボタン
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".quick-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const app = btn.dataset.app;
+        const appSelect = document.getElementById("appSelect");
+        appSelect.value = app;
+        appSelect.dispatchEvent(new Event("change"));
+        document.querySelectorAll(".quick-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
   });
-});
 
-  // ===================== 種類・サービス更新 =====================
-  window.updateTypes = function () {
-    const app = appSelect.value;
-    typeSelect.innerHTML = "<option value=''>種類を選んでください</option>";
-
-    if (!app || !grouped[app]) return;
-
-    const emoji = { "再生数": "▶️", "いいね": "❤️", "フォロワー": "👥", "コメント": "💬", "シェア": "🔄", "その他": "✨" };
-    Object.keys(grouped[app]).forEach(type => {
-      const op = document.createElement("option");
-      op.value = type;
-      op.textContent = (emoji[type] || "🧩") + " " + type;
+  // 種類更新
+  function updateTypes(){
+    const app=document.getElementById("appSelect").value;
+    const typeSelect=document.getElementById("typeSelect");
+    typeSelect.innerHTML="<option value=''>種類を選んでください</option>";
+    if(!app||!grouped[app])return;
+    const em={"再生数":"▶️","いいね":"❤️","フォロワー":"👥","コメント":"💬","シェア":"🔄","その他":"✨"};
+    Object.keys(grouped[app]).forEach(t=>{
+      const op=document.createElement("option");
+      op.value=t; op.textContent=(em[t]||"🧩")+" "+t;
       typeSelect.appendChild(op);
     });
-  };
-
- window.updateServices = function () {
-  const app = appSelect.value;
-  const type = typeSelect.value;
-  serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
-
-  if (!app || !type || !grouped[app][type]) return;
-
-  // 👑おすすめ と 通常サービスを分ける
-  const recommendedServices = [];
-  const normalServices = [];
-
-  grouped[app][type].forEach(service => {
-    const isRecommended = recommended.includes(String(service.service));
-    (isRecommended ? recommendedServices : normalServices).push(service);
-  });
-
-  // おすすめを上、通常を下に結合
-  const allServices = [...recommendedServices, ...normalServices];
-
-  // DOMに追加
-  allServices.forEach(service => {
-    const op = document.createElement("option");
-    op.value = service.service;
-    op.dataset.finalRate = service.finalRate;
-    op.dataset.price = service.finalRate;
-
-    const isRecommended = recommended.includes(String(service.service));
-    const prefix = isRecommended ? "👑おすすめ " : "";
-
-    op.textContent = `${prefix}[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
-    serviceSelect.appendChild(op);
-  });
-
-  applyFilters();
-};
-
-  window.updatePrice = function () {
-    const op = serviceSelect.options[serviceSelect.selectedIndex];
-    const qty = parseInt(qtyInput.value, 10) || 0;
-    const rate = parseFloat(op?.dataset.finalRate || 0);
-    const price = Math.round((rate / 1000) * qty * 100) / 100;
-    priceDisplay.textContent = `金額: ${price} 円`;
-  };
-
-  // ===================== 並び替え & 絞り込み =====================
-  function applyFilters() {
-    const keyword = searchInput?.value?.toLowerCase() || "";
-    const sort = sortSelect?.value || "default";
-    const filter = filterSelect?.value || "none";
-
-    const original = Array.from(serviceSelect.querySelectorAll("option")).slice(1);
-    let options = [...original];
-
-    if (keyword) options = options.filter(o => o.text.toLowerCase().includes(keyword));
-
-    const regex = {
-      instant: /instant|fast|0-1/i,
-      refill: /refill|guarantee/i,
-      "non-drop": /non.?drop/i,
-      popular: /exclusive|premium|best/i
-    };
-    if (filter !== "none" && regex[filter]) {
-      options = options.filter(o => regex[filter].test(o.text));
-    }
-
-    if (sort === "low") options.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
-    if (sort === "high") options.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
-
-    const ph = serviceSelect.options[0].cloneNode(true);
-    serviceSelect.innerHTML = "";
-    serviceSelect.appendChild(ph);
-    options.forEach(o => serviceSelect.appendChild(o));
+    // 復元
+    if(selectedType){ typeSelect.value = selectedType; }
+    updateServices();
   }
 
-  [sortSelect, filterSelect, searchInput].forEach(el => {
-    if (el) el.addEventListener("input", applyFilters);
-  });
+  // サービス更新
+  function updateServices(){
+    const app=document.getElementById("appSelect").value;
+    const type=document.getElementById("typeSelect").value;
+    const serviceSelect=document.getElementById("serviceSelect");
+    serviceSelect.innerHTML="<option value=''>サービスを選んでください</option>";
+    if(!app||!type||!grouped[app][type])return;
 
-  if (resetBtn) {
-  resetBtn.addEventListener("click", () => {
-    console.log("🔁 フィルターのみリセット");
+    const rec=[] , normal=[];
+    grouped[app][type].forEach(s=>{
+      const isRec=recommended.includes(String(s.service));
+      (isRec?rec:normal).push(s);
+    });
+    [...rec,...normal].forEach(s=>{
+      const op=document.createElement("option");
+      op.value=s.service;
+      op.dataset.finalRate=s.finalRate;
+      const prefix=recommended.includes(String(s.service))?"👑おすすめ ":"";
+      op.textContent=`${prefix}[${s.service}] ${s.name} （最終価格: ${s.finalRate.toFixed(2)}円/1000）`;
+      serviceSelect.appendChild(op);
+    });
 
-    // ====== フィルター関連を初期化 ======
-    sortSelect.value = "default";
-    filterSelect.value = "none";
-    searchInput.value = "";
-
-    // ====== 現在選択中のアプリ・種類を維持したままサービスリストを再描画 ======
-    if (typeof updateServices === "function") {
-      updateServices(); // ← 種類・アプリを再読み込み
-    }
-
-    // ====== フィルターを再適用（全件表示） ======
     applyFilters();
 
-    // ====== 金額表示はリセット ======
-    priceDisplay.textContent = "金額: 0 円";
-
-    console.log("✅ 検索・絞り込み・並び替えをリセットしました（アプリ・種類は保持）");
-  });
-}
-
-  // ===================== 初期化 =====================
-  if (appSelect.value) updateTypes();
-
-  console.log("✅ order.js 初期化完了");
-});
-</script>
-
-
-<!-- ✅ 種類・サービス選択スクリプト -->
-<script>
-  // grouped はサーバーから渡されるデータ
-  const grouped = <%- JSON.stringify(grouped) %>;
-  const recommended = <%- JSON.stringify(recommended) %>; // 👑追加！
-
-  // ==== アプリを選んだら種類を更新 ====
-function updateTypes() {
-  const app = document.getElementById("appSelect").value;
-  const typeSelect = document.getElementById("typeSelect");
-  typeSelect.innerHTML = "<option value=''>種類を選んでください</option>";
-
-  if (!app || !grouped[app]) return;
-
-  // 種類ごとの絵文字マップ
-  const typeEmojiMap = {
-    "再生数": "▶️",
-    "いいね": "❤️",
-    "フォロワー": "👥",
-    "コメント": "💬",
-    "シェア": "🔄",
-    "その他": "✨"
-  };
-
-  Object.keys(grouped[app]).forEach(type => {
-    const option = document.createElement("option");
-    option.value = type;
-    option.textContent = (typeEmojiMap[type] || "🧩") + " " + type;
-    typeSelect.appendChild(option);
-  });
-}
-
-// ==== 種類を選んだらサービスを更新 ====
-function updateServices() {
-  const app = document.getElementById("appSelect").value;
-  const type = document.getElementById("typeSelect").value;
-  const serviceSelect = document.getElementById("serviceSelect");
-  serviceSelect.innerHTML = "<option value=''>サービスを選んでください</option>";
-
-  // データが無い場合は終了
-  if (!app || !type || !grouped[app][type]) return;
-
-  grouped[app][type].forEach(service => {
-    const option = document.createElement("option");
-
-    // ✅ IDを value に入れる
-    option.value = service.service;
-
-    // ✅ dataset に finalRate をセット（updatePrice で使う）
-    option.dataset.finalRate = service.finalRate;
-
-    // サーバーから渡された recommended 配列を使って判定
-    const isRecommended = recommended.includes(String(service.service));
-
-    // 👑おすすめマークを追加
-const prefix = isRecommended ? "👑おすすめ " : "";
-
-// ✅ 表示は「おすすめ + ID + 名前 + 最終価格」
-option.textContent = `${prefix}[${service.service}] ${service.name} （最終価格: ${service.finalRate.toFixed(2)}円/1000）`;
-
-    serviceSelect.appendChild(option);
-  });
-}
-
-
-// ==== サービスを選んだら金額を更新 ====
-function updatePrice() {
-  const serviceSelect = document.getElementById("serviceSelect");
-  const qty = parseInt(document.getElementById("quantity").value, 10) || 0;
-  const priceDisplay = document.getElementById("priceDisplay");
-
-  if (!serviceSelect.value) {
-    priceDisplay.textContent = "金額: 0 円";
-    return;
+    // 復元
+    if(selectedServiceId){ serviceSelect.value = selectedServiceId; }
+    updatePrice();
   }
 
-  // ✅ 選択中の option から data-final-rate を取得
-  const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-  const finalRate = parseFloat(selectedOption.dataset.finalRate || "0");
+  // 金額表示
+  function updatePrice(){
+    const sel=document.getElementById("serviceSelect");
+    const qty=parseInt(document.getElementById("quantity").value,10)||0;
+    const disp=document.getElementById("priceDisplay");
+    if(!sel.value){ disp.textContent="金額: 0 円"; return; }
+    const rate=parseFloat(sel.options[sel.selectedIndex].dataset.finalRate||0);
+    const price=Math.round((rate/1000)*qty*100)/100;
+    disp.textContent=`金額: ${price} 円`;
+  }
 
-  // ✅ 金額計算
-  const price = Math.round((finalRate / 1000) * qty * 100) / 100;
+  // フィルター
+  const sortSelect=document.getElementById("sortSelect");
+  const filterSelect=document.getElementById("filterSelect");
+  const searchInput=document.getElementById("searchInput");
+  const resetBtn=document.getElementById("resetFilters");
+  function applyFilters(){
+    const sel=document.getElementById("serviceSelect");
+    const keyword=(searchInput?.value||"").toLowerCase();
+    const sort=sortSelect?.value||"default";
+    const filter=filterSelect?.value||"none";
+    const original=Array.from(sel.querySelectorAll("option")).slice(1);
+    let opts=[...original];
 
-  // ✅ 表示更新
-  priceDisplay.textContent = `金額: ${price} 円`;
-}
+    if(keyword) opts=opts.filter(o=>o.text.toLowerCase().includes(keyword));
+    const re={instant:/instant|fast|0-1/i,refill:/refill|guarantee/i,"non-drop":/non.?drop/i,popular:/exclusive|premium|best/i};
+    if(filter!=="none"&&re[filter]) opts=opts.filter(o=>re[filter].test(o.text));
+    if(sort==="low") opts.sort((a,b)=>parseFloat(a.dataset.finalRate)-parseFloat(b.dataset.finalRate));
+    if(sort==="high") opts.sort((a,b)=>parseFloat(b.dataset.finalRate)-parseFloat(a.dataset.finalRate));
+
+    const ph=sel.options[0].cloneNode(true);
+    sel.innerHTML=""; sel.appendChild(ph); opts.forEach(o=>sel.appendChild(o));
+  }
+  [sortSelect,filterSelect,searchInput].forEach(el=>{ if(el) el.addEventListener("input",applyFilters); });
+  if(resetBtn){ resetBtn.addEventListener("click",()=>{ sortSelect.value="default"; filterSelect.value="none"; searchInput.value=""; updateServices(); applyFilters(); document.getElementById("priceDisplay").textContent="金額: 0 円"; }); }
+
+  // 初期復元
+  document.addEventListener("DOMContentLoaded",()=>{
+    if(selectedApp){
+      document.getElementById("appSelect").value = selectedApp;
+      updateTypes();
+    }
+  });
 </script>
 
 
