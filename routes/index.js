@@ -6,6 +6,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 
+
 // 優先アプリ
 const priorityApps = ["TikTok", "Instagram", "YouTube", "Twitter", "Spotify", "Telegram", "Twitch", "Facebook"];
 
