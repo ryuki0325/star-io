@@ -109,9 +109,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const subcategoryInput = document.getElementById("subcategoryInput");
   const form = document.getElementById("contactForm");
   const emailInput = document.getElementById("email");
+  const orderIdInput = document.getElementById("orderId");
+  const messageInput = document.getElementById("message");
   const msgBox = document.getElementById("msgBox");
 
-  // 成功・エラー時は自動スクロール
   if (msgBox) msgBox.scrollIntoView({ behavior: "smooth", block: "center" });
 
   // ✅ カテゴリ選択
@@ -132,29 +133,65 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ✅ フォーム送信前チェック
+  // ✅ フォーム送信 → メールアプリを開く
   form.addEventListener("submit", (e) => {
+    e.preventDefault(); // 通常のPOSTを止める（メールアプリを優先）
+
     const category = categoryInput.value.trim();
     const subcategory = subcategoryInput.value.trim();
     const email = emailInput.value.trim();
+    const orderId = (orderIdInput.value || "").trim();
+    const message = messageInput.value.trim();
 
-    if (!category) {
-      e.preventDefault();
-      alert("カテゴリを選択してください。");
-      categoryBtns[0].focus();
+    // 入力チェック
+    if (!category) { alert("カテゴリを選択してください。"); return; }
+    if (!subcategory) { alert("サブカテゴリを選択してください。"); return; }
+    if (!email) { alert("メールアドレスを入力してください。"); return; }
+    if (!message) { alert("お問い合わせ内容を入力してください。"); return; }
+
+    if (!confirm(`以下の内容でメールアプリを開きます。\n\n📧 ${email}\n🗂 ${category} / ${subcategory}\n🧾 注文ID: ${orderId || "未記入"}\n\nよろしいですか？`)) {
       return;
     }
 
-    if (!subcategory) {
-      e.preventDefault();
-      alert("サブカテゴリを選択してください。");
-      subcategoryBtns[0].focus();
-      return;
+    // 件名・本文を作成（改行は \r\n）
+    const subject = `【${category}/${subcategory}】お問い合わせ（注文ID: ${orderId || "未記入"}）`;
+    const lines = [
+      "以下の内容でお問い合わせいたします。",
+      "",
+      `メールアドレス: ${email}`,
+      `カテゴリ: ${category}`,
+      `サブカテゴリ: ${subcategory}`,
+      `注文ID: ${orderId || "未記入"}`,
+      "",
+      "お問い合わせ内容:",
+      message
+    ];
+    let body = lines.join("\r\n");
+
+    // URL長対策（mailtoは長すぎると失敗するため、本文を短縮）
+    const MAX_URL = 1800; // ざっくり安全側
+    const enc = (s) => encodeURIComponent(s);
+    let mailto = `mailto:star.company527@gmail.com?subject=${enc(subject)}&body=${enc(body)}`;
+    if (mailto.length > MAX_URL) {
+      // 末尾に追記して本文をカット
+      const notice = "\r\n\r\n※本文が長いため一部省略されました。";
+      const allow = MAX_URL - (`mailto:star.company527@gmail.com?subject=${enc(subject)}&body=`).length - enc(notice).length - 50;
+      // 余裕を持って50文字ぶんマージン
+      const cutLen = Math.max(0, body.length - 1);
+      while (encodeURIComponent(body).length > allow && body.length > 0) {
+        body = body.slice(0, Math.max(0, body.length - 50));
+      }
+      body += notice;
+      mailto = `mailto:star.company527@gmail.com?subject=${enc(subject)}&body=${enc(body)}`;
     }
 
-    if (!confirm(`以下の内容で送信します。\n\n📧 メールアドレス: ${email}\n🗂 カテゴリ: ${category} / ${subcategory}\n\nよろしいですか？`)) {
-      e.preventDefault();
-    }
+    // メールアプリを開く
+    window.location.href = mailto;
+
+    // 万一開かない環境向けの案内（1秒後に表示）
+    setTimeout(() => {
+      alert("メールアプリが開かない場合は、画面下の赤いボタン「送信できない方はこちら」から送信してください。");
+    }, 1000);
   });
 });
 </script>
