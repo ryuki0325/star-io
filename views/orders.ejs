@@ -10,21 +10,29 @@
       <% orders.forEach(order => { %>
         <div class="order-card border border-info rounded p-3 shadow-sm">
 
-          <!-- 上段: 注文ID & 日付 -->
-          <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-            <span class="badge bg-info text-dark fw-bold px-3 py-2 mb-1">
-              ID: <%= order.id %>
-            </span>
+          <!-- 上段: 注文ID(本家優先) & 日付 -->
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+  <!-- ✅ 表示は本家IDを最優先、無ければ内部ID -->
+  <span class="badge bg-info text-dark fw-bold px-3 py-2 mb-1">
+    ID: <%= order.main_order_id || order.api_order_id || order.provider_order_id || order.id %>
+  </span>
 
-            <span class="badge bg-dark text-white mb-1">
-              📅 
-              <% if (order.created_at) { %>
-                <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
-              <% } else { %>
-                不明
-              <% } %>
-            </span>
-          </div>
+  <!-- 内部IDも小さく併記（運用・問い合わせ用、不要ならこの行を消してOK） -->
+  <% if (order.id && (order.main_order_id || order.api_order_id || order.provider_order_id)) { %>
+    <small class="text-muted ms-2 mb-1">
+      (内部: <%= order.id %>)
+    </small>
+  <% } %>
+
+  <span class="badge bg-dark text-white mb-1 ms-auto">
+    📅 
+    <% if (order.created_at) { %>
+      <%= new Date(order.created_at + " UTC").toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+    <% } else { %>
+      不明
+    <% } %>
+  </span>
+</div>
 
           <!-- サービス名 + 商品ID -->
           <h5 class="text-white mb-2 fw-bold" style="word-break: break-word;">
