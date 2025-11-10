@@ -24,31 +24,64 @@
   </form>
 
   <!-- 購入履歴 -->
-  <h3 class="mb-3">📜 最近の注文履歴</h3>
-  <% if (!orders || orders.length === 0) { %>
-    <p class="text-muted">注文履歴はありません。</p>
-  <% } else { %>
-    <table class="table table-dark table-striped table-sm">
-      <thead>
+ <h3 class="mb-3">📜 最近の注文履歴</h3>
+<% if (!orders || orders.length === 0) { %>
+  <p class="text-muted">注文履歴はありません。</p>
+<% } else { %>
+  <table class="table table-dark table-striped table-sm align-middle">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>サービス名</th>
+        <th>数量</th>
+        <th>金額</th>
+        <th>日付（JST）</th>
+        <th>本家</th> <!-- ← 追加 -->
+      </tr>
+    </thead>
+    <tbody>
+      <% orders.forEach(o => { %>
         <tr>
-          <th>ID</th>
-          <th>サービス名</th>
-          <th>数量</th>
-          <th>金額</th>
-          <th>日付</th>
+          <td><%= o.id %></td>
+          <td><%= o.service_name %></td>
+          <td><%= o.quantity %></td>
+          <td><%= Number(o.price_jpy).toFixed(2) %> 円</td>
+          <td><%= new Date(o.created_at + " UTC").toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %></td>
+          <td>
+            <% if (o.smm_order_id) { %>
+              <a class="btn btn-sm btn-outline-warning"
+                 href="/staff/smm/orders/<%= o.smm_order_id %>">
+                本家履歴
+              </a>
+              <button type="button"
+                      class="btn btn-sm btn-outline-light ms-1 copy-smm"
+                      data-id="<%= o.smm_order_id %>">
+                IDコピー
+              </button>
+            <% } else { %>
+              <span class="text-muted">—</span>
+            <% } %>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% orders.forEach(o => { %>
-          <tr>
-            <td><%= o.id %></td>
-            <td><%= o.service_name %></td>
-            <td><%= o.quantity %></td>
-            <td><%= Number(o.price_jpy).toFixed(2) %> 円</td>
-            <td><%= new Date(o.created_at + " UTC").toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  <% } %>
-</div>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<script>
+  // SMM本家の注文IDをワンクリックでコピー
+  document.querySelectorAll('.copy-smm').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      try {
+        await navigator.clipboard.writeText(id);
+        const old = btn.textContent;
+        btn.textContent = '✅ コピー済';
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1000);
+      } catch {
+        alert('コピーに失敗しました');
+      }
+    });
+  });
+</script>
