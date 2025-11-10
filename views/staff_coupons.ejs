@@ -10,17 +10,81 @@
     <button type="submit" class="btn btn-success">発行</button>
   </form>
 
-  <table class="table table-dark table-striped">
-    <thead><tr><th>コード</th><th>金額</th><th>有効期限</th><th>使用数</th></tr></thead>
+  <table class="table table-dark table-striped align-middle">
+    <thead>
+      <tr>
+        <th>コード</th>
+        <th>金額</th>
+        <th>有効期限（日本時間）</th>
+        <th>使用数</th>
+      </tr>
+    </thead>
     <tbody>
-      <% coupons.forEach(c => { %>
+      <% coupons.forEach(c => { 
+           const expiryDate = new Date(c.valid_until);
+           // UTC → JST (+9時間)
+           expiryDate.setHours(expiryDate.getHours() + 9);
+           const expiryStr = expiryDate.toLocaleString('ja-JP', {
+             year: 'numeric', month: '2-digit', day: '2-digit',
+             hour: '2-digit', minute: '2-digit'
+           });
+      %>
         <tr>
-          <td><%= c.code %></td>
+          <td>
+            <span class="code-text"><%= c.code %></span>
+            <button type="button"
+                    class="btn btn-sm btn-outline-info ms-2 copy-btn"
+                    data-code="<%= c.code %>"
+                    data-amount="<%= c.discount_value %>"
+                    data-expiry="<%= expiryStr %>">
+              テンプレコピー
+            </button>
+          </td>
           <td><%= c.discount_value %>円</td>
-          <td><%= c.valid_until %></td>
+          <td><%= expiryStr %></td>
           <td><%= c.used_count %>/<%= c.max_uses %></td>
         </tr>
       <% }) %>
     </tbody>
   </table>
 </div>
+
+<script>
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.dataset.code;
+      const amount = btn.dataset.amount;
+      const expiry = btn.dataset.expiry;
+
+      const message =
+        `🎁 ギフトコード「${code}」です。\n` +
+        `サイト内の購入画面で入力すると ${amount}円 の割引が適用されます。\n` +
+        `使用期限 ${expiry} \n` +
+        `ご利用をお待ちしております。`;
+
+      const ok = await copyText(message);
+      const old = btn.textContent;
+      btn.textContent = ok ? '✅ コピー済' : '⚠️ 失敗';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = old;
+        btn.disabled = false;
+      }, 1200);
+    });
+  });
+</script>
