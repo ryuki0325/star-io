@@ -83,52 +83,61 @@ router.get("/", async (req, res) => {   // ← async を追加！
 
 // ================== サインアップ ==================
 router.get("/signup", (req, res) => {
-  const { ref } = req.query;   // ← 紹介コードを受け取る
+  const { ref } = req.query;   // ← ref追加版！
   res.render("signup", { title: "新規登録", error: null, ref });
 });
 
-router.post("/signup", async (req, res) => {   // ← ✅ async を追加！
-  const { email, password } = req.body;
+// ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+// ここが書き換え後のアフィリエイト対応版
+router.post("/signup", async (req, res) => {
+  const { email, password, ref } = req.body;
   const db = req.app.locals.db;
 
   try {
-    // ✅ パスワードをハッシュ化
     const hash = await bcrypt.hash(password, 10);
 
-    // ✅ 同じメールが既に登録されていないかチェック
     const existing = await db.query("SELECT * FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) {
       return res.render("signup", { 
         title: "新規登録", 
-        error: "このメールアドレスは既に登録されています。" 
+        error: "このメールアドレスは既に登録されています。",
+        ref
       });
     }
 
-    // ✅ 新規登録
-    await db.query("INSERT INTO users (email, password_hash, balance) VALUES ($1, $2, $3)", [
-      email,
-      hash,
-      0  // 初期残高0円
-    ]);
+    let referredBy = null;
+    if (ref) {
+      const refUser = await db.query(
+        "SELECT id FROM users WHERE referral_code = $1",
+        [ref]
+      );
+      if (refUser.rows.length > 0) {
+        referredBy = refUser.rows[0].id;
+      }
+    }
 
-    // ✅ 登録直後のユーザー情報を取得
+    const crypto = require("crypto");
+    const myRefCode = crypto.randomBytes(4).toString("hex");
+
+    await db.query(
+      `INSERT INTO users (email, password_hash, balance, referral_code, referred_by)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [email, hash, 0, myRefCode, referredBy]
+    );
+
     const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
 
-    // ✅ セッションに保存
     req.session.userId = user.id;
     req.session.user = { id: user.id, email: user.email, balance: user.balance || 0 };
 
-    console.log("✅ 新規登録成功:", user.email);
-
-    // ✅ マイページへ
     res.redirect("/mypage");
 
   } catch (err) {
-    console.error("❌ サインアップエラー:", err);
     return res.render("signup", { 
       title: "新規登録", 
-      error: "登録に失敗しました: " + err.message 
+      error: "登録に失敗しました: " + err.message,
+      ref
     });
   }
 });
