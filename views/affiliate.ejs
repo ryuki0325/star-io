@@ -1,0 +1,68 @@
+<% title = 'アフィリエイト紹介' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">🤝 アフィリエイト紹介プログラム</h2>
+
+  <div class="alert alert-info">
+    この紹介リンクから新規登録し、ギフトコードなどで入金した場合、
+    <strong>入金額の5%</strong> があなたの残高として自動付与されます。
+  </div>
+
+  <!-- 紹介リンク -->
+  <div class="card bg-dark border border-info mb-4 p-3">
+    <h5 class="mb-2">あなたの紹介リンク</h5>
+    <div class="input-group">
+      <input
+        type="text"
+        class="form-control bg-dark text-light"
+        value="<%= inviteLink %>"
+        readonly
+        id="inviteLinkInput"
+      >
+      <button class="btn btn-info" type="button" onclick="copyInviteLink()">コピー</button>
+    </div>
+    <small class="text-muted">SNS・友達・ブログなどで自由にシェアしてください。</small>
+  </div>
+
+  <!-- 集計カード -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card bg-dark border border-info p-3 h-100">
+        <div class="text-muted">招待したユーザー数</div>
+        <div class="fs-3 fw-bold"><%= invitedCount %> 人</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-dark border border-info p-3 h-100">
+        <div class="text-muted">あなたが獲得した紹介報酬</div>
+        <div class="fs-3 fw-bold text-info"><%= affiliateEarnings %> 円</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-dark border border-info p-3 h-100">
+        <div class="text-muted">ステータス</div>
+        <div class="fs-5 fw-bold">
+          <% if (invitedCount > 0) { %>
+            👍 紹介が発生しています！
+          <% } else { %>
+            まだ紹介はありません。まずはリンクをシェアしてみましょう。
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-muted">
+    ※ 不正な自己紹介・複数アカウント作成・スパム行為が確認された場合は、
+    紹介報酬の取消やアカウント停止となる場合があります。
+  </p>
+</div>
+
+<script>
+  function copyInviteLink() {
+    const input = document.getElementById('inviteLinkInput');
+    input.select();
+    document.execCommand('copy');
+    alert('紹介リンクをコピーしました！');
+  }
+</script>
