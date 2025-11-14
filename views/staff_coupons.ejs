@@ -73,8 +73,10 @@
 
       const message =
         `🎁 ギフトコード「${code}」です。\n` +
-        `サイト内の購入画面で入力すると ${amount}円 の割引が適用されます。\n` +
+　　　　　`　\n` +
+        `サイト内の💰残高チャージ💰ページにて入力すると ${amount}円 が入金されます。\n` +
         `使用期限 ${expiry} \n` +
+        `\n` +
         `ご利用をお待ちしております。`;
 
       const ok = await copyText(message);
