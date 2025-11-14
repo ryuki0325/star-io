@@ -8,6 +8,9 @@
   <% } %>
 
   <form method="POST" action="/signup" class="bg-dark p-4 rounded border border-secondary">
+    <!-- ★ ここに hidden を移動！ -->
+    <input type="hidden" name="ref" value="<%= ref || '' %>">
+
     <input type="email" name="email" class="form-control mb-3" placeholder="メールアドレス" required>
     <input type="password" name="password" class="form-control mb-3" placeholder="パスワード" required>
     <button type="submit" class="btn btn-primary w-100">登録</button>
@@ -17,6 +20,4 @@
     すでにアカウントをお持ちですか？
     <a href="/login" class="text-info">ログインはこちら</a>
   </p>
-
-<input type="hidden" name="ref" value="<%= ref || '' %>">
 </div>
