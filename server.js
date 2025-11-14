@@ -8,6 +8,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const indexRouter = require("./routes/index");   // ユーザー用ルート
 const staffRoutes = require("./routes/staff");   // スタッフ専用ルート
+const affiliateRoutes = require("./routes/affiliate");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -156,6 +157,7 @@ app.use(async (req, res, next) => {
 // ====== ルーティング ======
 app.use("/", indexRouter);
 app.use("/staff", staffRoutes);
+app.use("/", affiliateRoutes);
 
 // ====== 起動 ======
 app.listen(PORT, () => {
