@@ -10,7 +10,7 @@
 
   <!-- 紹介リンク -->
   <div class="card bg-dark border border-info mb-4 p-3">
-    <h5 class="mb-2">あなたの紹介リンク</h5>
+    <h5 class="mb-2" style="color:#ffffff;">あなたの紹介リンク</h5>
     <div class="input-group">
       <input
         type="text"
@@ -26,26 +26,53 @@
 
   <!-- 集計カード -->
   <div class="row g-3 mb-4">
+
+    <!-- 招待したユーザー数 -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
-        <div class="text-white">招待したユーザー数</div>
-        <div class="fs-3 fw-bold text-white"><%= invitedCount %> 人</div>
+        <div style="color:#ffffff;">招待したユーザー数</div>
+        <div class="fs-3 fw-bold" style="color:#ffffff;"><%= invitedCount %> 人</div>
       </div>
     </div>
+
+    <!-- 紹介報酬 -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
         <div class="text-muted">あなたが獲得した紹介報酬</div>
         <div class="fs-3 fw-bold text-info"><%= affiliateEarnings %> 円</div>
       </div>
     </div>
+
+    <!-- ステータス -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
-        <div class="text-white">ステータス</div>
-        <div class="fs-5 fw-bold text-white">
+        <div style="color:#ffffff;">ステータス</div>
+        <div class="fs-5 fw-bold" style="color:#ffffff;">
           <% if (invitedCount > 0) { %>
             👍 紹介が発生しています！
           <% } else { %>
             まだ紹介はありません。まずはリンクをシェアしてみましょう。
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="text-muted">
+    ※ 不正な自己紹介・複数アカウント作成・スパム行為が確認された場合は、
+    紹介報酬の取消やアカウント停止となる場合があります。
+  </p>
+</div>
+
+<script>
+  function copyInviteLink() {
+    const input = document.getElementById('inviteLinkInput');
+    input.select();
+    document.execCommand('copy');
+    alert('紹介リンクをコピーしました！');
+  }
+</script>リンクをシェアしてみましょう。
           <% } %>
         </div>
       </div>
