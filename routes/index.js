@@ -83,7 +83,8 @@ router.get("/", async (req, res) => {   // ← async を追加！
 
 // ================== サインアップ ==================
 router.get("/signup", (req, res) => {
-  res.render("signup", { title: "新規登録", error: null });
+  const { ref } = req.query;   // ← 紹介コードを受け取る
+  res.render("signup", { title: "新規登録", error: null, ref });
 });
 
 router.post("/signup", async (req, res) => {   // ← ✅ async を追加！
