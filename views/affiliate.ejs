@@ -99,42 +99,7 @@
   <% } %>
 </div>
 
-  <!-- 受け取った紹介報酬一覧 -->
-  <div class="card bg-dark border border-info p-3 mb-4">
-    <h5 class="mb-3 text-white">💰 受け取った紹介報酬一覧</h5>
-
-    <% if (rewardLogs && rewardLogs.length > 0) { %>
-      <div class="table-responsive">
-        <table class="table table-dark table-striped align-middle mb-0">
-          <thead>
-            <tr>
-              <th>ユーザーID</th>
-              <th>元の入金額</th>
-              <th>あなたの報酬</th>
-              <th>日時</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% rewardLogs.forEach(log => { %>
-              <tr>
-                <td><%= log.user_id %></td>
-                <td><%= log.amount %> 円</td>
-                <td class="text-info fw-bold"><%= log.reward %> 円</td>
-                <td>
-                  <%= new Date(log.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
-                </td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </div>
-    <% } else { %>
-      <p class="text-muted mb-0">
-        まだ紹介報酬はありません。
-      </p>
-    <% } %>
-  </div>
-
+  
   <p class="text-white">
     ※ 不正な自己紹介・複数アカウント作成・スパム行為が確認された場合は、
     紹介報酬の取消やアカウント停止となる場合があります。
