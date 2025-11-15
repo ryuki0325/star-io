@@ -17,16 +17,23 @@ router.get("/affiliate", async (req, res) => {
     );
     const me = userRes.rows[0];
 
-    // ② 招待したユーザー一覧
-    const invitedRes = await db.query(
-      `SELECT id, created_at
-       FROM users
-       WHERE referred_by = $1
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-    const invitedUsers = invitedRes.rows;
-    const invitedCount = invitedUsers.length;
+    // ② 招待したユーザー一覧 + 報酬額
+const invitedRes = await db.query(
+  `SELECT 
+      u.id,
+      u.created_at,
+      COALESCE(SUM(a.reward), 0) AS reward  -- ← 報酬合計
+   FROM users u
+   LEFT JOIN affiliate_logs a
+     ON a.user_id = u.id  -- 紹介されたユーザー
+   WHERE u.referred_by = $1
+   GROUP BY u.id
+   ORDER BY u.created_at DESC`,
+  [userId]
+);
+
+const invitedUsers = invitedRes.rows;
+const invitedCount = invitedUsers.length;
 
     // ③ 受け取った紹介報酬（affiliate_logs から）
     const rewardLogsRes = await db.query(
