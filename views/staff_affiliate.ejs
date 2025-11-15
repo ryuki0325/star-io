@@ -1,0 +1,52 @@
+<% title = 'アフィリエイト管理（スタッフ）' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">💹 アフィリエイト管理（スタッフ用）</h2>
+
+  <div class="alert alert-warning">
+    ここでは、<strong>誰が誰を招待し、いくら入金して、紹介者にいくら報酬が入ったか</strong> を確認できます。
+  </div>
+
+  <% if (!logs || logs.length === 0) { %>
+    <p class="text-muted">まだアフィリエイト報酬の履歴はありません。</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>日時</th>
+            <th>紹介者（ID / メール）</th>
+            <th>紹介されたユーザー（ID / メール）</th>
+            <th>元の入金額</th>
+            <th>付与された報酬</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(row => { %>
+            <tr>
+              <td><%= row.id %></td>
+              <td>
+                <%= new Date(row.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+              </td>
+              <td>
+                ID: <%= row.referrer_id %><br>
+                <small class="text-muted"><%= row.referrer_email || '-' %></small>
+              </td>
+              <td>
+                ID: <%= row.user_id %><br>
+                <small class="text-muted"><%= row.user_email || '-' %></small>
+              </td>
+              <td><%= row.amount %> 円</td>
+              <td class="text-info fw-bold"><%= row.reward %> 円</td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <p class="text-muted mt-3">
+    ※ 不正な自己紹介やスパムが疑われる場合は、この履歴をもとにアカウント停止・報酬取消などの対応を行ってください。
+  </p>
+</div>
