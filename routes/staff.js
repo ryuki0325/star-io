@@ -256,6 +256,44 @@ router.get("/smm-deposit", (req, res) => {
   res.render("staff_smm_deposit", { title: "SMM入金ページ" });
 });
 
+// ===== アフィリエイト履歴一覧（スタッフ用） =====
+router.get("/affiliate", async (req, res) => {
+  if (!req.session.isStaff) {
+    return res.redirect("/staff/login");
+  }
+
+  const db = req.app.locals.db;
+
+  try {
+    const result = await db.query(
+      `SELECT 
+         a.id,
+         a.created_at,
+         a.referrer_id,
+         ref.email   AS referrer_email,
+         a.user_id,
+         u.email     AS user_email,
+         a.amount,
+         a.reward
+       FROM affiliate_logs a
+       LEFT JOIN users ref ON ref.id = a.referrer_id
+       LEFT JOIN users u   ON u.id = a.user_id
+       ORDER BY a.created_at DESC
+       LIMIT 200`
+    );
+
+    const logs = result.rows;
+
+    res.render("staff_affiliate", {
+      title: "アフィリエイト管理（スタッフ）",
+      logs
+    });
+
+  } catch (err) {
+    console.error("❌ スタッフ用アフィリエイト一覧エラー:", err);
+    res.status(500).send("アフィリエイト履歴の取得に失敗しました。");
+  }
+});
 
 // ===== ユーザー編集 =====
 router.get("/user/:id/edit", async (req, res) => {
