@@ -1,11 +1,7 @@
-// routes/affiliate.js
-
 const express = require("express");
 const router = express.Router();
 
-// アフィリエイト紹介ページ
 router.get("/affiliate", async (req, res) => {
-  // ログインチェック
   if (!req.session.userId) {
     return res.redirect("/login");
   }
@@ -14,30 +10,34 @@ router.get("/affiliate", async (req, res) => {
   const userId = req.session.userId;
 
   try {
-    // 自分の情報（紹介コード・累計紹介報酬）を取得
+    // 自分の情報
     const userRes = await db.query(
       "SELECT email, referral_code, affiliate_earnings FROM users WHERE id = $1",
       [userId]
     );
     const me = userRes.rows[0];
 
-    // 紹介したユーザー数
+    // ⭐ 招待したユーザー一覧（メールは取らず、idと日時だけ）
     const invitedRes = await db.query(
-      "SELECT COUNT(*) AS cnt FROM users WHERE referred_by = $1",
+      `SELECT id, created_at
+       FROM users
+       WHERE referred_by = $1
+       ORDER BY created_at DESC`,
       [userId]
     );
-    const invitedCount = invitedRes.rows[0].cnt;
+    const invitedUsers = invitedRes.rows;
+    const invitedCount = invitedUsers.length; // ← ここで人数カウント
 
-    // 紹介リンク（本番URLは必要に応じて変更）
     const baseUrl = process.env.BASE_URL || "https://star-io-hc9c.onrender.com";
     const inviteLink = `${baseUrl}/signup?ref=${me.referral_code}`;
 
     res.render("affiliate", {
       title: "アフィリエイト紹介",
-      user: req.session.user,                 // 既存のユーザー情報
+      user: req.session.user,
       invitedCount,
       affiliateEarnings: me.affiliate_earnings || 0,
-      inviteLink
+      inviteLink,
+      invitedUsers      // ← ★ これをEJSに渡す
     });
 
   } catch (err) {
