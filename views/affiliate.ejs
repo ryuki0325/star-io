@@ -60,40 +60,44 @@
   </div>
 
   <!-- 招待ユーザー一覧 -->
-  <div class="card bg-dark border border-info p-3 mb-4">
-    <h5 class="mb-3 text-white">👥 招待したユーザー一覧</h5>
+<div class="card bg-dark border border-info p-3 mb-4">
+  <h5 class="mb-3 text-white">👥 招待したユーザー一覧</h5>
 
-    <% if (invitedUsers && invitedUsers.length > 0) { %>
-      <div class="table-responsive">
-        <table class="table table-dark table-striped align-middle mb-0">
-          <thead>
+  <% if (invitedUsers && invitedUsers.length > 0) { %>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>ユーザーID</th>
+            <th>登録日時</th>
+            <th>あなたの報酬</th> <!-- 追加 -->
+          </tr>
+        </thead>
+        <tbody>
+          <% invitedUsers.forEach(u => { %>
             <tr>
-              <th>ユーザーID</th>
-              <th>登録日時</th>
+              <td><%= u.id %></td>
+              <td>
+                <% if (u.created_at) { %>
+                  <%= new Date(u.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td class="text-info fw-bold">
+                <%= u.reward %> 円 <!-- ← 追加表示 -->
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <% invitedUsers.forEach(u => { %>
-              <tr>
-                <td><%= u.id %></td>
-                <td>
-                  <% if (u.created_at) { %>
-                    <%= new Date(u.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
-                  <% } else { %>
-                    -
-                  <% } %>
-                </td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </div>
-    <% } else { %>
-      <p class="text-muted mb-0">
-        まだ招待されたユーザーはいません。紹介リンクをシェアしてみましょう。
-      </p>
-    <% } %>
-  </div>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <p class="text-muted mb-0">
+      まだ招待されたユーザーはいません。紹介リンクをシェアしてみましょう。
+    </p>
+  <% } %>
+</div>
 
   <!-- 受け取った紹介報酬一覧 -->
   <div class="card bg-dark border border-info p-3 mb-4">
