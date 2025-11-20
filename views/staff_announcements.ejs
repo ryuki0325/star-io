@@ -1,21 +1,22 @@
 <% title = title || 'お知らせ管理' %>
 
 <style>
-  /* ⭐ 文字は全部白 */
-  h2, h4, h5, p, label, small, div, span {
+  /* このページのメインコンテンツ内だけ白文字にする */
+  .container.py-4.text-light h2,
+  .container.py-4.text-light h4,
+  .container.py-4.text-light h5,
+  .container.py-4.text-light p,
+  .container.py-4.text-light label,
+  .container.py-4.text-light small,
+  .container.py-4.text-light div,
+  .container.py-4.text-light span {
     color: #fff !important;
   }
 
-  /* ⭐ プレースホルダーも白っぽく */
-  input::placeholder,
-  textarea::placeholder {
+  /* プレースホルダーも少し明るめのグレーに */
+  .container.py-4.text-light input::placeholder,
+  .container.py-4.text-light textarea::placeholder {
     color: #cccccc !important;
-  }
-
-  /* ⭐ ボタン以外の文字を白にしてもボタンはデフォルトのまま維持 */
-  .btn,
-  .btn * {
-    color: initial !important;
   }
 </style>
 
