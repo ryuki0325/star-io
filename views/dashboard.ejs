@@ -65,6 +65,33 @@
   </div>
 </div>
 
+<!-- ===================== 📢 運営からのお知らせ ===================== -->
+<div class="container mt-5">
+  <div class="card bg-dark border border-info shadow-sm">
+    <div class="card-body">
+      <h4 class="fw-bold mb-3">📢 運営からのお知らせ</h4>
+
+      <% if (!announcements || announcements.length === 0) { %>
+        <p class="text-muted mb-0">現在お知らせはありません。</p>
+      <% } else { %>
+        <div class="d-flex flex-column gap-3">
+          <% announcements.forEach(a => { %>
+            <div class="border border-secondary rounded p-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <h5 class="mb-0"><%= a.title %></h5>
+                <small class="text-muted">
+                  <%= new Date(a.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+                </small>
+              </div>
+              <p class="mb-0" style="white-space: pre-wrap;"><%= a.body %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
 <style>
   .card {
     border-width: 2px !important;
