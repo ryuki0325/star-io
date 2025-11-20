@@ -5,6 +5,7 @@ const smm = require("../lib/smmClient");
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const Announcement = require("../models/announcementModel");
 
 
 // 優先アプリ
@@ -28,7 +29,7 @@ const emojiMap = {
 };
 
 // ================== ホーム ==================
-router.get("/", async (req, res) => {   // ← async を追加！
+router.get("/", async (req, res) => {
   const apps = ["TikTok","Instagram","YouTube","Twitter","Spotify","Telegram","Twitch","Facebook","Reddit"];
   const db = req.app.locals.db;
 
@@ -37,7 +38,7 @@ router.get("/", async (req, res) => {   // ← async を追加！
     TikTok: "🎵",
     Instagram: "📸",
     YouTube: "▶️",
-    Twitter: "🐦", // Xは🐦か✖️でもOK
+    Twitter: "🐦",
     Spotify: "🎧",
     Telegram: "✈️",
     Twitch: "🎮",
@@ -45,38 +46,47 @@ router.get("/", async (req, res) => {   // ← async を追加！
     Reddit: "👽"
   };
 
-  if (!req.session.userId) {
-    return res.render("dashboard", { 
-      title: "ホーム", 
-      apps, 
-      user: null, 
-      orders: [],
-      emojiMap
-    });
-  }
-
   try {
+    // ⭐ お知らせを全部取得（新しい順）
+    const announcements = await Announcement.getAll();
+
+    // --- 未ログイン時 ---
+    if (!req.session.userId) {
+      return res.render("dashboard", {
+        title: "ホーム",
+        apps,
+        user: null,
+        orders: [],
+        emojiMap,
+        announcements   // ← 追加
+      });
+    }
+
+    // --- ログイン時: 注文取得 ---
     const result = await db.query(
       "SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC",
       [req.session.userId]
     );
     const orders = result.rows;
 
-    res.render("dashboard", { 
-      title: "ホーム", 
-      apps, 
-      user: req.session.user, 
+    res.render("dashboard", {
+      title: "ホーム",
+      apps,
+      user: req.session.user,
       orders,
-      emojiMap
+      emojiMap,
+      announcements     // ← 追加
     });
   } catch (err) {
-    console.error("❌ ダッシュボード注文取得エラー:", err);
-    res.render("dashboard", { 
-      title: "ホーム", 
-      apps, 
-      user: req.session.user, 
+    console.error("❌ ダッシュボードエラー:", err);
+    // 失敗したらお知らせは空配列で表示
+    res.render("dashboard", {
+      title: "ホーム",
+      apps,
+      user: req.session.user || null,
       orders: [],
-      emojiMap
+      emojiMap,
+      announcements: []
     });
   }
 });
