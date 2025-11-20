@@ -46,6 +46,16 @@
       </div>
     </div>
 
+      <!-- ✅ CSVダウンロードボタン -->
+  <div class="d-flex justify-content-end mb-3">
+    <button id="csvBtn" class="btn btn-success fw-bold">
+      📥 CSVダウンロード
+    </button>
+  </div>
+
+  <!-- ==================== テーブル ==================== -->
+  <div id="tableWrapper" class="d-none">
+
     <!-- 📅 ショートカットボタン -->
     <div class="mt-3 d-flex flex-wrap gap-2">
       <button class="btn btn-outline-info btn-sm range-btn" data-days="1">過去1日</button>
@@ -121,6 +131,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const yearSelect = document.getElementById("yearSelect");
   const monthSelect = document.getElementById("monthSelect");
   const serviceFilter = document.getElementById("serviceFilter");
+  const csvBtn = document.getElementById("csvBtn");
+
+
+  // ✅ CSVダウンロードボタン
+  csvBtn.addEventListener("click", () => {
+    const start = startDate.value;
+    const end = endDate.value;
+    const service = serviceFilter.value;
+
+    if (!start || !end) {
+      alert("CSVを出す前に、開始日と終了日を選んでください。");
+      return;
+    }
+
+    // service は platform パラメータとして飛ばす（サーバー側で使えるように）
+    const params = new URLSearchParams({
+      start,
+      end,
+      platform: service || "all"
+    });
+
+    // /staff/profits/csv にリダイレクト（ダウンロード開始）
+    window.location.href = `/staff/profits/csv?${params.toString()}`;
+  });
+
 
   // 年ドロップダウン
   const currentYear = new Date().getFullYear();
