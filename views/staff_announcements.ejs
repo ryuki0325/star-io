@@ -1,5 +1,11 @@
 <% title = title || 'お知らせ管理' %>
 
+<style>
+  body, .container, .card, .card-body, label, h2, h4, h5, p, small, li, div {
+    color: #fff !important;
+  }
+</style>
+
 <div class="container py-4 text-light">
   <h2 class="mb-4">📢 お知らせ管理</h2>
 
@@ -12,7 +18,7 @@
   <% } %>
 
   <!-- 追加フォーム -->
-  <div class="card bg-dark border border-info mb-4">
+  <div class="card bg-white border border-info mb-4">
     <div class="card-body">
       <h4 class="card-title mb-3">新しいお知らせを追加</h4>
       <form action="/staff/announcements" method="POST">
@@ -21,7 +27,7 @@
           <input
             type="text"
             name="title"
-            class="form-control bg-dark text-light border border-info"
+            class="form-control bg-white text-light border border-info"
             placeholder="例）メンテナンスのお知らせ"
             required
           >
