@@ -46,17 +46,7 @@
       </div>
     </div>
 
-      <!-- ✅ CSVダウンロードボタン -->
-  <div class="d-flex justify-content-end mb-3">
-    <button id="csvBtn" class="btn btn-success fw-bold">
-      📥 CSVダウンロード
-    </button>
-  </div>
-
-  <!-- ==================== テーブル ==================== -->
-  <div id="tableWrapper" class="d-none">
-
-    <!-- 📅 ショートカットボタン -->
+    <!-- 📅 ショートカットボタン（元の位置） -->
     <div class="mt-3 d-flex flex-wrap gap-2">
       <button class="btn btn-outline-info btn-sm range-btn" data-days="1">過去1日</button>
       <button class="btn btn-outline-info btn-sm range-btn" data-days="7">過去1週間</button>
@@ -66,6 +56,13 @@
       <button class="btn btn-outline-info btn-sm range-btn" data-days="180">過去6ヶ月</button>
       <button class="btn btn-outline-info btn-sm range-btn" data-days="365">過去1年</button>
     </div>
+  </div>
+
+  <!-- ✅ CSVダウンロードボタン（フィルタの下） -->
+  <div class="d-flex justify-content-end mb-3">
+    <button id="csvBtn" class="btn btn-success fw-bold">
+      📥 CSVダウンロード
+    </button>
   </div>
 
   <!-- ==================== テーブル ==================== -->
@@ -133,7 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const serviceFilter = document.getElementById("serviceFilter");
   const csvBtn = document.getElementById("csvBtn");
 
-
   // ✅ CSVダウンロードボタン
   csvBtn.addEventListener("click", () => {
     const start = startDate.value;
@@ -145,17 +141,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // service は platform パラメータとして飛ばす（サーバー側で使えるように）
     const params = new URLSearchParams({
       start,
       end,
       platform: service || "all"
     });
 
-    // /staff/profits/csv にリダイレクト（ダウンロード開始）
     window.location.href = `/staff/profits/csv?${params.toString()}`;
   });
-
 
   // 年ドロップダウン
   const currentYear = new Date().getFullYear();
@@ -248,24 +241,23 @@ document.addEventListener("DOMContentLoaded", () => {
         totalProfit += parseFloat(profit);
 
         // 日付フォーマット（時間込み）
-        // ✅ Invalid Date 対策付き
-      let dateStr = "N/A";
-      try {
-        const parsedDate = new Date(row.created_at.replace(" ", "T"));
-        if (!isNaN(parsedDate)) {
-          dateStr = parsedDate.toLocaleString("ja-JP", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false
-          });
+        let dateStr = "N/A";
+        try {
+          const parsedDate = new Date(row.created_at.replace(" ", "T"));
+          if (!isNaN(parsedDate)) {
+            dateStr = parsedDate.toLocaleString("ja-JP", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false
+            });
+          }
+        } catch (e) {
+          console.warn("⚠️ 日付変換エラー:", row.created_at);
         }
-      } catch (e) {
-        console.warn("⚠️ 日付変換エラー:", row.created_at);
-      }
         return `
           <tr>
             <td>${row.user}</td>
