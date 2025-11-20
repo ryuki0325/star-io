@@ -1,5 +1,24 @@
 <% title = title || 'お知らせ管理' %>
 
+<style>
+  /* ⭐ 文字は全部白 */
+  h2, h4, h5, p, label, small, div, span {
+    color: #fff !important;
+  }
+
+  /* ⭐ プレースホルダーも白っぽく */
+  input::placeholder,
+  textarea::placeholder {
+    color: #cccccc !important;
+  }
+
+  /* ⭐ ボタン以外の文字を白にしてもボタンはデフォルトのまま維持 */
+  .btn,
+  .btn * {
+    color: initial !important;
+  }
+</style>
+
 <div class="container py-4 text-light">
   <h2 class="mb-4">📢 お知らせ管理</h2>
 
@@ -12,7 +31,7 @@
   <% } %>
 
   <!-- 追加フォーム -->
-  <div class="card bg-white border border-info mb-4">
+  <div class="card bg-dark border border-info mb-4">
     <div class="card-body">
       <h4 class="card-title mb-3">新しいお知らせを追加</h4>
       <form action="/staff/announcements" method="POST">
@@ -21,7 +40,7 @@
           <input
             type="text"
             name="title"
-            class="form-control bg-white text-light border border-info"
+            class="form-control bg-dark text-light border border-info"
             placeholder="例）メンテナンスのお知らせ"
             required
           >
@@ -31,7 +50,7 @@
           <textarea
             name="body"
             rows="4"
-            class="form-control bg-white text-light border border-info"
+            class="form-control bg-dark text-light border border-info"
             placeholder="例）3/10 02:00〜05:00の間、システムメンテナンスのため一時的にご利用いただけません。"
             required
           ></textarea>
@@ -42,12 +61,12 @@
   </div>
 
   <!-- 既存お知らせ一覧 -->
-  <div class="card bg-white border border-info">
+  <div class="card bg-dark border border-info">
     <div class="card-body">
       <h4 class="card-title mb-3">登録済みお知らせ一覧</h4>
 
       <% if (!announcements || announcements.length === 0) { %>
-        <p class="text-white mb-0">まだお知らせはありません。</p>
+        <p class="text-muted mb-0">まだお知らせはありません。</p>
       <% } else { %>
         <div class="d-flex flex-column gap-3">
           <% announcements.forEach(a => { %>
