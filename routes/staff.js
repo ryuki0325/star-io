@@ -186,8 +186,9 @@ router.get("/profits", async (req, res) => {
 
     // ユーザー検索
     if (user_search) {
-      conditions.push(`users.email ILIKE $${paramIndex++} OR CAST(users.id AS TEXT) ILIKE $${paramIndex - 1}`);
+      conditions.push(`(users.email ILIKE $${paramIndex} OR CAST(users.id AS TEXT) ILIKE $${paramIndex})`);
       params.push(`%${user_search}%`);
+      paramIndex++;
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -200,6 +201,8 @@ router.get("/profits", async (req, res) => {
         orders.quantity,
         orders.price_jpy,
         orders.smm_cost_jpy,
+        orders.customer_deposit_jpy,  -- ★追加：お客様入金額
+        orders.extra_cost_jpy,        -- ★追加：使用費
         orders.created_at,
         users.email AS user_email,
         (orders.price_jpy - COALESCE(orders.smm_cost_jpy, 0)) AS profit
@@ -211,16 +214,24 @@ router.get("/profits", async (req, res) => {
 
     const result = await db.query(query, params);
 
-    // 円換算：1ドル = 150円
-    const rate = 150;
+    const rate = 150; // 円換算：1ドル = 150円（仮）
 
-    const formatted = result.rows.map(o => ({
-      ...o,
-      smm_cost_usd: o.smm_cost_jpy ? (o.smm_cost_jpy / rate).toFixed(2) : "0.00",
-      profit: (o.price_jpy - (o.smm_cost_jpy || 0)).toFixed(2),
-    }));
+    const formatted = result.rows.map(o => {
+      const costJpy = o.smm_cost_jpy || 0;
+      const profit = o.price_jpy - costJpy;
+      const margin = o.price_jpy ? (profit / o.price_jpy) * 100 : 0;
 
-    const totalProfit = formatted.reduce((sum, o) => sum + parseFloat(o.profit), 0).toFixed(2);
+      return {
+        ...o,
+        smm_cost_usd: costJpy ? (costJpy / rate).toFixed(2) : "0.00", // 仕入れ価格($)
+        profit: profit.toFixed(0),
+        margin: margin.toFixed(1), // 利益率(%)
+      };
+    });
+
+    const totalProfit = formatted
+      .reduce((sum, o) => sum + parseFloat(o.profit), 0)
+      .toFixed(0);
 
     res.render("staff_profits", {
       title: "利益一覧",
@@ -234,6 +245,120 @@ router.get("/profits", async (req, res) => {
   } catch (err) {
     console.error("❌ 利益計算エラー:", err);
     res.status(500).send("利益計算に失敗しました");
+  }
+});
+
+// ===== 利益：お客様入金額・使用費の更新 =====
+router.post("/profits/:id/update-extra", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const db = req.app.locals.db;
+  const { id } = req.params;
+  let { customer_deposit_jpy, extra_cost_jpy } = req.body;
+
+  // 数値に変換しておく
+  customer_deposit_jpy = parseInt(customer_deposit_jpy || "0", 10);
+  extra_cost_jpy = parseInt(extra_cost_jpy || "0", 10);
+
+  try {
+    await db.query(
+      `UPDATE orders
+       SET customer_deposit_jpy = $1,
+           extra_cost_jpy       = $2
+       WHERE id = $3`,
+      [customer_deposit_jpy, extra_cost_jpy, id]
+    );
+    res.redirect("/staff/profits");
+  } catch (err) {
+    console.error("❌ 利益追加情報更新エラー:", err);
+    res.status(500).send("更新に失敗しました");
+  }
+});
+
+// ===== 利益CSV出力 =====
+router.get("/profits/csv", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const db = req.app.locals.db;
+  const { start, end, platform, user_search } = req.query;
+
+  try {
+    let conditions = [];
+    let params = [];
+    let paramIndex = 1;
+
+    if (start && end) {
+      conditions.push(`orders.created_at BETWEEN $${paramIndex++} AND $${paramIndex++}`);
+      params.push(start, end);
+    }
+
+    if (platform && platform !== "all") {
+      conditions.push(`orders.service_name ILIKE $${paramIndex++}`);
+      params.push(`%${platform}%`);
+    }
+
+    if (user_search) {
+      conditions.push(`(users.email ILIKE $${paramIndex} OR CAST(users.id AS TEXT) ILIKE $${paramIndex})`);
+      params.push(`%${user_search}%`);
+      paramIndex++;
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const query = `
+      SELECT 
+        orders.service_name,
+        orders.quantity,
+        orders.price_jpy,
+        orders.smm_cost_jpy,
+        orders.customer_deposit_jpy,
+        orders.extra_cost_jpy,
+        orders.created_at
+      FROM orders
+      JOIN users ON orders.user_id = users.id
+      ${whereClause}
+      ORDER BY orders.created_at DESC
+    `;
+
+    const result = await db.query(query, params);
+
+    const rate = 150; // 1ドル = 150円（仮）
+
+    // ヘッダー行
+    let csv = "サービス名,数量,販売価格(円),仕入れ価格(円),仕入れ価格($),利益率(%),日付,お客様入金額,使用費\n";
+
+    result.rows.forEach(row => {
+      const price = row.price_jpy || 0;
+      const costJpy = row.smm_cost_jpy || 0;
+      const profit = price - costJpy;
+      const margin = price ? ((profit / price) * 100).toFixed(1) : "0.0";
+      const costUsd = costJpy ? (costJpy / rate).toFixed(2) : "0.00";
+      const dateStr = row.created_at.toISOString().slice(0, 10); // YYYY-MM-DD
+
+      const line = [
+        `"${row.service_name || ""}"`,   // サービス名
+        row.quantity || 0,               // 数量
+        price,                           // 販売価格(円)
+        costJpy,                         // 仕入れ価格(円)
+        costUsd,                         // 仕入れ価格($)
+        margin,                          // 利益率(%)
+        dateStr,                         // 日付
+        row.customer_deposit_jpy || 0,   // お客様入金額
+        row.extra_cost_jpy || 0          // 使用費
+      ].join(",");
+
+      csv += line + "\n";
+    });
+
+    const bom = "\uFEFF"; // Excel用BOM
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=\"profits.csv\"");
+
+    res.send(bom + csv);
+  } catch (err) {
+    console.error("❌ 利益CSV出力エラー:", err);
+    res.status(500).send("CSV出力に失敗しました");
   }
 });
 
