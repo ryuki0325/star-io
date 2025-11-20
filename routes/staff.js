@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const Announcement = require("../models/announcementModel");
 
 // ===== スタッフログインページ =====
 router.get("/login", (req, res) => {
@@ -377,6 +378,60 @@ router.get("/api/profit", async (req, res) => {
   } catch (err) {
     console.error("❌ 利益APIエラー:", err);
     res.status(500).json({ error: "サーバーエラー" });
+  }
+});
+
+// ===== お知らせ管理（一覧 + 追加） =====
+router.get("/announcements", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  try {
+    const announcements = await Announcement.getAll();
+    res.render("staff_announcements", {
+      title: "お知らせ管理",
+      announcements,
+      success: req.query.success || null,
+      error: req.query.error ? "お知らせの更新に失敗しました。" : null
+    });
+  } catch (err) {
+    console.error("❌ スタッフお知らせ一覧エラー:", err);
+    res.render("staff_announcements", {
+      title: "お知らせ管理",
+      announcements: [],
+      success: null,
+      error: "お知らせの取得に失敗しました。"
+    });
+  }
+});
+
+// ===== お知らせ追加 =====
+router.post("/announcements", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const { title, body } = req.body;
+
+  try {
+    if (!title || !body) {
+      return res.redirect("/staff/announcements?error=1");
+    }
+    await Announcement.create(title, body);
+    res.redirect("/staff/announcements?success=1");
+  } catch (err) {
+    console.error("❌ お知らせ追加エラー:", err);
+    res.redirect("/staff/announcements?error=1");
+  }
+});
+
+// ===== お知らせ削除 =====
+router.post("/announcements/:id/delete", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  try {
+    await Announcement.delete(req.params.id);
+    res.redirect("/staff/announcements?success=1");
+  } catch (err) {
+    console.error("❌ お知らせ削除エラー:", err);
+    res.redirect("/staff/announcements?error=1");
   }
 });
 
