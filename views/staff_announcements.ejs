@@ -1,0 +1,73 @@
+<% title = title || 'お知らせ管理' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">📢 お知らせ管理</h2>
+
+  <!-- メッセージ -->
+  <% if (success) { %>
+    <div class="alert alert-success">✅ 更新しました。</div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-danger">❌ エラーが発生しました。</div>
+  <% } %>
+
+  <!-- 追加フォーム -->
+  <div class="card bg-dark border border-info mb-4">
+    <div class="card-body">
+      <h4 class="card-title mb-3">新しいお知らせを追加</h4>
+      <form action="/staff/announcements" method="POST">
+        <div class="mb-3">
+          <label class="form-label">タイトル</label>
+          <input
+            type="text"
+            name="title"
+            class="form-control bg-dark text-light border border-info"
+            placeholder="例）メンテナンスのお知らせ"
+            required
+          >
+        </div>
+        <div class="mb-3">
+          <label class="form-label">本文</label>
+          <textarea
+            name="body"
+            rows="4"
+            class="form-control bg-dark text-light border border-info"
+            placeholder="例）3/10 02:00〜05:00の間、システムメンテナンスのため一時的にご利用いただけません。"
+            required
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-info fw-bold">追加する</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 既存お知らせ一覧 -->
+  <div class="card bg-dark border border-info">
+    <div class="card-body">
+      <h4 class="card-title mb-3">登録済みお知らせ一覧</h4>
+
+      <% if (!announcements || announcements.length === 0) { %>
+        <p class="text-muted mb-0">まだお知らせはありません。</p>
+      <% } else { %>
+        <div class="d-flex flex-column gap-3">
+          <% announcements.forEach(a => { %>
+            <div class="border border-secondary rounded p-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <div>
+                  <h5 class="mb-1"><%= a.title %></h5>
+                  <small class="text-muted">
+                    <%= new Date(a.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
+                  </small>
+                </div>
+                <form action="/staff/announcements/<%= a.id %>/delete" method="POST" onsubmit="return confirm('このお知らせを削除しますか？');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
+                </form>
+              </div>
+              <p class="mb-0" style="white-space: pre-wrap;"><%= a.body %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
