@@ -1,0 +1,68 @@
+<% title = '出金設定' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">💴 出金設定</h2>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <div class="row g-4">
+
+    <!-- PayPay設定 -->
+    <div class="col-md-6">
+      <div class="card bg-dark border border-info p-3">
+        <h5 class="text-white">📱 PayPay ID</h5>
+        <form method="POST" action="/withdraw/paypay">
+          <label class="mb-1">PayPay ID</label>
+          <input
+            type="text"
+            class="form-control bg-dark text-light mb-3"
+            name="paypay_id"
+            value="<%= paypayId || '' %>"
+            required
+          >
+          <button class="btn btn-info w-100">保存する</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 銀行設定 -->
+    <div class="col-md-6">
+      <div class="card bg-dark border border-info p-3">
+        <h5 class="text-white">🏦 銀行口座情報</h5>
+        <form method="POST" action="/withdraw/bank">
+          <label class="mb-1">銀行名</label>
+          <input
+            type="text"
+            class="form-control bg-dark text-light mb-2"
+            name="bank_name"
+            value="<%= bankName || '' %>"
+            required
+          >
+          <label class="mb-1">支店名</label>
+          <input
+            type="text"
+            class="form-control bg-dark text-light mb-2"
+            name="bank_branch"
+            value="<%= bankBranch || '' %>"
+            required
+          >
+          <label class="mb-1">口座番号</label>
+          <input
+            type="text"
+            class="form-control bg-dark text-light mb-3"
+            name="bank_account"
+            value="<%= bankAccount || '' %>"
+            required
+          >
+          <button class="btn btn-info w-100">保存する</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
