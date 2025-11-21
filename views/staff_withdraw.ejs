@@ -1,7 +1,16 @@
 <% title = '出金申請一覧（スタッフ）' %>
 
 <div class="container py-4 text-light">
-  <h2 class="mb-4">💴 出金申請一覧</h2>
+  <h2 class="mb-3">💴 出金申請一覧</h2>
+
+  <p class="mb-3">
+    未完了の申請： 
+    <% if (pendingCount > 0) { %>
+      <span class="badge bg-warning text-dark"><%= pendingCount %> 件</span>
+    <% } else { %>
+      <span class="badge bg-success">0 件（全て処理済み）</span>
+    <% } %>
+  </p>
 
   <% if (requests.length === 0) { %>
     <p class="text-muted">まだ出金申請はありません。</p>
@@ -13,33 +22,35 @@
           <tr>
             <th>ID</th>
             <th>申請日時</th>
-            <th>ユーザーID</th>
-            <th>メール</th>
+            <th>ユーザーID / メール</th>
             <th>金額</th>
             <th>方法</th>
             <th>ステータス</th>
             <th>送金情報</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
           <% requests.forEach(r => { %>
-            <tr>
+            <tr class="<%= r.status === 'pending' ? 'table-warning text-dark' : '' %>">
               <td><%= r.id %></td>
               <td><%= new Date(r.created_at).toLocaleString("ja-JP") %></td>
-              <td><%= r.user_id %></td>
-              <td><%= r.user_email %></td>
+              <td>
+                ID: <%= r.user_id %><br>
+                <small class="text-muted"><%= r.user_email %></small>
+              </td>
               <td><%= r.amount %> 円</td>
               <td>
-                <% if (r.method === 'balance') { %> 残高
-                <% } else if (r.method === 'paypay') { %> PayPay
-                <% } else if (r.method === 'bank') { %> 銀行
+                <% if (r.method === 'balance') { %>残高
+                <% } else if (r.method === 'paypay') { %>PayPay
+                <% } else if (r.method === 'bank') { %>銀行振込
                 <% } %>
               </td>
               <td>
                 <% if (r.status === 'pending') { %>
-                  <span class="badge bg-warning text-dark">未処理</span>
+                  <span class="badge bg-warning text-dark">未完了</span>
                 <% } else if (r.status === 'approved') { %>
-                  <span class="badge bg-success">承認済み</span>
+                  <span class="badge bg-success">完了</span>
                 <% } else if (r.status === 'rejected') { %>
                   <span class="badge bg-danger">却下</span>
                 <% } %>
@@ -53,6 +64,18 @@
                   <div><%= r.bank_account %></div>
                 <% } else { %>
                   なし
+                <% } %>
+              </td>
+              <td>
+                <% if (r.status === 'pending' && r.method !== 'balance') { %>
+                  <form action="/staff/withdraw/<%= r.id %>/approve" method="POST" class="d-inline">
+                    <button class="btn btn-sm btn-success mb-1" type="submit">完了</button>
+                  </form>
+                  <form action="/staff/withdraw/<%= r.id %>/reject" method="POST" class="d-inline">
+                    <button class="btn btn-sm btn-danger mb-1" type="submit">却下</button>
+                  </form>
+                <% } else { %>
+                  <small class="text-muted">操作なし</small>
                 <% } %>
               </td>
             </tr>
