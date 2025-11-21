@@ -70,17 +70,17 @@
 
   </div>
 
-  <!-- ==============================
+    <!-- ==============================
        出金パネル（3種類）
   =============================== -->
   <div class="card bg-dark border border-info p-3 mb-4">
     <h5 class="text-white mb-3">💴 アフィリエイト出金</h5>
 
     <div class="mb-2">
-      <span class="text-muted">現在の出金可能残高：</span>
-      <span class="fs-4 fw-bold text-info"><%= withdrawableAmount %> 円</span>
+      <span class="text-white-50">現在の出金可能残高：</span>
+      <span class="fs-3 fw-bold text-warning"><%= withdrawableAmount %> 円</span>
     </div>
-    <small class="text-muted d-block mb-3">
+    <small class="text-white-50 d-block mb-3">
       ※ 累計紹介報酬 − これまでの申請額 = 出金可能残高
     </small>
 
@@ -88,8 +88,9 @@
 
       <!-- 残高換金（即時反映） -->
       <div class="col-md-4">
-        <div class="border border-info rounded p-3 h-100">
-          <h6 class="text-white mb-2">💰 残高に換金</h6>
+        <div class="rounded p-3 h-100 border border-info"
+             style="background-color:#0b1926;">
+          <h6 class="mb-2" style="color:#ffd966;">💰 残高に換金</h6>
           <form action="/affiliate/withdraw/balance" method="POST">
             <input
               type="number"
@@ -101,15 +102,16 @@
               required
             >
             <button class="btn btn-info w-100" type="submit">残高に追加</button>
-            <small class="text-muted d-block mt-2">※ 即時反映されます。</small>
+            <small class="text-white-50 d-block mt-2">※ 即時反映されます。</small>
           </form>
         </div>
       </div>
 
       <!-- PayPay換金（申請のみ） -->
       <div class="col-md-4">
-        <div class="border border-info rounded p-3 h-100">
-          <h6 class="text-white mb-2">📱 PayPay換金（1000円〜）</h6>
+        <div class="rounded p-3 h-100 border border-info"
+             style="background-color:#0b1926;">
+          <h6 class="mb-2" style="color:#9ad8ff;">📱 PayPay換金（1000円〜）</h6>
           <form action="/affiliate/withdraw/paypay" method="POST">
             <input
               type="number"
@@ -129,15 +131,18 @@
               required
             >
             <button class="btn btn-outline-info w-100" type="submit">PayPay申請</button>
-            <small class="text-muted d-block mt-2">※ スタッフが承認後に送金されます。</small>
+            <small class="text-white-50 d-block mt-2">
+              ※ スタッフが承認後に送金されます。
+            </small>
           </form>
         </div>
       </div>
 
       <!-- 銀行振込換金（申請のみ） -->
       <div class="col-md-4">
-        <div class="border border-info rounded p-3 h-100">
-          <h6 class="text-white mb-2">🏦 銀行振込（1000円〜）</h6>
+        <div class="rounded p-3 h-100 border border-info"
+             style="background-color:#0b1926;">
+          <h6 class="mb-2" style="color:#b3ffb3;">🏦 銀行振込（1000円〜）</h6>
           <form action="/affiliate/withdraw/bank" method="POST">
             <input
               type="number"
@@ -173,8 +178,8 @@
               required
             >
             <button class="btn btn-outline-info w-100" type="submit">銀行振込申請</button>
-            <small class="text-muted d-block mt-2">
-              ※ スタッフ確認後に手動で振込します。手数料はユーザー負担です。
+            <small class="text-white-50 d-block mt-2">
+              ※ スタッフ確認後に振込します。手数料はお客様負担です。
             </small>
           </form>
         </div>
