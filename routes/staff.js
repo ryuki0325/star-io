@@ -560,6 +560,34 @@ router.post("/announcements/:id/delete", async (req, res) => {
   }
 });
 
+// ===== 出金申請一覧（スタッフ用） =====
+router.get("/withdraw", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const db = req.app.locals.db;
+
+  try {
+    const result = await db.query(
+      `SELECT 
+         w.*,
+         u.email AS user_email
+       FROM withdraw_requests w
+       LEFT JOIN users u
+         ON w.user_id = u.id
+       ORDER BY w.created_at DESC`
+    );
+
+    res.render("staff_withdraw", {
+      title: "出金申請一覧",
+      requests: result.rows
+    });
+
+  } catch (err) {
+    console.error("❌ 出金申請一覧エラー:", err);
+    res.status(500).send("出金申請の取得に失敗しました。");
+  }
+});
+
 // ===== ログアウト =====
 router.get("/logout", (req, res) => {
   req.session.isStaff = false;
