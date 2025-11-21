@@ -492,6 +492,7 @@ router.get("/coupon", (req, res) => {
 });
 
 // ================== ギフトコード適用 (POST /redeem) ==================
+const { giveAffiliateReward } = require("../lib/affiliate");
 
 router.post("/redeem", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
