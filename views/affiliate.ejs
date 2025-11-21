@@ -3,12 +3,21 @@
 <div class="container py-4 text-light">
   <h2 class="mb-4">🤝 アフィリエイト紹介プログラム</h2>
 
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
   <div class="alert alert-info">
-    この紹介リンクから新規登録し、ギフトコードなどで入金した場合、
-    <strong>入金額の5%</strong> があなたの残高として自動付与されます。
+    あなたの紹介リンクから登録し、ギフトコードなどで入金すると、
+    <strong>入金額の5%</strong> があなたに報酬として付与されます。
   </div>
 
-  <!-- 紹介リンク -->
+  <!-- ==============================
+       紹介リンク
+  =============================== -->
   <div class="card bg-dark border border-info mb-4 p-3">
     <h5 class="text-white">あなたの紹介リンク</h5>
     <div class="input-group">
@@ -19,15 +28,17 @@
         readonly
         id="inviteLinkInput"
       >
-      <button class="btn btn-info" type="button" onclick="copyInviteLink()">コピー</button>
+      <button class="btn btn-info" onclick="copyInviteLink()">コピー</button>
     </div>
-    <small class="text-white">SNS・友達・ブログなどで自由にシェアしてください。</small>
+    <small class="text-white">SNS・友達・ブログに自由に貼り付けてOKです。</small>
   </div>
 
-  <!-- 集計カード -->
+  <!-- ==============================
+       集計カード（あなたの数字）
+  =============================== -->
   <div class="row g-3 mb-4">
 
-    <!-- 招待したユーザー数 -->
+    <!-- 招待人数 -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
         <div class="text-white">招待したユーザー数</div>
@@ -35,10 +46,10 @@
       </div>
     </div>
 
-    <!-- 紹介報酬 -->
+    <!-- 累計紹介報酬 -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
-        <div class="text-muted">あなたが獲得した紹介報酬</div>
+        <div class="text-muted">累計紹介報酬</div>
         <div class="fs-3 fw-bold text-info"><%= affiliateEarnings %> 円</div>
       </div>
     </div>
@@ -51,7 +62,7 @@
           <% if (invitedCount > 0) { %>
             👍 紹介が発生しています！
           <% } else { %>
-            まだ紹介はありません。まずはリンクをシェアしてみましょう。
+            まだ紹介ユーザーがいません。
           <% } %>
         </div>
       </div>
@@ -59,58 +70,161 @@
 
   </div>
 
-  <!-- 招待ユーザー一覧 -->
-<div class="card bg-dark border border-info p-3 mb-4">
-  <h5 class="mb-3 text-white">👥 招待したユーザー一覧</h5>
+  <!-- ==============================
+       出金パネル（3種類）
+  =============================== -->
+  <div class="card bg-dark border border-info p-3 mb-4">
+    <h5 class="text-white mb-3">💴 アフィリエイト出金</h5>
 
-  <% if (invitedUsers && invitedUsers.length > 0) { %>
-    <div class="table-responsive">
-      <table class="table table-dark table-striped align-middle mb-0">
-        <thead>
-          <tr>
-            <th>ユーザーID</th>
-            <th>登録日時</th>
-            <th>あなたの報酬</th> <!-- 追加 -->
-          </tr>
-        </thead>
-        <tbody>
-          <% invitedUsers.forEach(u => { %>
-            <tr>
-              <td><%= u.id %></td>
-              <td>
-                <% if (u.created_at) { %>
-                  <%= new Date(u.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
-                <% } else { %>
-                  -
-                <% } %>
-              </td>
-              <td class="text-info fw-bold">
-                <%= u.reward %> 円 <!-- ← 追加表示 -->
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
+    <div class="mb-2">
+      <span class="text-muted">現在の出金可能残高：</span>
+      <span class="fs-4 fw-bold text-info"><%= withdrawableAmount %> 円</span>
     </div>
-  <% } else { %>
-    <p class="text-muted mb-0">
-      まだ招待されたユーザーはいません。紹介リンクをシェアしてみましょう。
-    </p>
-  <% } %>
-</div>
+    <small class="text-muted d-block mb-3">
+      ※ 累計紹介報酬 − これまでの申請額 = 出金可能残高
+    </small>
 
-  
-  <p class="text-white">
-    ※ 不正な自己紹介・複数アカウント作成・スパム行為が確認された場合は、
-    紹介報酬の取消やアカウント停止となる場合があります。
+    <div class="row g-3">
+
+      <!-- 残高換金（即時反映） -->
+      <div class="col-md-4">
+        <div class="border border-info rounded p-3 h-100">
+          <h6 class="text-white mb-2">💰 残高に換金</h6>
+          <form action="/affiliate/withdraw/balance" method="POST">
+            <input
+              type="number"
+              name="amount"
+              class="form-control bg-dark text-light mb-2"
+              min="1"
+              max="<%= withdrawableAmount %>"
+              placeholder="金額を入力"
+              required
+            >
+            <button class="btn btn-info w-100" type="submit">残高に追加</button>
+            <small class="text-muted d-block mt-2">※ 即時反映されます。</small>
+          </form>
+        </div>
+      </div>
+
+      <!-- PayPay換金（申請のみ） -->
+      <div class="col-md-4">
+        <div class="border border-info rounded p-3 h-100">
+          <h6 class="text-white mb-2">📱 PayPay換金（1000円〜）</h6>
+          <form action="/affiliate/withdraw/paypay" method="POST">
+            <input
+              type="number"
+              name="amount"
+              class="form-control bg-dark text-light mb-2"
+              min="1000"
+              max="<%= withdrawableAmount %>"
+              placeholder="金額（1000円〜）"
+              required
+            >
+            <input
+              type="text"
+              name="paypay_id"
+              class="form-control bg-dark text-light mb-2"
+              placeholder="PayPay ID"
+              value="<%= paypayId %>"
+              required
+            >
+            <button class="btn btn-outline-info w-100" type="submit">PayPay申請</button>
+            <small class="text-muted d-block mt-2">※ スタッフが承認後に送金されます。</small>
+          </form>
+        </div>
+      </div>
+
+      <!-- 銀行振込換金（申請のみ） -->
+      <div class="col-md-4">
+        <div class="border border-info rounded p-3 h-100">
+          <h6 class="text-white mb-2">🏦 銀行振込（1000円〜）</h6>
+          <form action="/affiliate/withdraw/bank" method="POST">
+            <input
+              type="number"
+              name="amount"
+              class="form-control bg-dark text-light mb-2"
+              min="1000"
+              max="<%= withdrawableAmount %>"
+              placeholder="金額（1000円〜）"
+              required
+            >
+            <input
+              type="text"
+              name="bank_name"
+              class="form-control bg-dark text-light mb-2"
+              placeholder="銀行名"
+              value="<%= bankName %>"
+              required
+            >
+            <input
+              type="text"
+              name="bank_branch"
+              class="form-control bg-dark text-light mb-2"
+              placeholder="支店名"
+              value="<%= bankBranch %>"
+              required
+            >
+            <input
+              type="text"
+              name="bank_account"
+              class="form-control bg-dark text-light mb-2"
+              placeholder="口座番号"
+              value="<%= bankAccount %>"
+              required
+            >
+            <button class="btn btn-outline-info w-100" type="submit">銀行振込申請</button>
+            <small class="text-muted d-block mt-2">
+              ※ スタッフ確認後に手動で振込します。手数料はユーザー負担です。
+            </small>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==============================
+       招待ユーザー一覧
+  =============================== -->
+  <div class="card bg-dark border border-info p-3 mb-4">
+    <h5 class="text-white mb-3">👥 招待したユーザー一覧</h5>
+
+    <% if (invitedUsers.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-dark table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>ユーザーID</th>
+              <th>登録日時</th>
+              <th>あなたの報酬</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% invitedUsers.forEach(u => { %>
+              <tr>
+                <td><%= u.id %></td>
+                <td><%= new Date(u.created_at).toLocaleString("ja-JP") %></td>
+                <td class="text-info fw-bold"><%= u.reward %> 円</td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-muted">まだ招待ユーザーはいません。</p>
+    <% } %>
+  </div>
+
+  <p class="text-muted">
+    ※ 不正行為（自己紹介・複数アカ作成）が発覚した場合、報酬取消になる可能性があります。
   </p>
 </div>
 
 <script>
   function copyInviteLink() {
-    const input = document.getElementById('inviteLinkInput');
+    const input = document.getElementById("inviteLinkInput");
     input.select();
-    document.execCommand('copy');
-    alert('紹介リンクをコピーしました！');
+    document.execCommand("copy");
+    alert("紹介リンクをコピーしました！");
   }
 </script>
