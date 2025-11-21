@@ -1,5 +1,27 @@
 <% title = 'アフィリエイト紹介' %>
 
+<style>
+  /* 出金フォーム専用の入力欄デザイン */
+  .aff-withdraw-input {
+    background-color: #000 !important;
+    color: #fff !important;
+    border: 1px solid #26c6da !important;
+  }
+  .aff-withdraw-input::placeholder {
+    color: #c7c7c7 !important;
+    opacity: 1;
+  }
+
+  /* 出金パネル背景を統一 */
+  .aff-box {
+    background-color: #0d1117;
+    border: 1px solid #26c6da;
+    border-radius: 6px;
+    padding: 16px;
+    min-height: 100%;
+  }
+</style>
+
 <div class="container py-4 text-light">
   <h2 class="mb-4">🤝 アフィリエイト紹介プログラム</h2>
 
@@ -15,43 +37,19 @@
     <strong>入金額の5%</strong> があなたに報酬として付与されます。
   </div>
 
-<style>
-  /* アフィリエイト出金フォーム専用の入力欄デザイン */
-  .aff-withdraw-input {
-    background-color: #000000 !important;  /* 真っ黒 */
-    color: #ffffff !important;             /* 文字は真っ白 */
-    border-color: #26c6da !important;      /* 枠をサイトの水色に */
-  }
-
-  .aff-withdraw-input::placeholder {
-    color: #bbbbbb !important;             /* プレースホルダーを明るいグレーに */
-    opacity: 1;                            /* 透明度をなくす */
-  }
-</style>
-  <!-- ==============================
-       紹介リンク
-  =============================== -->
+  <!-- 紹介リンク -->
   <div class="card bg-dark border border-info mb-4 p-3">
     <h5 class="text-white">あなたの紹介リンク</h5>
     <div class="input-group">
-      <input
-        type="text"
-        class="form-control bg-dark text-light"
-        value="<%= inviteLink %>"
-        readonly
-        id="inviteLinkInput"
-      >
+      <input type="text" class="form-control bg-dark text-light" value="<%= inviteLink %>" readonly id="inviteLinkInput">
       <button class="btn btn-info" onclick="copyInviteLink()">コピー</button>
     </div>
     <small class="text-white">SNS・友達・ブログに自由に貼り付けてOKです。</small>
   </div>
 
-  <!-- ==============================
-       集計カード（あなたの数字）
-  =============================== -->
+  <!-- 集計カード -->
   <div class="row g-3 mb-4">
 
-    <!-- 招待人数 -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
         <div class="text-white">招待したユーザー数</div>
@@ -59,7 +57,6 @@
       </div>
     </div>
 
-    <!-- 累計紹介報酬 -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
         <div class="text-muted">累計紹介報酬</div>
@@ -67,7 +64,6 @@
       </div>
     </div>
 
-    <!-- ステータス -->
     <div class="col-md-4">
       <div class="card bg-dark border border-info p-3 h-100">
         <div class="text-white">ステータス</div>
@@ -83,123 +79,115 @@
 
   </div>
 
-    <!-- ==============================
-       出金パネル（3種類）
-  =============================== -->
+  <!-- 出金パネル -->
   <div class="card bg-dark border border-info p-3 mb-4">
+
     <h5 class="text-white mb-3">💴 アフィリエイト出金</h5>
 
-    <div class="mb-2">
+    <div class="fs-5 mb-2">
       <span class="text-white-50">現在の出金可能残高：</span>
-      <span class="fs-3 fw-bold text-warning"><%= withdrawableAmount %> 円</span>
+      <span class="fw-bold text-warning"><%= withdrawableAmount %> 円</span>
     </div>
+
     <small class="text-white-50 d-block mb-3">
       ※ 累計紹介報酬 − これまでの申請額 = 出金可能残高
     </small>
 
-      <div class="row g-3">
+    <div class="row g-3">
 
-    <!-- 残高換金（即時反映） -->
-    <div class="col-md-4">
-      <div class="rounded p-3 h-100 border border-info"
-           style="background-color:#0d1117;">
-        <h6 class="mb-3 text-white fw-bold">💰 残高に換金</h6>
-        <form action="/affiliate/withdraw/balance" method="POST">
-          <input type="number"
-            name="amount"
-            class="form-control bg-dark text-light mb-2"
-            min="1"
-            max="<%= withdrawableAmount %>"
-            placeholder="金額を入力"
-            required>
-          <button class="btn btn-info w-100" type="submit">残高に追加</button>
-          <small class="text-white-50 d-block mt-2">※ 即時反映されます。</small>
-        </form>
+      <!-- 残高換金 -->
+      <div class="col-md-4">
+        <div class="aff-box">
+          <h6 class="text-white fw-bold mb-2">💰 残高に換金</h6>
+          <form action="/affiliate/withdraw/balance" method="POST">
+            <input type="number" name="amount"
+              class="form-control aff-withdraw-input mb-2"
+              min="1"
+              max="<%= withdrawableAmount %>"
+              placeholder="金額を入力"
+              required>
+            <button class="btn btn-info w-100" type="submit">残高に追加</button>
+            <small class="text-white-50 d-block mt-2">※ 即時反映されます。</small>
+          </form>
+        </div>
       </div>
-    </div>
 
-    <!-- PayPay換金 -->
-    <div class="col-md-4">
-      <div class="rounded p-3 h-100 border border-info"
-           style="background-color:#0d1117;">
-        <h6 class="mb-3 text-white fw-bold">📱 PayPay換金（1000円〜）</h6>
-        <form action="/affiliate/withdraw/paypay" method="POST">
-          <input type="number"
-            name="amount"
-            class="form-control bg-dark text-light mb-2"
-            min="1000"
-            max="<%= withdrawableAmount %>"
-            placeholder="金額（1000円〜）"
-            required>
+      <!-- PayPay換金 -->
+      <div class="col-md-4">
+        <div class="aff-box">
+          <h6 class="text-white fw-bold mb-2">📱 PayPay換金（1000円〜）</h6>
+          <form action="/affiliate/withdraw/paypay" method="POST">
 
-          <input type="text"
-            name="paypay_id"
-            class="form-control bg-dark text-light mb-2"
-            placeholder="PayPay ID"
-            value="<%= paypayId %>"
-            required>
+            <input type="number" name="amount"
+              class="form-control aff-withdraw-input mb-2"
+              min="1000"
+              max="<%= withdrawableAmount %>"
+              placeholder="金額（1000円〜）" required>
 
-          <button class="btn btn-outline-info w-100" type="submit">PayPay申請</button>
-          <small class="text-white-50 d-block mt-2">
-            ※ スタッフ承認後に送金されます。
-          </small>
-        </form>
+            <input type="text" name="paypay_id"
+              class="form-control aff-withdraw-input mb-2"
+              placeholder="PayPay ID"
+              value="<%= paypayId %>"
+              required>
+
+            <button class="btn btn-outline-info w-100" type="submit">PayPay申請</button>
+            <small class="text-white-50 d-block mt-2">
+              ※ スタッフ承認後に送金されます。
+            </small>
+
+          </form>
+        </div>
       </div>
-    </div>
 
-    <!-- 銀行振込 -->
-    <div class="col-md-4">
-      <div class="rounded p-3 h-100 border border-info"
-           style="background-color:#0d1117;">
-        <h6 class="mb-3 text-white fw-bold">🏦 銀行振込（1000円〜）</h6>
-        <form action="/affiliate/withdraw/bank" method="POST">
-          <input type="number"
-            name="amount"
-            class="form-control bg-dark text-light mb-2"
-            min="1000"
-            max="<%= withdrawableAmount %>"
-            placeholder="金額（1000円〜）"
-            required>
+      <!-- 銀行振込 -->
+      <div class="col-md-4">
+        <div class="aff-box">
+          <h6 class="text-white fw-bold mb-2">🏦 銀行振込（1000円〜）</h6>
+          <form action="/affiliate/withdraw/bank" method="POST">
 
-          <input type="text"
-            name="bank_name"
-            class="form-control bg-dark text-light mb-2"
-            placeholder="銀行名"
-            value="<%= bankName %>"
-            required>
+            <input type="number" name="amount"
+              class="form-control aff-withdraw-input mb-2"
+              min="1000"
+              max="<%= withdrawableAmount %>"
+              placeholder="金額（1000円〜）" required>
 
-          <input type="text"
-            name="bank_branch"
-            class="form-control bg-dark text-light mb-2"
-            placeholder="支店名"
-            value="<%= bankBranch %>"
-            required>
+            <input type="text" name="bank_name"
+              class="form-control aff-withdraw-input mb-2"
+              placeholder="銀行名"
+              value="<%= bankName %>"
+              required>
 
-          <input type="text"
-            name="bank_account"
-            class="form-control bg-dark text-light mb-2"
-            placeholder="口座番号"
-            value="<%= bankAccount %>"
-            required>
+            <input type="text" name="bank_branch"
+              class="form-control aff-withdraw-input mb-2"
+              placeholder="支店名"
+              value="<%= bankBranch %>"
+              required>
 
-          <button class="btn btn-outline-info w-100" type="submit">銀行振込申請</button>
-          <small class="text-white-50 d-block mt-2">
-            ※ スタッフ確認後に振込します（手数料はユーザー負担）。
-          </small>
-        </form>
+            <input type="text" name="bank_account"
+              class="form-control aff-withdraw-input mb-2"
+              placeholder="口座番号"
+              value="<%= bankAccount %>"
+              required>
+
+            <button class="btn btn-outline-info w-100" type="submit">銀行振込申請</button>
+            <small class="text-white-50 d-block mt-2">
+              ※ スタッフ確認後に振込します（手数料はユーザー負担）。
+            </small>
+
+          </form>
+        </div>
       </div>
-    </div>
 
+    </div>
   </div>
-  <!-- ==============================
-       招待ユーザー一覧
-  =============================== -->
+
+  <!-- 招待ユーザー一覧 -->
   <div class="card bg-dark border border-info p-3 mb-4">
     <h5 class="text-white mb-3">👥 招待したユーザー一覧</h5>
 
     <% if (invitedUsers.length > 0) { %>
       <div class="table-responsive">
-        <table class="table table-dark table-striped align-middle mb-0">
+        <table class="table table-dark table-striped">
           <thead>
             <tr>
               <th>ユーザーID</th>
