@@ -37,12 +37,10 @@ router.get("/affiliate", async (req, res) => {
   const db = req.app.locals.db;
   const userId = req.session.userId;
 
-  // クエリパラメータからメッセージ
   const success = req.query.success || null;
   const error = req.query.error || null;
 
   try {
-    // 自分の情報（紹介コード・累計紹介報酬・口座情報など）
     const userRes = await db.query(
       `SELECT email, referral_code, affiliate_earnings,
               paypay_id, bank_name, bank_branch, bank_account
@@ -52,7 +50,6 @@ router.get("/affiliate", async (req, res) => {
     );
     const me = userRes.rows[0];
 
-    // 招待したユーザー一覧 + そのユーザーから発生した報酬の合計
     const invitedRes = await db.query(
       `SELECT 
           u.id,
@@ -69,10 +66,18 @@ router.get("/affiliate", async (req, res) => {
     const invitedUsers = invitedRes.rows;
     const invitedCount = invitedUsers.length;
 
-    // 出金可能残高
     const withdrawableAmount = await getWithdrawableAmount(db, userId);
 
-    // 紹介リンク
+    // ★ 出金履歴（自分の申請一覧）
+    const historyRes = await db.query(
+      `SELECT amount, method, status, created_at
+       FROM withdraw_requests
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    const withdrawHistory = historyRes.rows;
+
     const baseUrl =
       process.env.BASE_URL || "https://star-io-hc9c.onrender.com";
     const inviteLink = `${baseUrl}/signup?ref=${me.referral_code}`;
@@ -80,7 +85,6 @@ router.get("/affiliate", async (req, res) => {
     res.render("affiliate", {
       title: "アフィリエイト紹介",
       user: req.session.user,
-      // 画面で使う値
       inviteLink,
       invitedUsers,
       invitedCount,
@@ -92,6 +96,7 @@ router.get("/affiliate", async (req, res) => {
       bankAccount: me.bank_account || "",
       success,
       error,
+      withdrawHistory   // ← ここをEJSに渡す
     });
   } catch (err) {
     console.error("❌ アフィリエイトページエラー:", err);
