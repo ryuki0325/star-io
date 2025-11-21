@@ -181,6 +181,53 @@
     </div>
   </div>
 
+   <!-- 出金履歴 -->
+  <div class="card bg-dark border border-info p-3 mb-4">
+    <h5 class="text-white mb-3">📜 出金履歴</h5>
+
+    <% if (withdrawHistory && withdrawHistory.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-dark table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>金額</th>
+              <th>方法</th>
+              <th>ステータス</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% withdrawHistory.forEach(h => { %>
+              <tr>
+                <td><%= new Date(h.created_at).toLocaleString("ja-JP") %></td>
+                <td><%= h.amount %> 円</td>
+                <td>
+                  <% if (h.method === 'balance') { %>残高
+                  <% } else if (h.method === 'paypay') { %>PayPay
+                  <% } else if (h.method === 'bank') { %>銀行振込
+                  <% } %>
+                </td>
+                <td>
+                  <% if (h.status === 'pending') { %>
+                    <span class="badge bg-warning text-dark">審査中</span>
+                  <% } else if (h.status === 'approved') { %>
+                    <span class="badge bg-success">完了</span>
+                  <% } else if (h.status === 'rejected') { %>
+                    <span class="badge bg-danger">却下</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-muted mb-0">
+        まだ出金履歴はありません。
+      </p>
+    <% } %>
+  </div>
+
   <!-- 招待ユーザー一覧 -->
   <div class="card bg-dark border border-info p-3 mb-4">
     <h5 class="text-white mb-3">👥 招待したユーザー一覧</h5>
