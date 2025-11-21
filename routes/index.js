@@ -558,6 +558,12 @@ router.post("/redeem", async (req, res) => {
       });
     }
 
+    // ✅ 残高付与処理
+    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
+      coupon.discount_value,
+      req.session.userId
+    ]);
+
     // ✅ 使用回数更新
     await db.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = $1", [coupon.id]);
 
