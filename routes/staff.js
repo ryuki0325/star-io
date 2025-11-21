@@ -572,19 +572,62 @@ router.get("/withdraw", async (req, res) => {
          w.*,
          u.email AS user_email
        FROM withdraw_requests w
-       LEFT JOIN users u
-         ON w.user_id = u.id
-       ORDER BY w.created_at DESC`
+       LEFT JOIN users u ON u.id = w.user_id
+       ORDER BY 
+         CASE WHEN w.status = 'pending' THEN 0 ELSE 1 END,
+         w.created_at DESC`
     );
+
+    const requests = result.rows;
+    const pendingCount = requests.filter(r => r.status === "pending").length;
 
     res.render("staff_withdraw", {
       title: "出金申請一覧",
-      requests: result.rows
+      requests,
+      pendingCount
     });
 
   } catch (err) {
     console.error("❌ 出金申請一覧エラー:", err);
     res.status(500).send("出金申請の取得に失敗しました。");
+  }
+});
+
+// ===== 出金申請 承認 =====
+router.post("/withdraw/:id/approve", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const db = req.app.locals.db;
+  const id = req.params.id;
+
+  try {
+    await db.query(
+      "UPDATE withdraw_requests SET status = 'approved' WHERE id = $1",
+      [id]
+    );
+    res.redirect("/staff/withdraw");
+  } catch (err) {
+    console.error("❌ 出金申請承認エラー:", err);
+    res.status(500).send("承認に失敗しました。");
+  }
+});
+
+// ===== 出金申請 却下 =====
+router.post("/withdraw/:id/reject", async (req, res) => {
+  if (!req.session.isStaff) return res.redirect("/staff/login");
+
+  const db = req.app.locals.db;
+  const id = req.params.id;
+
+  try {
+    await db.query(
+      "UPDATE withdraw_requests SET status = 'rejected' WHERE id = $1",
+      [id]
+    );
+    res.redirect("/staff/withdraw");
+  } catch (err) {
+    console.error("❌ 出金申請却下エラー:", err);
+    res.status(500).send("却下に失敗しました。");
   }
 });
 
