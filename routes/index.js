@@ -492,7 +492,6 @@ router.get("/coupon", (req, res) => {
 });
 
 // ================== ギフトコード適用 (POST /redeem) ==================
-const { giveAffiliateReward } = require("../lib/affiliate");
 
 router.post("/redeem", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
@@ -557,15 +556,6 @@ router.post("/redeem", async (req, res) => {
         error: "このコードは既に使用済みです。"
       });
     }
-
-    // ✅ 残高付与処理
-    await db.query("UPDATE users SET balance = balance + $1 WHERE id = $2", [
-      coupon.discount_value,
-      req.session.userId
-    ]);
-
-    // ★ 紹介者にアフィリエイト報酬を付与
-    await giveAffiliateReward(db, req.session.userId, coupon.discount_value);
 
     // ✅ 使用回数更新
     await db.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = $1", [coupon.id]);
