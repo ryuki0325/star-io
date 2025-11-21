@@ -93,14 +93,14 @@
           <h6 class="mb-2" style="color:#ffd966;">💰 残高に換金</h6>
           <form action="/affiliate/withdraw/balance" method="POST">
             <input
-              type="number"
-              name="amount"
-              class="form-control bg-dark text-light mb-2"
-              min="1"
-              max="<%= withdrawableAmount %>"
-              placeholder="金額を入力"
-              required
-            >
+  type="number"
+  name="amount"
+  class="form-control bg-dark text-light mb-2"
+  min="1"
+  max="<%= withdrawableAmount %>"
+  placeholder="金額を入力"
+  required
+>
             <button class="btn btn-info w-100" type="submit">残高に追加</button>
             <small class="text-white-50 d-block mt-2">※ 即時反映されます。</small>
           </form>
@@ -114,22 +114,23 @@
           <h6 class="mb-2" style="color:#9ad8ff;">📱 PayPay換金（1000円〜）</h6>
           <form action="/affiliate/withdraw/paypay" method="POST">
             <input
-              type="number"
-              name="amount"
-              class="form-control bg-dark text-light mb-2"
-              min="1000"
-              max="<%= withdrawableAmount %>"
-              placeholder="金額（1000円〜）"
-              required
-            >
-            <input
-              type="text"
-              name="paypay_id"
-              class="form-control bg-dark text-light mb-2"
-              placeholder="PayPay ID"
-              value="<%= paypayId %>"
-              required
-            >
+  type="number"
+  name="amount"
+  class="form-control bg-dark text-light mb-2"
+  min="1000"
+  max="<%= withdrawableAmount %>"
+  placeholder="金額（1000円〜）"
+  required
+>
+
+<input
+  type="text"
+  name="paypay_id"
+  class="form-control bg-dark text-light mb-2"
+  placeholder="PayPay ID"
+  value="<%= paypayId %>"
+  required
+>
             <button class="btn btn-outline-info w-100" type="submit">PayPay申請</button>
             <small class="text-white-50 d-block mt-2">
               ※ スタッフが承認後に送金されます。
@@ -145,38 +146,41 @@
           <h6 class="mb-2" style="color:#b3ffb3;">🏦 銀行振込（1000円〜）</h6>
           <form action="/affiliate/withdraw/bank" method="POST">
             <input
-              type="number"
-              name="amount"
-              class="form-control bg-dark text-light mb-2"
-              min="1000"
-              max="<%= withdrawableAmount %>"
-              placeholder="金額（1000円〜）"
-              required
-            >
-            <input
-              type="text"
-              name="bank_name"
-              class="form-control bg-dark text-light mb-2"
-              placeholder="銀行名"
-              value="<%= bankName %>"
-              required
-            >
-            <input
-              type="text"
-              name="bank_branch"
-              class="form-control bg-dark text-light mb-2"
-              placeholder="支店名"
-              value="<%= bankBranch %>"
-              required
-            >
-            <input
-              type="text"
-              name="bank_account"
-              class="form-control bg-dark text-light mb-2"
-              placeholder="口座番号"
-              value="<%= bankAccount %>"
-              required
-            >
+  type="number"
+  name="amount"
+  class="form-control bg-dark text-light mb-2"
+  min="1000"
+  max="<%= withdrawableAmount %>"
+  placeholder="金額（1000円〜）"
+  required
+>
+
+<input
+  type="text"
+  name="bank_name"
+  class="form-control bg-dark text-light mb-2"
+  placeholder="銀行名"
+  value="<%= bankName %>"
+  required
+>
+
+<input
+  type="text"
+  name="bank_branch"
+  class="form-control bg-dark text-light mb-2"
+  placeholder="支店名"
+  value="<%= bankBranch %>"
+  required
+>
+
+<input
+  type="text"
+  name="bank_account"
+  class="form-control bg-dark text-light mb-2"
+  placeholder="口座番号"
+  value="<%= bankAccount %>"
+  required
+>
             <button class="btn btn-outline-info w-100" type="submit">銀行振込申請</button>
             <small class="text-white-50 d-block mt-2">
               ※ スタッフ確認後に振込します。手数料はお客様負担です。
