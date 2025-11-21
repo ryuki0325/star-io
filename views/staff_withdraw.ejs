@@ -1,0 +1,65 @@
+<% title = '出金申請一覧（スタッフ）' %>
+
+<div class="container py-4 text-light">
+  <h2 class="mb-4">💴 出金申請一覧</h2>
+
+  <% if (requests.length === 0) { %>
+    <p class="text-muted">まだ出金申請はありません。</p>
+  <% } else { %>
+
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>申請日時</th>
+            <th>ユーザーID</th>
+            <th>メール</th>
+            <th>金額</th>
+            <th>方法</th>
+            <th>ステータス</th>
+            <th>送金情報</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% requests.forEach(r => { %>
+            <tr>
+              <td><%= r.id %></td>
+              <td><%= new Date(r.created_at).toLocaleString("ja-JP") %></td>
+              <td><%= r.user_id %></td>
+              <td><%= r.user_email %></td>
+              <td><%= r.amount %> 円</td>
+              <td>
+                <% if (r.method === 'balance') { %> 残高
+                <% } else if (r.method === 'paypay') { %> PayPay
+                <% } else if (r.method === 'bank') { %> 銀行
+                <% } %>
+              </td>
+              <td>
+                <% if (r.status === 'pending') { %>
+                  <span class="badge bg-warning text-dark">未処理</span>
+                <% } else if (r.status === 'approved') { %>
+                  <span class="badge bg-success">承認済み</span>
+                <% } else if (r.status === 'rejected') { %>
+                  <span class="badge bg-danger">却下</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (r.method === 'paypay') { %>
+                  PayPay ID：<%= r.paypay_id %>
+                <% } else if (r.method === 'bank') { %>
+                  <div><%= r.bank_name %></div>
+                  <div><%= r.bank_branch %></div>
+                  <div><%= r.bank_account %></div>
+                <% } else { %>
+                  なし
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+  <% } %>
+</div>
