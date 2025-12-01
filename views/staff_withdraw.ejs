@@ -17,7 +17,7 @@
   <% } else { %>
 
     <div class="table-responsive">
-      <table class="table table-dark table-striped align-middle">
+      <table class="table table-dark table-striped align-middle withdraw-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -32,12 +32,12 @@
         </thead>
         <tbody>
           <% requests.forEach(r => { %>
-            <tr class="<%= r.status === 'pending' ? 'table-warning text-dark' : '' %>">
+            <tr class="<%= r.status === 'pending' ? 'pending-row' : '' %>">
               <td><%= r.id %></td>
-              <td><%= new Date(r.created_at).toLocaleString("ja-JP") %></td>
+              <td><%= new Date(r.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %></td>
               <td>
                 ID: <%= r.user_id %><br>
-                <small class="text-muted"><%= r.user_email %></small>
+                <span class="user-email-withdraw"><%= r.user_email %></span>
               </td>
               <td><%= r.amount %> 円</td>
               <td>
@@ -55,17 +55,26 @@
                   <span class="badge bg-danger">却下</span>
                 <% } %>
               </td>
-              <td>
+
+              <!-- ▼ 送金情報 -->
+              <td class="send-info-cell">
                 <% if (r.method === 'paypay') { %>
-                  PayPay ID：<%= r.paypay_id %>
+                  <div class="send-info-box">
+                    <div class="send-info-title">PayPay</div>
+                    <div class="send-info-row">ID：<span><%= r.paypay_id %></span></div>
+                  </div>
                 <% } else if (r.method === 'bank') { %>
-                  <div><%= r.bank_name %></div>
-                  <div><%= r.bank_branch %></div>
-                  <div><%= r.bank_account %></div>
+                  <div class="send-info-box">
+                    <div class="send-info-title">銀行振込</div>
+                    <div class="send-info-row">銀行名：<span><%= r.bank_name %></span></div>
+                    <div class="send-info-row">支店名：<span><%= r.bank_branch %></span></div>
+                    <div class="send-info-row">口座番号：<span><%= r.bank_account %></span></div>
+                  </div>
                 <% } else { %>
-                  なし
+                  <span class="send-info-none">なし</span>
                 <% } %>
               </td>
+
               <td>
                 <% if (r.status === 'pending' && r.method !== 'balance') { %>
                   <form action="/staff/withdraw/<%= r.id %>/approve" method="POST" class="d-inline">
@@ -75,7 +84,7 @@
                     <button class="btn btn-sm btn-danger mb-1" type="submit">却下</button>
                   </form>
                 <% } else { %>
-                  <small class="text-muted">操作なし</small>
+                  <small class="no-action-text">操作なし</small>
                 <% } %>
               </td>
             </tr>
@@ -86,3 +95,64 @@
 
   <% } %>
 </div>
+
+<style>
+  /* ▼ テーブル全体の文字を白に統一 */
+  .withdraw-table,
+  .withdraw-table th,
+  .withdraw-table td {
+    color: #ffffff !important;
+  }
+
+  /* 保留行だけ少し背景を濃くしてわかりやすく */
+  .withdraw-table .pending-row {
+    background: #2c2600 !important;
+  }
+
+  /* ユーザーメールも白で表示 */
+  .user-email-withdraw {
+    color: #ffffff !important;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+
+  /* 送金情報セル */
+  .send-info-cell {
+    vertical-align: middle;
+  }
+
+  /* 送金情報のカード */
+  .send-info-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    line-height: 1.6;
+    font-size: 0.9rem;
+    color: #ffffff;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  }
+
+  .send-info-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+
+  .send-info-row span {
+    font-weight: 500;
+  }
+
+  .send-info-none {
+    color: #ffffff !important;
+    opacity: 0.7;
+    font-size: 0.85rem;
+  }
+
+  /* 「操作なし」の文字も白 */
+  .no-action-text {
+    color: #ffffff !important;
+    opacity: 0.7;
+  }
+</style>
