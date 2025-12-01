@@ -101,11 +101,14 @@ router.get("/orders", async (req, res) => {
     const result = await db.query(`
       SELECT 
         orders.id,
+        orders.user_id,               -- あっても良いのでついでに
         orders.service_id,
         orders.service_name,
         orders.link,
         orders.quantity,
-        orders.price_jpy AS price,     -- ✅ 修正ポイント！
+        orders.price_jpy AS price,
+        orders.status,               -- ★ 追加
+        orders.smm_status,           -- ★ 追加（カラムがある場合）
         orders.created_at,
         users.email AS user_email
       FROM orders
