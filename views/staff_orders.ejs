@@ -45,34 +45,36 @@
             <%= new Date(order.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) %>
           </p>
           <p class="mb-0 status">
-            📌 ステータス: 
-           <%
-            let jpStatus = "不明";
-            const s = (order.status || "").toLowerCase();
+  📌 ステータス: 
+  <%
+    // 個人ページと同じカラム名に合わせる
+    const rawStatus = (order.smm_status || order.status || "");
+    const s = rawStatus.toLowerCase();
 
-            if (s === "completed") jpStatus = "完了";
-            else if (s === "inprogress") jpStatus = "進行中";
-            else if (s === "pending") jpStatus = "保留中";
-            else if (s === "processing") jpStatus = "処理中";
-            else if (s === "partial") jpStatus = "一部完了";
-            else if (s === "canceled" || s === "cancel") jpStatus = "キャンセル";
-            else if (s === "error" || s === "failed") jpStatus = "エラー";
-          %>
-            <span class="badge 
-            <%= s === 'completed'
-                ? 'bg-success'
-                : s === 'inprogress'
-                  ? 'bg-info text-dark'
-                  : s === 'pending' || s === 'processing'
-                    ? 'bg-warning text-dark'
-                    : s === 'partial'
-                      ? 'bg-primary'
-                      : s === 'canceled' || s === 'error' || s === 'failed'
-                        ? 'bg-danger'
-                        : 'bg-secondary' %>">
-            <%= jpStatus %>
-          </span>
-          </p>
+    let jpStatus = "不明";
+
+    if (s === "completed") jpStatus = "完了";
+    else if (s === "in progress" || s === "processing") jpStatus = "進行中"; // ★修正
+    else if (s === "pending") jpStatus = "保留中";
+    else if (s === "partial") jpStatus = "一部完了";
+    else if (s === "canceled" || s === "cancel") jpStatus = "キャンセル";
+    else if (s === "error" || s === "failed") jpStatus = "エラー";
+  %>
+  <span class="badge 
+    <%= s === 'completed'
+        ? 'bg-success'
+        : (s === 'in progress' || s === 'processing')
+          ? 'bg-info text-dark'
+          : s === 'pending'
+            ? 'bg-warning text-dark'
+            : s === 'partial'
+              ? 'bg-primary'
+              : (s === 'canceled' || s === 'error' || s === 'failed')
+                ? 'bg-danger'
+                : 'bg-secondary' %>">
+    <%= jpStatus %>
+  </span>
+</p>
         </div>
       <% }) %>
     </div>
