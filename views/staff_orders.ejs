@@ -48,17 +48,17 @@
   📌 ステータス: 
   <%
     // 個人ページと同じカラム名に合わせる
-    const rawStatus = (order.smm_status || order.status || "");
-    const s = rawStatus.toLowerCase();
+const rawStatus = (order.status || "");
+const s = rawStatus.toLowerCase();
 
-    let jpStatus = "不明";
+let jpStatus = "不明";
 
-    if (s === "completed") jpStatus = "完了";
-    else if (s === "in progress" || s === "processing") jpStatus = "進行中"; // ★修正
-    else if (s === "pending") jpStatus = "保留中";
-    else if (s === "partial") jpStatus = "一部完了";
-    else if (s === "canceled" || s === "cancel") jpStatus = "キャンセル";
-    else if (s === "error" || s === "failed") jpStatus = "エラー";
+if (s === "completed") jpStatus = "完了";
+else if (s === "in progress" || s === "processing") jpStatus = "進行中";
+else if (s === "pending") jpStatus = "保留中";
+else if (s === "partial") jpStatus = "一部完了";
+else if (s === "canceled" || s === "cancel") jpStatus = "キャンセル";
+else if (s === "error" || s === "failed") jpStatus = "エラー";
   %>
   <span class="badge 
     <%= s === 'completed'
